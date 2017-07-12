@@ -78,7 +78,7 @@ public class CircularWallForce extends AbstractForce {
         item.force[0] += v*dx/d;
         item.force[1] += v*dy/d;
  
-        System.out.println(dx/d+","+dy/d+","+dr+","+v);
+        //System.out.println(dx/d+","+dy/d+","+dr+","+v);
     }
 
 } // end of class CircularWallForce
