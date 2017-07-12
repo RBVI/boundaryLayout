@@ -287,14 +287,14 @@ public class NBodyForce extends AbstractForce {
 
 		float effectivedx = Math.abs(dx);
 		float effectivedy = Math.abs(dy);
-		float effectivedr = r;
 		boolean isOverlapping = false;
 
 		if(disableOverlapping)
 			if(n.value != item && n.value != null && item != null) {
-			effectivedx = (float) (Math.abs(dx) - (item.dimensions[0] + n.value.dimensions[0]));
-			effectivedy = (float) (Math.abs(dy) - (item.dimensions[1] + n.value.dimensions[1]));
-			isOverlapping = (effectivedx < 0 && effectivedy < 0);
+				effectivedx = (float) (Math.abs(dx) - (item.dimensions[0] + n.value.dimensions[0]));
+				effectivedy = (float) (Math.abs(dy) - (item.dimensions[1] + n.value.dimensions[1]));
+				r = Math.abs(effectivedx * effectivedx + effectivedy * effectivedy);
+				isOverlapping = (effectivedx < 0 && effectivedy < 0);
 			}
 
 		boolean minDist = params[MIN_DISTANCE]>0f && r>params[MIN_DISTANCE] && !isOverlapping;
@@ -310,14 +310,12 @@ public class NBodyForce extends AbstractForce {
 			// for Barnes-Hut approximation, so calc force
 			float v = params[GRAVITATIONAL_CONST]*item.mass*n.mass 
 					/ (r*r*r);
-			/*if(disableOverlapping)
-				v += params[GRAVITATIONAL_CONST] * item.mass * n.mass / 10000000;*/ 
 			if(isOverlapping) {
 				item.force[0] += (dx < 0 ? overlapForce : -overlapForce);
 				item.force[1] += (dy < 0 ? overlapForce : -overlapForce);
 			} else if(!isOverlapping) {
-				item.force[0] += v*dx;
-				item.force[1] += v*dy;
+				item.force[0] += v*effectivedx;
+				item.force[1] += v*effectivedy;
 			}
 		} else if ( n.hasChildren ) {
 			// recurse for more accurate calculation
@@ -334,14 +332,12 @@ public class NBodyForce extends AbstractForce {
 			if ( n.value != null && n.value != item ) {
 				float v = params[GRAVITATIONAL_CONST]*item.mass*n.value.mass
 						/ (r*r*r);
-				/*if(disableOverlapping)
-					v += params[GRAVITATIONAL_CONST] * item.mass * n.value.mass / 10000000; */
 				if(isOverlapping) {
 					item.force[0] += (dx < 0 ? overlapForce : -overlapForce);
 					item.force[1] += (dy < 0 ? overlapForce : -overlapForce);
 				} else if(!isOverlapping) {
-					item.force[0] += v*dx;
-					item.force[1] += v*dy;
+					item.force[0] += v*effectivedx;
+					item.force[1] += v*effectivedy;
 				}
 			}
 		}

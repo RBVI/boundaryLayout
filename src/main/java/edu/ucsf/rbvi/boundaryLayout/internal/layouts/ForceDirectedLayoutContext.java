@@ -15,7 +15,7 @@ public class ForceDirectedLayoutContext implements TunableValidator {
   @Tunable(description="Number of Iterations:",
            tooltip="The number of iterations to run the algorithm. The higher the "+
 					         "number, the better the accuracy yet longer run-time.")
-  public int numIterations = 100;
+  public int numIterations = 1000;
 
   @Tunable(description="Default Spring Coefficient",
            tooltip="The smaller this number is, the more the network "+
@@ -23,7 +23,7 @@ public class ForceDirectedLayoutContext implements TunableValidator {
   public double defaultSpringCoefficient = 1e-4;
 
   @Tunable(description="Default Spring Length")
-  public double defaultSpringLength = 50.0;
+  public double defaultSpringLength = 140.0;
 
   @Tunable(description="Node mass",
            tooltip="The higher the node mass, the less nodes move around the network")
@@ -40,7 +40,7 @@ public class ForceDirectedLayoutContext implements TunableValidator {
   public boolean avoidOverlap = false;
  
   @Tunable(description="Force to apply to avoid node overlap")
-  public float overlapForce = 500.0f;
+  public float overlapForce = 1000000000.0f;
 
 	@Override
   public ValidationState getValidationState(final Appendable errMsg) {
