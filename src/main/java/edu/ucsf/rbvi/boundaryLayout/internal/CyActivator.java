@@ -22,7 +22,7 @@ import org.osgi.framework.BundleContext;
 import edu.ucsf.rbvi.boundaryLayout.internal.layouts.ForceDirectedLayout;
 
 public class CyActivator extends AbstractCyActivator {
-	
+
 	public CyActivator() {
 		super();
 	}
@@ -44,8 +44,8 @@ public class CyActivator extends AbstractCyActivator {
 		CyLayoutAlgorithm forceDirectedLayoutAlgorithm = new ForceDirectedLayout(registrar, undoSupport);
 		Properties forceDirectedLayoutAlgorithmProps = new Properties();
 		forceDirectedLayoutAlgorithmProps.setProperty("preferredTaskManager","menu");
-    forceDirectedLayoutAlgorithmProps.setProperty(TITLE,forceDirectedLayoutAlgorithmProps.toString());
-    forceDirectedLayoutAlgorithmProps.setProperty(MENU_GRAVITY,"20.1");
-    registerService(bc, forceDirectedLayoutAlgorithm, CyLayoutAlgorithm.class, forceDirectedLayoutAlgorithmProps);
+		forceDirectedLayoutAlgorithmProps.setProperty(TITLE,forceDirectedLayoutAlgorithmProps.toString());
+		forceDirectedLayoutAlgorithmProps.setProperty(MENU_GRAVITY,"20.1");
+		registerService(bc, forceDirectedLayoutAlgorithm, CyLayoutAlgorithm.class, forceDirectedLayoutAlgorithmProps);
 	}
 }

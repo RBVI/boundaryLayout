@@ -69,8 +69,6 @@ public class RectangularWallForce extends AbstractForce {
 		float drBottom = this.height - drTop;
 		int cX = (Math.abs(dx) > width / 2 ? -1 : 1);
 		int cY = (Math.abs(dy) > height / 2 ? -1 : 1);
-		if(cX + cY < 2)
-			System.out.print("UHOH");
 		float vLeft = -cX * params[GRAVITATIONAL_CONST]*item.mass / (drLeft * drLeft);
 		float vTop = -cY * params[GRAVITATIONAL_CONST]*item.mass / (drTop * drTop);
 		float vRight = cX * params[GRAVITATIONAL_CONST]*item.mass / (drRight * drRight);
@@ -79,8 +77,6 @@ public class RectangularWallForce extends AbstractForce {
 		item.force[1] += vTop;
 		item.force[0] += vRight;
 		item.force[1] += vBottom;
-	//	System.out.println("left is " + vLeft + ", and top is " + vTop + 
-		//	", and right is " + vRight + ", and bottom is " + vBottom);
 	}
 	
 	private float getRandDisplacement() {

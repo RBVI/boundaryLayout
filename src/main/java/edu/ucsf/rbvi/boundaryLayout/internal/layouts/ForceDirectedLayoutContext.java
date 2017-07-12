@@ -14,7 +14,7 @@ public class ForceDirectedLayoutContext implements TunableValidator {
 
   @Tunable(description="Number of Iterations:",
            tooltip="The number of iterations to run the algorithm. The higher the "+
-					         "number, the better the accuracy yet longer run-time.")
+					         "number, the better the accuracy yet longer run-time (1000 is recommended).")
   public int numIterations = 1000;
 
   @Tunable(description="Default Spring Coefficient",
