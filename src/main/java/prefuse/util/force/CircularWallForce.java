@@ -56,7 +56,7 @@ public class CircularWallForce extends AbstractForce {
      * @see prefuse.util.force.AbstractForce#getParameterNames()
      */
     protected String[] getParameterNames() {
-        return pnames;
+         return pnames;
     }
     
     /**
