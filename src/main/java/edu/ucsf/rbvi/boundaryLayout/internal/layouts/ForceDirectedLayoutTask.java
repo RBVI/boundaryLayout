@@ -1,21 +1,14 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.layouts;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import  java.awt.geom.Point2D;
-import  java.awt.geom.Rectangle2D;
 
-import org.cytoscape.model.CyNetwork;
-import org.cytoscape.application.CyApplicationManager;
-import org.cytoscape.application.events.SetCurrentNetworkListener;
-import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.layout.AbstractPartitionLayoutTask;
@@ -29,10 +22,8 @@ import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.annotations.Annotation;
 import org.cytoscape.view.presentation.annotations.AnnotationManager;
 import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
-import org.cytoscape.view.presentation.annotations.ShapeAnnotation.ShapeType;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 
-import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.undo.UndoSupport;
 
@@ -43,7 +34,6 @@ import prefuse.util.force.ForceSimulator;
 import prefuse.util.force.NBodyForce;
 import prefuse.util.force.RectangularWallForce;
 import prefuse.util.force.SpringForce;
-import prefuse.util.force.WallForce;
 
 // TODO: add circle and wall forces
 
