@@ -1,5 +1,7 @@
 package prefuse.util.force;
 
+import java.awt.geom.Point2D;
+
 /**
  * Uses a gravitational force model to act as a circular "wall". Can be used to
  * construct circles which either attract or repel items.
@@ -10,12 +12,11 @@ public class CircularWallForce extends AbstractForce {
 
     private static String[] pnames = new String[] { "GravitationalConstant" };
     
-    public static final float DEFAULT_GRAV_CONSTANT = -0.1f;
-    public static final float DEFAULT_MIN_GRAV_CONSTANT = -1.0f;
-    public static final float DEFAULT_MAX_GRAV_CONSTANT = 1.0f;
+    public static final float DEFAULT_GRAV_CONSTANT = -500f;
     public static final int GRAVITATIONAL_CONST = 0;
     
-    private float x, y, r;
+    private Point2D.Double center;
+	private float radius;
 
     /**
      * Create a new CircularWallForce.
@@ -25,13 +26,11 @@ public class CircularWallForce extends AbstractForce {
      * @param r the radius of the circle
      */
     public CircularWallForce(float gravConst, 
-        float x, float y, float r) 
+        Point2D.Double center, float radius) 
     {
         params = new float[] { gravConst };
-        minValues = new float[] { DEFAULT_MIN_GRAV_CONSTANT };
-        maxValues = new float[] { DEFAULT_MAX_GRAV_CONSTANT };
-        this.x = x; this.y = y;
-        this.r = r;
+        this.center = center;
+        this.radius = radius;
     }
     
     /**
@@ -40,8 +39,8 @@ public class CircularWallForce extends AbstractForce {
      * @param y the center y-coordinate of the circle
      * @param r the radius of the circle
      */
-    public CircularWallForce(float x, float y, float r) {
-        this(DEFAULT_GRAV_CONSTANT,x,y,r);
+    public CircularWallForce(Point2D.Double center, float radius) {
+        this(DEFAULT_GRAV_CONSTANT,center,radius);
     }
     
     /**
@@ -64,10 +63,10 @@ public class CircularWallForce extends AbstractForce {
      */
     public void getForce(ForceItem item) {
         float[] n = item.location;
-        float dx = x-n[0];
-        float dy = y-n[1];
+        float dx = (float)center.getX()-n[0];
+        float dy = (float)center.getY()-n[1];
         float d = (float)Math.sqrt(dx*dx+dy*dy);
-        float dr = r-d;
+        float dr = radius-d;
         float c = dr > 0 ? -1 : 1;
         float v = c*params[GRAVITATIONAL_CONST]*item.mass / (dr*dr);
         if ( d == 0.0 ) {

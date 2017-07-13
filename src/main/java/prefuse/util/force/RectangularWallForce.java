@@ -5,10 +5,10 @@ import java.awt.geom.Point2D;
 public class RectangularWallForce extends AbstractForce {
 	private static String[] pnames = new String[] { "GravitationalConstant" };
 
-	public static final float DEFAULT_GRAV_CONSTANT = -1f;
+	public static final float DEFAULT_GRAV_CONSTANT = -500f;
 	public static final int GRAVITATIONAL_CONST = 0;
 
-	private Point2D center;
+	private Point2D.Double center;
 	private float height, width;
 
 	/**
@@ -19,7 +19,7 @@ public class RectangularWallForce extends AbstractForce {
 	 * @param r the radius of the circle
 	 */
 	public RectangularWallForce(float gravConst, 
-			Point2D center, float height, float width) {
+			Point2D.Double center, float width, float height) {
 		params = new float[] { gravConst };
 		this.center = center;
 		this.height = height;
@@ -32,9 +32,9 @@ public class RectangularWallForce extends AbstractForce {
 	 * @param y the center y-coordinate of the circle
 	 * @param r the radius of the circle
 	 */
-	public RectangularWallForce(Point2D center, 
-			float height, float width) {
-		this(DEFAULT_GRAV_CONSTANT,center,height,width);
+	public RectangularWallForce(Point2D.Double center, 
+			float width, float height) {
+		this(DEFAULT_GRAV_CONSTANT,center,width,height);
 	}
 
 	/**

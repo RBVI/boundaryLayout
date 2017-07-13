@@ -1,5 +1,6 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.layouts;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,6 +26,8 @@ import org.cytoscape.view.layout.LayoutPoint;
 
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
+import org.cytoscape.view.presentation.annotations.Annotation;
+import org.cytoscape.view.presentation.annotations.AnnotationManager;
 import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
 import org.cytoscape.view.presentation.annotations.ShapeAnnotation.ShapeType;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
@@ -33,6 +36,7 @@ import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.undo.UndoSupport;
 
+import prefuse.util.force.CircularWallForce;
 import prefuse.util.force.DragForce;
 import prefuse.util.force.ForceItem;
 import prefuse.util.force.ForceSimulator;
@@ -48,7 +52,8 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 	private ForceDirectedLayout.Integrators integrator;
 	private Map<LayoutNode,ForceItem> forceItems;
 	private ForceDirectedLayoutContext context;
-
+	private CyServiceRegistrar registrar;
+	private String chosenCategory;
 	final CyNetworkView netView;
 
 	public ForceDirectedLayoutTask( final String displayName,
@@ -56,14 +61,17 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 			final Set<View<CyNode>> nodesToLayOut,
 			final ForceDirectedLayoutContext context,
 			final ForceDirectedLayout.Integrators integrator,
-			final String attrName, final UndoSupport undo) {
+			final String attrName, final CyServiceRegistrar registrar, 
+			final UndoSupport undo) {
 		super(displayName, context.singlePartition, netView, nodesToLayOut, attrName, undo);
 
 		context.setColumnTunables(netView.getModel());
-		
+
 		this.netView = netView;
 		this.context = context;
 		this.integrator = integrator;
+		this.registrar = registrar;
+		this.chosenCategory = attrName;
 
 		edgeWeighter = context.edgeWeighter;
 		edgeWeighter.setWeightAttribute(layoutAttribute);
@@ -83,6 +91,8 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 		//m_fsim.clear();
 
 		ForceSimulator m_fsim = new ForceSimulator();
+		for(ShapeAnnotation shapeAnnotation : getShapeAnnotations())
+			addAnnotationForce(m_fsim, shapeAnnotation);
 		m_fsim.addForce(new NBodyForce(context.avoidOverlap, context.overlapForce));
 		m_fsim.addForce(new SpringForce());
 		m_fsim.addForce(new DragForce());
@@ -193,5 +203,49 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 	 */
 	protected float getSpringCoefficient(LayoutEdge e) {
 		return (float)context.defaultSpringCoefficient;
+	}
+
+	//gets all the shape annotations in the network view
+	protected List<ShapeAnnotation> getShapeAnnotations() {
+		List<Annotation> annotations = 
+				registrar.getService(AnnotationManager.class).getAnnotations(netView);
+		List<ShapeAnnotation> shapeAnnotations = new ArrayList<ShapeAnnotation>();
+		for(Annotation annotation : annotations)
+			if(annotation instanceof ShapeAnnotation)
+				shapeAnnotations.add((ShapeAnnotation)annotation);
+		return shapeAnnotations;
+	}
+
+	//add a force annotation for each of the shape annotations depending on type
+	//of annotation
+	protected void addAnnotationForce(ForceSimulator m_fsim, ShapeAnnotation shapeAnnotation) {
+		float[] annotationCenter = getAnnotationCenter(shapeAnnotation);
+		float[] annotationDimensions = getAnnotationDimensions(shapeAnnotation);
+		switch(shapeAnnotation.getShapeType()) {
+			case "RECTANGLE":
+				m_fsim.addForce(new RectangularWallForce(new Point2D.Double(annotationCenter[0], 
+					annotationCenter[1]), annotationDimensions[0], annotationDimensions[1]));
+				break;
+			case "ELLIPSE":
+				if(annotationDimensions[0] == annotationDimensions[1])
+					m_fsim.addForce(new CircularWallForce(new Point2D.Double(annotationCenter[0], 
+					annotationCenter[1]), annotationDimensions[0]));
+				//add else for ellipse
+				break;
+		}
+	}
+	
+	//gets dimensions for the shape annotation passed
+	private static float[] getAnnotationDimensions(ShapeAnnotation shapeAnnotation) {
+		float[] annotationDimensions = {Float.parseFloat(shapeAnnotation.WIDTH), 
+			Float.parseFloat(shapeAnnotation.HEIGHT)};
+		return annotationDimensions;
+	}
+	
+	//gets centerpoint for the shape annotation passed
+	private static float[] getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
+		float[] annotationCenter = {Float.parseFloat(shapeAnnotation.X), 
+				Float.parseFloat(shapeAnnotation.Y)};
+		return annotationCenter;
 	}
 }

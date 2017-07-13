@@ -22,6 +22,9 @@ import org.cytoscape.work.TunableValidator;
 import org.cytoscape.work.util.ListSingleSelection;
 
 public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentNetworkListener {
+	@Tunable(description="Category to group nodes by")
+	public ListSingleSelection<String> categories = null; 
+	
 	@ContainsTunables
 	public EdgeWeighter edgeWeighter = new EdgeWeighter();
 
@@ -54,9 +57,6 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 
 	@Tunable(description="Force to apply to avoid node overlap")
 	public float overlapForce = 1000000000.0f;
-
-	@Tunable(description="Category to group nodes by")
-	public ListSingleSelection<String> categories = null; 
 
 	@Override
 	public ValidationState getValidationState(final Appendable errMsg) {
