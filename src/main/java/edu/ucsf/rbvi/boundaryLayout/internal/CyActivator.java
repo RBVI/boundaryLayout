@@ -31,7 +31,6 @@ public class CyActivator extends AbstractCyActivator {
 		// See if we have a graphics console or not
 		boolean haveGUI = true;
 		CySwingApplication cyApplication = getService(bc, CySwingApplication.class);
-		CyApplicationManager cyApplicationManager = getService(bc, CyApplicationManager.class);
 		CyServiceRegistrar registrar = getService(bc, CyServiceRegistrar.class);
 
 		if (cyApplication == null) {

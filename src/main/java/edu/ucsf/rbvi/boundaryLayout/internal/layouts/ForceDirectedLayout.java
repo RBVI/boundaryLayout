@@ -26,8 +26,12 @@ package edu.ucsf.rbvi.boundaryLayout.internal.layouts;
 
 
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
+import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.application.events.SetCurrentNetworkListener;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.layout.AbstractLayoutAlgorithm;
@@ -84,7 +88,11 @@ public class ForceDirectedLayout extends AbstractLayoutAlgorithm {
 
 	@Override
 	public Object createLayoutContext() {
-		return new ForceDirectedLayoutContext();
+		ForceDirectedLayoutContext context = new ForceDirectedLayoutContext();
+		CyNetwork network = registrar.getService(CyApplicationManager.class).getCurrentNetwork();
+		if(network != null)
+			context.setColumnTunables(network);
+		return context;
 	}
 
 	@Override

@@ -5,14 +5,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import  java.awt.geom.Point2D;
 import  java.awt.geom.Rectangle2D;
 
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.application.events.SetCurrentNetworkListener;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.layout.AbstractPartitionLayoutTask;
 import org.cytoscape.view.layout.LayoutEdge;
 import org.cytoscape.view.layout.LayoutNode;
@@ -55,6 +59,8 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 			final String attrName, final UndoSupport undo) {
 		super(displayName, context.singlePartition, netView, nodesToLayOut, attrName, undo);
 
+		context.setColumnTunables(netView.getModel());
+		
 		this.netView = netView;
 		this.context = context;
 		this.integrator = integrator;
