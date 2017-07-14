@@ -82,6 +82,7 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 
 		ForceSimulator m_fsim = new ForceSimulator();
 
+		//initialize shapeannotations and their forces
 		Map<Object, ShapeAnnotation> shapeAnnotations = getShapeAnnotations();
 		if(shapeAnnotations != null)
 			for(Object category : shapeAnnotations.keySet())
@@ -92,7 +93,7 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 		m_fsim.addForce(new NBodyForce(context.avoidOverlap, context.overlapForce));
 		m_fsim.addForce(new SpringForce());
 		m_fsim.addForce(new DragForce());
-		m_fsim.addForce(new RectangularWallForce(-500, new Point2D.Double(0., 0.), 800, 800));
+		m_fsim.addForce(new RectangularWallForce(-500, new Point2D.Double(0., 0.), 800, 800));//test
 
 		forceItems.clear();
 
@@ -114,6 +115,8 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 
 			View<CyNode> nodeView = netView.getNodeView(ln.getNode());
 			fitem.mass = getMassValue(ln);
+			
+			//place each node in its respective ShapeAnnotation
 			Object group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
 			if(shapeAnnotations.keySet().contains(group)) {
 				float[] centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
@@ -210,7 +213,9 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 		return (float)context.defaultSpringCoefficient;
 	}
 
-	//gets all the shape annotations in the network view
+	//gets all the shape annotations in the network view 
+	//and returns a HashMap of key category name with its
+	//corresponding ShapeAnnotation value
 	protected Map<Object, ShapeAnnotation> getShapeAnnotations() {
 		List<Annotation> annotations = 
 				registrar.getService(AnnotationManager.class).getAnnotations(netView);
