@@ -81,8 +81,14 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 		//m_fsim.clear();
 
 		ForceSimulator m_fsim = new ForceSimulator();
-		for(ShapeAnnotation shapeAnnotation : getShapeAnnotations())
-			addAnnotationForce(m_fsim, shapeAnnotation);
+
+		Map<Object, ShapeAnnotation> shapeAnnotations = getShapeAnnotations();
+		if(shapeAnnotations != null)
+			for(Object category : shapeAnnotations.keySet())
+				addAnnotationForce(m_fsim, shapeAnnotations.get(category));
+		else 
+			System.out.println("UHOH");
+
 		m_fsim.addForce(new NBodyForce(context.avoidOverlap, context.overlapForce));
 		m_fsim.addForce(new SpringForce());
 		m_fsim.addForce(new DragForce());
@@ -108,8 +114,17 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 
 			View<CyNode> nodeView = netView.getNodeView(ln.getNode());
 			fitem.mass = getMassValue(ln);
-			fitem.location[0] = 0f; 
-			fitem.location[1] = 0f; 
+			Object group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
+			if(shapeAnnotations.keySet().contains(group)) {
+				float[] centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
+				fitem.location[0] = centerOfShape[0]; 
+				fitem.location[1] = centerOfShape[1]; 
+			}
+			else {
+				fitem.location[0] = 0f; 
+				fitem.location[1] = 0f; 
+				System.out.print("UH OH");
+			}
 
 			double width = nodeView.getVisualProperty(BasicVisualLexicon.NODE_WIDTH) / 2;
 			double height = nodeView.getVisualProperty(BasicVisualLexicon.NODE_HEIGHT) / 2;
@@ -196,14 +211,17 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 	}
 
 	//gets all the shape annotations in the network view
-	protected List<ShapeAnnotation> getShapeAnnotations() {
+	protected Map<Object, ShapeAnnotation> getShapeAnnotations() {
 		List<Annotation> annotations = 
 				registrar.getService(AnnotationManager.class).getAnnotations(netView);
-		List<ShapeAnnotation> shapeAnnotations = new ArrayList<ShapeAnnotation>();
-		for(Annotation annotation : annotations)
-			if(annotation instanceof ShapeAnnotation)
-				shapeAnnotations.add((ShapeAnnotation)annotation);
-		return shapeAnnotations;
+		if(annotations != null) {
+			Map<Object, ShapeAnnotation> shapeAnnotations = new HashMap<Object, ShapeAnnotation>();
+			for(Annotation annotation : annotations)
+				if(annotation instanceof ShapeAnnotation)
+					shapeAnnotations.put(annotation.getCanvasName(), (ShapeAnnotation)annotation);
+			return shapeAnnotations;
+		}
+		else return null;
 	}
 
 	//add a force annotation for each of the shape annotations depending on type
@@ -212,26 +230,26 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 		float[] annotationCenter = getAnnotationCenter(shapeAnnotation);
 		float[] annotationDimensions = getAnnotationDimensions(shapeAnnotation);
 		switch(shapeAnnotation.getShapeType()) {
-			case "RECTANGLE":
-				m_fsim.addForce(new RectangularWallForce(new Point2D.Double(annotationCenter[0], 
+		case "RECTANGLE":
+			m_fsim.addForce(new RectangularWallForce(new Point2D.Double(annotationCenter[0], 
 					annotationCenter[1]), annotationDimensions[0], annotationDimensions[1]));
-				break;
-			case "ELLIPSE":
-				if(annotationDimensions[0] == annotationDimensions[1])
-					m_fsim.addForce(new CircularWallForce(new Point2D.Double(annotationCenter[0], 
-					annotationCenter[1]), annotationDimensions[0]));
-				//add else for ellipse
-				break;
+			break;
+		case "ELLIPSE":
+			if(annotationDimensions[0] == annotationDimensions[1])
+				m_fsim.addForce(new CircularWallForce(new Point2D.Double(annotationCenter[0], 
+						annotationCenter[1]), annotationDimensions[0]));
+			//add else for ellipse
+			break;
 		}
 	}
-	
+
 	//gets dimensions for the shape annotation passed
 	private static float[] getAnnotationDimensions(ShapeAnnotation shapeAnnotation) {
 		float[] annotationDimensions = {Float.parseFloat(shapeAnnotation.WIDTH), 
-			Float.parseFloat(shapeAnnotation.HEIGHT)};
+				Float.parseFloat(shapeAnnotation.HEIGHT)};
 		return annotationDimensions;
 	}
-	
+
 	//gets centerpoint for the shape annotation passed
 	private static float[] getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
 		float[] annotationCenter = {Float.parseFloat(shapeAnnotation.X), 

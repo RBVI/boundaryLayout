@@ -21,13 +21,13 @@ import org.cytoscape.work.Tunable;
 import org.cytoscape.work.TunableValidator;
 import org.cytoscape.work.util.ListSingleSelection;
 
-public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentNetworkListener {
-	@Tunable(description="Category to group nodes by")
-	public ListSingleSelection<String> categories = null; 
-	
+public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentNetworkListener {	
 	@ContainsTunables
 	public EdgeWeighter edgeWeighter = new EdgeWeighter();
 
+	@Tunable(description="Category to group nodes by")
+	public ListSingleSelection<String> categories = null; 
+	
 	@Tunable(description="Number of Iterations:",
 			tooltip="The number of iterations to run the algorithm. The higher the "+
 			"number, the better the accuracy yet longer run-time (1000 is recommended).")
