@@ -58,6 +58,14 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	@Tunable(description="Force to apply to avoid node overlap")
 	public float overlapForce = 1000000000.0f;
 
+	public ForceDirectedLayoutContext(CyServiceRegistrar registrar) {
+		super();
+		registrar.registerService(this, SetCurrentNetworkListener.class, new Properties());
+		CyNetwork network = registrar.getService(CyApplicationManager.class).getCurrentNetwork();
+		if (network != null)
+			setColumnTunables(network);
+	}
+	
 	@Override
 	public ValidationState getValidationState(final Appendable errMsg) {
 		try {
@@ -97,7 +105,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 				continue;
 			columnNames.add(name);
 		}
-
+		
 		// Now sort the list
 		Collections.sort(columnNames);
 		columnNames.add(0, "--None--");
