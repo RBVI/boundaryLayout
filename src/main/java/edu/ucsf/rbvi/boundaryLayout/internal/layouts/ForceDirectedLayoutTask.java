@@ -56,8 +56,6 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 			final UndoSupport undo) {
 		super(displayName, context.singlePartition, netView, nodesToLayOut, context.categories.getSelectedValue(), undo);
 
-		context.setColumnTunables(netView.getModel());
-
 		this.netView = netView;
 		this.context = context;
 		this.integrator = integrator;
@@ -81,7 +79,6 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 		//m_fsim.clear();
 		if (context.categories != null && !context.categories.getSelectedValue().equals("--None--"))
 			this.chosenCategory = context.categories.getSelectedValue();
-		System.out.println(chosenCategory);
 
 		ForceSimulator m_fsim = new ForceSimulator();
 
@@ -91,7 +88,7 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 			for(Object category : shapeAnnotations.keySet())
 				addAnnotationForce(m_fsim, shapeAnnotations.get(category));
 		else 
-			System.out.println("UHOH");
+			System.out.println("UHOHshapeAnnotationsisnull");
 
 		m_fsim.addForce(new NBodyForce(context.avoidOverlap, context.overlapForce));
 		m_fsim.addForce(new SpringForce());
@@ -119,7 +116,6 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 			fitem.mass = getMassValue(ln);
 
 			//place each node in its respective ShapeAnnotation
-			System.out.println(nodeView.getModel() + ": " + chosenCategory + "fffffff");
 			Object group = null;
 			if(chosenCategory != null)
 				group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
@@ -128,12 +124,13 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 					float[] centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
 					fitem.location[0] = centerOfShape[0]; 
 					fitem.location[1] = centerOfShape[1]; 
+					System.out.println((fitem.location[0] == centerOfShape[0] ? "good" : "bad") + 
+							"," + (fitem.location[1] == centerOfShape[1] ? "good" : "bad"));
 				} else {
 					fitem.location[0] = 0f; 
 					fitem.location[1] = 0f; //change to outside the union of shapes'
-					System.out.print("UH OH");
 				}
-
+		
 			double width = nodeView.getVisualProperty(BasicVisualLexicon.NODE_WIDTH) / 2;
 			double height = nodeView.getVisualProperty(BasicVisualLexicon.NODE_HEIGHT) / 2;
 			fitem.dimensions[0] = (float) width;
@@ -173,7 +170,6 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 		for (LayoutNode ln: part.getNodeList()) {
 			if (!ln.isLocked()) {
 				ForceItem fitem = forceItems.get(ln); 
-				System.out.println(fitem.location[0] + "," + fitem.location[1]);
 				ln.setX(fitem.location[0]);
 				ln.setY(fitem.location[1]);
 				part.moveNodeToLocation(ln);
@@ -257,9 +253,6 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 
 	//gets dimensions for the shape annotation passed
 	private static float[] getAnnotationDimensions(ShapeAnnotation shapeAnnotation) {
-		System.out.println(shapeAnnotation.getName() + " is");
-		System.out.println(shapeAnnotation.getShape().getBounds2D().getWidth());
-		System.out.println(shapeAnnotation.getShape().getBounds2D().getHeight());
 		float[] annotationDimensions = {(float)shapeAnnotation.getShape().getBounds2D().getWidth(), 
 				(float)shapeAnnotation.getShape().getBounds2D().getHeight()};
 		return annotationDimensions;
@@ -267,9 +260,10 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 
 	//gets centerpoint for the shape annotation passed
 	private static float[] getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
-		System.out.println(shapeAnnotation.getShape());
-		float[] annotationCenter = {(float) shapeAnnotation.getShape().getBounds2D().getCenterX(), 
-				(float)shapeAnnotation.getShape().getBounds2D().getCenterY()};
+		System.out.println(Float.parseFloat(shapeAnnotation.getArgMap().get(Annotation.X)) + "," + 
+			(Float.parseFloat(shapeAnnotation.getArgMap().get(Annotation.Y))));
+		float[] annotationCenter = {Float.parseFloat(shapeAnnotation.getArgMap().get(Annotation.X)), 
+			(Float.parseFloat(shapeAnnotation.getArgMap().get(Annotation.Y)))};
 		return annotationCenter;
 	}
 }
