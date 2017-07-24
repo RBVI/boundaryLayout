@@ -11,6 +11,7 @@ import  java.awt.geom.Point2D;
 
 import org.cytoscape.model.CyNode;
 import org.cytoscape.service.util.CyServiceRegistrar;
+import org.cytoscape.view.layout.AbstractLayoutTask;
 import org.cytoscape.view.layout.AbstractPartitionLayoutTask;
 import org.cytoscape.view.layout.LayoutEdge;
 import org.cytoscape.view.layout.LayoutNode;
@@ -38,14 +39,16 @@ import prefuse.util.force.SpringForce;
 
 // TODO: add circle and wall forces
 
-public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
+public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 	private ForceDirectedLayout.Integrators integrator;
-	private Map<LayoutNode,ForceItem> forceItems;
+	private Map<View<CyNode>,ForceItem> forceItems;
 	private ForceDirectedLayoutContext context;
 	private CyServiceRegistrar registrar;
+	private List<View<CyNode>> nodeViewList;
 	private String chosenCategory;
 	final CyNetworkView netView;
+	private final Map<Object, ShapeAnnotation> shapeAnnotations; 
 
 	public ForceDirectedLayoutTask( final String displayName,
 			final CyNetworkView netView,
@@ -54,41 +57,39 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 			final ForceDirectedLayout.Integrators integrator,
 			final CyServiceRegistrar registrar, 
 			final UndoSupport undo) {
-		super(displayName, context.singlePartition, netView, nodesToLayOut, context.categories.getSelectedValue(), undo);
+		super(displayName, netView, nodesToLayOut, context.categories.getSelectedValue(), undo);
+
+		if(nodeViewList == null)
+			nodeViewList = new ArrayList<View<CyNode>>();
 
 		this.netView = netView;
 		this.context = context;
 		this.integrator = integrator;
 		this.registrar = registrar;
+		for(View<CyNode> nodeView : nodesToLayOut)
+			nodeViewList.add(nodeView);
+		if (context.categories != null && !context.categories.getSelectedValue().equals("--None--"))
+			this.chosenCategory = context.categories.getSelectedValue();
+		shapeAnnotations = getShapeAnnotations();
 
-		edgeWeighter = context.edgeWeighter;
-		edgeWeighter.setWeightAttribute(layoutAttribute);
-
-		forceItems = new HashMap<LayoutNode, ForceItem>();
+		forceItems = new HashMap<View<CyNode>, ForceItem>();
 	}
 
-
-	public void layoutPartition(LayoutPartition part) {
-		LayoutPoint initialLocation = null;
+	@Override
+	protected void doLayout(TaskMonitor arg0) {
 		// System.out.println("layoutPartion: "+part.getEdgeList().size()+" edges");
 		// Calculate our edge weights
-		part.calculateEdgeWeights();
 		// System.out.println("layoutPartion: "+part.getEdgeList().size()+" edges after calculateEdgeWeights");
 
 		//m_fsim.setIntegrator(integrator.getNewIntegrator());
 		//m_fsim.clear();
-		if (context.categories != null && !context.categories.getSelectedValue().equals("--None--"))
-			this.chosenCategory = context.categories.getSelectedValue();
 
 		ForceSimulator m_fsim = new ForceSimulator();
 
-		//initialize shapeannotations and their forces
-		Map<Object, ShapeAnnotation> shapeAnnotations = getShapeAnnotations();
+		//initialize shape annotations and their forces
 		if(shapeAnnotations != null)
 			for(Object category : shapeAnnotations.keySet())
 				addAnnotationForce(m_fsim, shapeAnnotations.get(category));
-		else 
-			System.out.println("UHOHshapeAnnotationsisnull");
 
 		m_fsim.addForce(new NBodyForce(context.avoidOverlap, context.overlapForce));
 		m_fsim.addForce(new SpringForce());
@@ -96,41 +97,38 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 
 		forceItems.clear();
 
-		List<LayoutNode> nodeList = part.getNodeList();
-		List<LayoutEdge> edgeList = part.getEdgeList();
-
-
 		if(context.isDeterministic){
-			Collections.sort(nodeList);
-			Collections.sort(edgeList);
+			//sort nodes views in some way ADD <---------------
 		}
-		// initialize nodes
-		for (LayoutNode ln: nodeList) {
-			ForceItem fitem = forceItems.get(ln); 
+
+		// initialize node locations and properties
+		for (View<CyNode> nodeView : nodeViewList) {
+			ForceItem fitem = forceItems.get(nodeView); 
 			if ( fitem == null ) {
 				fitem = new ForceItem();
-				forceItems.put(ln, fitem);
+				forceItems.put(nodeView, fitem);
 			}
 
-			View<CyNode> nodeView = netView.getNodeView(ln.getNode());
-			fitem.mass = getMassValue(ln);
+			fitem.mass = getMassValue(nodeView);
 
 			//place each node in its respective ShapeAnnotation
 			Object group = null;
 			if(chosenCategory != null)
 				group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
-			if(group != null)
+			if(group != null) {
 				if(shapeAnnotations.keySet().contains(group)) {
-					float[] centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
-					fitem.location[0] = centerOfShape[0]; 
-					fitem.location[1] = centerOfShape[1]; 
-					System.out.println((fitem.location[0] == centerOfShape[0] ? "good" : "bad") + 
-							"," + (fitem.location[1] == centerOfShape[1] ? "good" : "bad"));
+					double[] centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
+					fitem.location[0] = (float) centerOfShape[0]; 
+					fitem.location[1] = (float) centerOfShape[1]; 
+					nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, centerOfShape[0]);
+					nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, centerOfShape[1]);
+					System.out.println(nodeView.getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION)+ "," + nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION) + " for group " + group);
 				} else {
-					fitem.location[0] = 0f; 
-					fitem.location[1] = 0f; //change to outside the union of shapes'
+					System.out.println("noooooooooooooo");
+					//change to put nodes outside the union of shapes'
 				}
-		
+			}
+
 			double width = nodeView.getVisualProperty(BasicVisualLexicon.NODE_WIDTH) / 2;
 			double height = nodeView.getVisualProperty(BasicVisualLexicon.NODE_HEIGHT) / 2;
 			fitem.dimensions[0] = (float) width;
@@ -139,43 +137,44 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 		}
 
 		// initialize edges
-		for (LayoutEdge e: edgeList) {
-			LayoutNode n1 = e.getSource();
-			ForceItem f1 = forceItems.get(n1); 
-			LayoutNode n2 = e.getTarget();
-			ForceItem f2 = forceItems.get(n2); 
-			if ( f1 == null || f2 == null )
-				continue;
-			m_fsim.addSpring(f1, f2, getSpringCoefficient(e), getSpringLength(e)); 
-		}
+		/*	for (LayoutEdge e: edgeList) {
+					LayoutNode n1 = e.getSource();
+					ForceItem f1 = forceItems.get(n1); 
+					LayoutNode n2 = e.getTarget();
+					ForceItem f2 = forceItems.get(n2); 
+					if ( f1 == null || f2 == null )
+						continue;
+					m_fsim.addSpring(f1, f2, getSpringCoefficient(e), getSpringLength(e)); 
+				}
 
-		// setTaskStatus(5); // This is a rough approximation, but probably good enough
-		if (taskMonitor != null) {
-			taskMonitor.setStatusMessage("Initializing partition "+part.getPartitionNumber());
-		}
+				// setTaskStatus(5); // This is a rough approximation, but probably good enough
+				if (taskMonitor != null) {
+					taskMonitor.setStatusMessage("Initializing partition "+part.getPartitionNumber());
+				}
 
-		// Figure out our starting point
-		initialLocation = part.getAverageLocation();
+				// Figure out our starting point
+				initialLocation = part.getAverageLocation();
 
-		// perform layout
-		long timestep = 1000L;
-		for ( int i = 0; i < context.numIterations && !cancelled; i++ ) {
-			timestep *= (1.0 - i/(double)context.numIterations);
-			long step = timestep+50;
-			m_fsim.runSimulator(step);
-			setTaskStatus((int)(((double)i/(double)context.numIterations)*90.+5));
-		}
-		// update positions
-		part.resetNodes(); // reset the nodes so we get the new average location
-		for (LayoutNode ln: part.getNodeList()) {
-			if (!ln.isLocked()) {
-				ForceItem fitem = forceItems.get(ln); 
-				ln.setX(fitem.location[0]);
-				ln.setY(fitem.location[1]);
-				part.moveNodeToLocation(ln);
-			}
-		}
+				// perform layout
+				long timestep = 1000L;
+				for ( int i = 0; i < context.numIterations && !cancelled; i++ ) {
+					timestep *= (1.0 - i/(double)context.numIterations);
+					long step = timestep+50;
+					m_fsim.runSimulator(step);
+					setTaskStatus((int)(((double)i/(double)context.numIterations)*90.+5));
+				}
+				// update positions
+				part.resetNodes(); // reset the nodes so we get the new average location
+			/*	for (LayoutNode ln: part.getNodeList()) {
+					if (!ln.isLocked()) {
+						ForceItem fitem = forceItems.get(ln); 
+						ln.setX(fitem.location[0]);
+						ln.setY(fitem.location[1]);
+						part.moveNodeToLocation(ln);
+					}
+				}*/
 	}
+
 	/**
 	 * Get the mass value associated with the given node. Subclasses should
 	 * override this method to perform custom mass assignment.
@@ -183,8 +182,8 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 	 * @return the mass value for the node. By default, all items are given
 	 * a mass value of 1.0.
 	 */
-	protected float getMassValue(LayoutNode n) {
-		return (float)context.defaultNodeMass;
+	protected float getMassValue(View<CyNode> nodeView) {
+		return (float) context.defaultNodeMass;
 	}
 
 	/**
@@ -236,7 +235,7 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 	//of annotation
 	protected void addAnnotationForce(ForceSimulator m_fsim, ShapeAnnotation shapeAnnotation) {
 		float[] annotationDimensions = getAnnotationDimensions(shapeAnnotation);
-		float[] annotationCenter = getAnnotationCenter(shapeAnnotation);
+		double[] annotationCenter = getAnnotationCenter(shapeAnnotation);
 		switch(shapeAnnotation.getShapeType()) {
 		case "RECTANGLE":
 			m_fsim.addForce(new RectangularWallForce(new Point2D.Double(annotationCenter[0], 
@@ -259,11 +258,9 @@ public class ForceDirectedLayoutTask extends AbstractPartitionLayoutTask {
 	}
 
 	//gets centerpoint for the shape annotation passed
-	private static float[] getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
-		System.out.println(Float.parseFloat(shapeAnnotation.getArgMap().get(Annotation.X)) + "," + 
-			(Float.parseFloat(shapeAnnotation.getArgMap().get(Annotation.Y))));
-		float[] annotationCenter = {Float.parseFloat(shapeAnnotation.getArgMap().get(Annotation.X)), 
-			(Float.parseFloat(shapeAnnotation.getArgMap().get(Annotation.Y)))};
+	private static double[] getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
+		double[] annotationCenter = {Double.parseDouble(shapeAnnotation.getArgMap().get(Annotation.X)), 
+				Double.parseDouble(shapeAnnotation.getArgMap().get(Annotation.Y))};
 		return annotationCenter;
 	}
 }
