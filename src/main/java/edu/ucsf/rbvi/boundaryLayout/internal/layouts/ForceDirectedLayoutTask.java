@@ -1,6 +1,7 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.layouts;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +64,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if(nodeViewList == null)
 			nodeViewList = new ArrayList<View<CyNode>>();
 
+		
 		this.netView = netView;
 		this.context = context;
 		this.integrator = integrator;
@@ -85,6 +87,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		//m_fsim.setIntegrator(integrator.getNewIntegrator());
 		//m_fsim.clear();
 
+		
 		ForceSimulator m_fsim = new ForceSimulator();
 
 		//initialize shape annotations and their forces
@@ -103,6 +106,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 
 		// initialize node locations and properties
+		
 		for (View<CyNode> nodeView : nodeViewList) {
 			ForceItem fitem = forceItems.get(nodeView); 
 			if ( fitem == null ) {
@@ -118,24 +122,24 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
 			if(group != null) {
 				if(shapeAnnotations.keySet().contains(group)) {
-					double[] centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
+					float[] centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
+					System.out.println("Before is " + centerOfShape[0]);
 					fitem.location[0] = (float) centerOfShape[0]; 
+					System.out.println("During is " + centerOfShape[0]);
 					fitem.location[1] = (float) centerOfShape[1]; 
-					nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, centerOfShape[0]);
-					nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, centerOfShape[1]);
+					nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double) centerOfShape[0]);
+					System.out.println("After is " + (double) centerOfShape[0]);
+					nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double) centerOfShape[1]);
 					System.out.println(nodeView.getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION)+ "," + nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION) + " for group " + group);
-				} else {
-					System.out.println("noooooooooooooo");
-					//change to put nodes outside the union of shapes'
 				}
 			}
 
-			double width = nodeView.getVisualProperty(BasicVisualLexicon.NODE_WIDTH) / 2;
+		/*	double width = nodeView.getVisualProperty(BasicVisualLexicon.NODE_WIDTH) / 2;
 			double height = nodeView.getVisualProperty(BasicVisualLexicon.NODE_HEIGHT) / 2;
 			fitem.dimensions[0] = (float) width;
 			fitem.dimensions[1] = (float) height;
-			m_fsim.addItem(fitem);
-		}
+	//		m_fsim.addItem(fitem);
+		*/}
 
 		// initialize edges
 		/*	for (LayoutEdge e: edgeList) {
@@ -175,7 +179,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					}
 				}*/
 	}
-
+	
 	/**
 	 * Get the mass value associated with the given node. Subclasses should
 	 * override this method to perform custom mass assignment.
@@ -236,7 +240,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	//of annotation
 	protected void addAnnotationForce(ForceSimulator m_fsim, ShapeAnnotation shapeAnnotation) {
 		float[] annotationDimensions = getAnnotationDimensions(shapeAnnotation);
-		double[] annotationCenter = getAnnotationCenter(shapeAnnotation);
+		float[] annotationCenter = getAnnotationCenter(shapeAnnotation);
 		switch(shapeAnnotation.getShapeType()) {
 		case "RECTANGLE":
 			m_fsim.addForce(new RectangularWallForce(new Point2D.Double(annotationCenter[0], 
@@ -262,9 +266,12 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	}
 
 	//gets centerpoint for the shape annotation passed
-	private static double[] getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
-		double[] annotationCenter = {Double.parseDouble(shapeAnnotation.getArgMap().get(Annotation.X)), 
-				Double.parseDouble(shapeAnnotation.getArgMap().get(Annotation.Y))};
+	private static float[] getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
+		float[] annotationCenter = new float[2];
+		annotationCenter[0] = Float.parseFloat(shapeAnnotation.getArgMap().get(Annotation.X));
+		annotationCenter[1] = Float.parseFloat(shapeAnnotation.getArgMap().get(Annotation.Y));
+		System.out.println(shapeAnnotation.getName() + shapeAnnotation.getArgMap().get(Annotation.X));
+		System.out.println(annotationCenter[0] + "," + annotationCenter[1]);
 		return annotationCenter;
 	}
 }
