@@ -106,6 +106,9 @@ public class ForceDirectedLayout extends AbstractLayoutAlgorithm {
 
 		ret.add(Integer.class);
 		ret.add(Double.class);
+		ret.add(Boolean.class);
+		ret.add(String.class);
+		ret.add(Long.class);
 
 		return ret;
 	}

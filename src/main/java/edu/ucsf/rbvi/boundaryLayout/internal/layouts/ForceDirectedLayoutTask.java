@@ -31,6 +31,7 @@ import org.cytoscape.work.undo.UndoSupport;
 
 import prefuse.util.force.CircularWallForce;
 import prefuse.util.force.DragForce;
+import prefuse.util.force.EllipseWallForce;
 import prefuse.util.force.ForceItem;
 import prefuse.util.force.ForceSimulator;
 import prefuse.util.force.NBodyForce;
@@ -246,6 +247,9 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				m_fsim.addForce(new CircularWallForce(new Point2D.Double(annotationCenter[0], 
 						annotationCenter[1]), annotationDimensions[0]));
 			//add else for ellipse
+			else {
+				m_fsim.addForce(new EllipseWallForce(new Point2D.Double(annotationCenter[0], annotationCenter[1]), annotationDimensions[0], annotationDimensions[1]));
+			}
 			break;
 		}
 	}
