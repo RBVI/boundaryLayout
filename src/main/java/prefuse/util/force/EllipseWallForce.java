@@ -53,6 +53,64 @@ public class EllipseWallForce extends AbstractForce {
 		// TODO Auto-generated method stub
 		return pnames;
 	}
+	
+	public void getForce(ForceItem item) {
+		float[] n = item.location; //current location of forceitem
+		float dx = x - n[0];
+		float dy = y - n[1];
+
+		if ( dx == 0.0 && dy == 0.0 ) {
+			dx = ((float)Math.random()-0.5f) / 50.0f;
+			dy = ((float)Math.random()-0.5f) / 50.0f;
+		}
+
+		float fociC = (float)(Math.sqrt((rX*rX) - (rY * rY))); 
+		
+		float foci1Dist = 0.0f;
+
+		float height = 2 * (rY);
+		float width = 2 * rX;
+
+		if (width > height) {
+			float foci1X = x + fociC;     
+			float foci2X = x - fociC;
+			float fociY = y; 	
+			foci1Dist = (float)(Math.sqrt(Math.pow((n[0] - foci1X), 2)) + Math.pow(n[1] - fociY, 2));
+		/*	float foci2Dist = (float)(Math.abs(n[0] - fociC));	     
+			float foci1DistSq = (float)(Math.pow(foci1Dist, 2));
+			float foci2DistSq = (float)(Math.pow(foci2Dist, 2)); */
+
+			float drLeft = foci1X - n[0];
+			float drRight = foci2X - n[0];
+
+			float cX =  drLeft > foci1Dist ? -1 : 1;  
+			float cY; 
+
+			float vLeft =  -cX * params[GRAVITATIONAL_CONST] * item.mass / (drLeft * drLeft); 
+			float vRight = cX * params[GRAVITATIONAL_CONST] * item.mass / (drRight * drRight); 
+
+			item.force[0] += vLeft;
+			item.force[0] += vRight;
+		}
+		else {
+			float foci1Y = y + fociC;     
+			float foci2Y = y - fociC;
+			float fociX = x; 	
+			foci1Dist = (float)(Math.sqrt(Math.pow((n[0] - fociX), 2)) + Math.pow(n[1] - foci1Y, 2));
+			
+			float drUp = foci1Y - n[1];
+			float drDown = foci2Y - n[1];
+
+			float cX =  drUp > foci1Dist ? -1 : 1;  
+			float cY; 
+
+			float vUp =  -cX * params[GRAVITATIONAL_CONST] * item.mass / (drUp * drUp); 
+			float vDown = cX * params[GRAVITATIONAL_CONST] * item.mass / (drDown * drDown); 
+
+			item.force[1] += vUp;
+			item.force[1] += vDown;		
+		}
+	}
 	    
 }
  
