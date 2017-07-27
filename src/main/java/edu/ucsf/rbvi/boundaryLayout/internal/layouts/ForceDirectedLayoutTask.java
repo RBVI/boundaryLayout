@@ -57,10 +57,11 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			final CyNetworkView netView,
 			final Set<View<CyNode>> nodesToLayOut,
 			final ForceDirectedLayoutContext context,
+			final String layoutAttribute,
 			final ForceDirectedLayout.Integrators integrator,
 			final CyServiceRegistrar registrar, 
 			final UndoSupport undo) {
-		super(displayName, netView, nodesToLayOut, context.categories.getSelectedValue(), undo);
+		super(displayName, netView, nodesToLayOut, layoutAttribute, undo);
 
 		if(nodeViewList == null)
 			nodeViewList = new ArrayList<View<CyNode>>();
@@ -71,8 +72,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		this.registrar = registrar;
 		for(View<CyNode> nodeView : nodesToLayOut)
 			nodeViewList.add(nodeView);
-		if (context.categories != null && !context.categories.getSelectedValue().equals("--None--"))
-			this.chosenCategory = context.categories.getSelectedValue();
+
+		// We should use the context for edge weighting
+		// if (context.categories != null && !context.categories.getSelectedValue().equals("--None--"))
+		// 	this.chosenCategory = context.categories.getSelectedValue();
 		shapeAnnotations = getShapeAnnotations();
 		
 		forceItems = new HashMap<View<CyNode>, ForceItem>();

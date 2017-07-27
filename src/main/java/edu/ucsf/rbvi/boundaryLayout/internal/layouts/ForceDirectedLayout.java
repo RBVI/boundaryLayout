@@ -90,7 +90,7 @@ public class ForceDirectedLayout extends AbstractLayoutAlgorithm {
 			settings = createLayoutContext();
 		}
 		ForceDirectedLayoutTask newTask = new ForceDirectedLayoutTask(toString(), networkView, nodesToLayOut,
-				settings, integrator, registrar, undoSupport);
+				settings, attrName, integrator, registrar, undoSupport);
 		return new TaskIterator(newTask);
 	}
 
@@ -101,11 +101,11 @@ public class ForceDirectedLayout extends AbstractLayoutAlgorithm {
 	}
 
 	@Override
-	public Set<Class<?>> getSupportedEdgeAttributeTypes() {
+	public Set<Class<?>> getSupportedNodeAttributeTypes() {
 		final Set<Class<?>> ret = new HashSet<Class<?>>();
 
 		ret.add(Integer.class);
-		ret.add(Double.class);
+		// ret.add(Double.class);
 		ret.add(Boolean.class);
 		ret.add(String.class);
 		ret.add(Long.class);
