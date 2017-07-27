@@ -51,6 +51,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private String chosenCategory;
 	final CyNetworkView netView;
 	private final Map<Object, ShapeAnnotation> shapeAnnotations; 
+	private Map<ShapeAnnotation, Point2D.Double> annotationCoordinates;
 
 	public ForceDirectedLayoutTask( final String displayName,
 			final CyNetworkView netView,
@@ -64,7 +65,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if(nodeViewList == null)
 			nodeViewList = new ArrayList<View<CyNode>>();
 
-		
 		this.netView = netView;
 		this.context = context;
 		this.integrator = integrator;
@@ -74,7 +74,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if (context.categories != null && !context.categories.getSelectedValue().equals("--None--"))
 			this.chosenCategory = context.categories.getSelectedValue();
 		shapeAnnotations = getShapeAnnotations();
-
+		
 		forceItems = new HashMap<View<CyNode>, ForceItem>();
 	}
 
@@ -87,7 +87,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		//m_fsim.setIntegrator(integrator.getNewIntegrator());
 		//m_fsim.clear();
 
-		
+		initializeAnnotationCoordinates();
 		ForceSimulator m_fsim = new ForceSimulator();
 
 		//initialize shape annotations and their forces
@@ -122,14 +122,14 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
 			if(group != null) {
 				if(shapeAnnotations.keySet().contains(group)) {
-					float[] centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
-					System.out.println("Before is " + centerOfShape[0]);
-					fitem.location[0] = (float) centerOfShape[0]; 
-					System.out.println("During is " + centerOfShape[0]);
-					fitem.location[1] = (float) centerOfShape[1]; 
-					nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double) centerOfShape[0]);
-					System.out.println("After is " + (double) centerOfShape[0]);
-					nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double) centerOfShape[1]);
+					Point2D.Double centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
+					System.out.println("Before is " + centerOfShape.getX());
+					fitem.location[0] = (float) centerOfShape.getX(); 
+					System.out.println("During is " + centerOfShape.getX());
+					fitem.location[1] = (float) centerOfShape.getY(); 
+					nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, centerOfShape.getX());
+					System.out.println("After is " + centerOfShape.getX());
+					nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, centerOfShape.getY());
 					System.out.println(nodeView.getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION)+ "," + nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION) + " for group " + group);
 				}
 			}
@@ -240,19 +240,17 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	//of annotation
 	protected void addAnnotationForce(ForceSimulator m_fsim, ShapeAnnotation shapeAnnotation) {
 		float[] annotationDimensions = getAnnotationDimensions(shapeAnnotation);
-		float[] annotationCenter = getAnnotationCenter(shapeAnnotation);
+		Point2D.Double annotationCenter = getAnnotationCenter(shapeAnnotation);
 		switch(shapeAnnotation.getShapeType()) {
 		case "RECTANGLE":
-			m_fsim.addForce(new RectangularWallForce(new Point2D.Double(annotationCenter[0], 
-					annotationCenter[1]), annotationDimensions[0], annotationDimensions[1]));
+			m_fsim.addForce(new RectangularWallForce(annotationCenter, annotationDimensions[0], annotationDimensions[1]));
 			break;
 		case "ELLIPSE":
 			if(annotationDimensions[0] == annotationDimensions[1])
-				m_fsim.addForce(new CircularWallForce(new Point2D.Double(annotationCenter[0], 
-						annotationCenter[1]), annotationDimensions[0]));
+				m_fsim.addForce(new CircularWallForce(annotationCenter, annotationDimensions[0]));
 			//add else for ellipse
 			else {
-				m_fsim.addForce(new EllipseWallForce(new Point2D.Double(annotationCenter[0], annotationCenter[1]), annotationDimensions[0], annotationDimensions[1]));
+				m_fsim.addForce(new EllipseWallForce(annotationCenter, annotationDimensions[0], annotationDimensions[1]));
 			}
 			break;
 		}
@@ -266,12 +264,18 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	}
 
 	//gets centerpoint for the shape annotation passed
-	private static float[] getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
-		float[] annotationCenter = new float[2];
-		annotationCenter[0] = Float.parseFloat(shapeAnnotation.getArgMap().get(Annotation.X));
-		annotationCenter[1] = Float.parseFloat(shapeAnnotation.getArgMap().get(Annotation.Y));
-		System.out.println(shapeAnnotation.getName() + shapeAnnotation.getArgMap().get(Annotation.X));
-		System.out.println(annotationCenter[0] + "," + annotationCenter[1]);
-		return annotationCenter;
+	private Point2D.Double getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
+		return annotationCoordinates.get(shapeAnnotation);
+	}
+	
+	private void initializeAnnotationCoordinates() {
+		annotationCoordinates = new HashMap<ShapeAnnotation, Point2D.Double>();
+		for(ShapeAnnotation shapeAnnotation : shapeAnnotations.values()) {
+			String xCoord = shapeAnnotation.getArgMap().get(Annotation.X);
+			String yCoord = shapeAnnotation.getArgMap().get(Annotation.Y);
+			double xCoordinate = Double.parseDouble(xCoord);
+			double yCoordinate = Double.parseDouble(yCoord);
+			annotationCoordinates.put(shapeAnnotation, new Point2D.Double(xCoordinate, yCoordinate));
+		}
 	}
 }
