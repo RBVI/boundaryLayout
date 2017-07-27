@@ -21,6 +21,10 @@ import org.osgi.framework.BundleContext;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.layouts.ForceDirectedLayout;
 
+import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
+import org.cytoscape.view.presentation.annotations.AnnotationFactory;
+import org.cytoscape.view.presentation.annotations.AnnotationManager;
+
 public class CyActivator extends AbstractCyActivator {
 
 	public CyActivator() {
@@ -46,5 +50,9 @@ public class CyActivator extends AbstractCyActivator {
 		forceDirectedLayoutAlgorithmProps.setProperty(TITLE,forceDirectedLayoutAlgorithmProps.toString());
 		forceDirectedLayoutAlgorithmProps.setProperty(MENU_GRAVITY,"20.1");
 		registerService(bc, forceDirectedLayoutAlgorithm, CyLayoutAlgorithm.class, forceDirectedLayoutAlgorithmProps);
+	
+		//annotations
+		AnnotationFactory<ShapeAnnotation> shapeFactory = (AnnotationFactory<ShapeAnnotation>) getService(bc, AnnotationFactory.class, "(type=ShapeAnnotation.class)");
+		AnnotationManager annotationManager = getService(bc, AnnotationManager.class);
 	}
 }
