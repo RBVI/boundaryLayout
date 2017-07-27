@@ -268,6 +268,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		return annotationCoordinates.get(shapeAnnotation);
 	}
 	
+	//initializes the annotationCoordinates HashMap (key is shapeannotation and value is
+	//its respectful Point2D Location)
 	private void initializeAnnotationCoordinates() {
 		annotationCoordinates = new HashMap<ShapeAnnotation, Point2D.Double>();
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations.values()) {
