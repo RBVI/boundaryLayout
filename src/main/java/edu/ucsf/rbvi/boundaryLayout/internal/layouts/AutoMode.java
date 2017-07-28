@@ -23,17 +23,12 @@ public class AutoMode { //AutoMode class called to create all the annotations
 	private Set<View<CyNode>> nodesToLayout;
 	private String categoryColumn;
 	
-	public AutoMode() { 
-		createAnnotations(cNV, nodesToLayout, categoryColumn);
-	}
-	
-	public static void createAnnotations(CyNetworkView cNV, Set<View<CyNode>> nodesToLayout, String categoryColumn) {	
-	//to do 
-		if(nodesToLayout != null) {
-			 		Map<Object, ShapeAnnotation> shapeAnnotations = new HashMap<Object, ShapeAnnotation>();
-			    	for(View<CyNode> annotation : nodesToLayout)
-			 		if(annotation instanceof ShapeAnnotation)
-			 				shapeAnnotations.put(categoryColumn, (ShapeAnnotation)annotation);
-			 	}	
+	public static Map<Object, ShapeAnnotation> createAnnotations(CyNetworkView cNV, 
+					                                                     Set<View<CyNode>> nodesToLayout, 
+						                                                   String categoryColumn) {	
+		//to do 
+		// 1. Get the list of categories and required space for each category
+		// 2. For each category create a rounded rectangle annotation of the correct size
+		return null;
 	}
 }

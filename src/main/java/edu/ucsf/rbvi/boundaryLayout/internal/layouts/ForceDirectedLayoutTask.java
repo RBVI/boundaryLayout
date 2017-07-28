@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import  java.awt.geom.Point2D;
+import  java.awt.geom.Rectangle2D;
 
 import org.cytoscape.model.CyNode;
 import org.cytoscape.service.util.CyServiceRegistrar;
@@ -47,10 +49,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private Map<View<CyNode>,ForceItem> forceItems;
 	private ForceDirectedLayoutContext context;
 	private CyServiceRegistrar registrar;
-	private List<View<CyNode>> nodeViewList;
-	private String chosenCategory;
+	private final List<View<CyNode>> nodeViewList;
+	private final String chosenCategory;
 	final CyNetworkView netView;
-	private final Map<Object, ShapeAnnotation> shapeAnnotations; 
+	private Map<Object, ShapeAnnotation> shapeAnnotations; 
 	private Map<ShapeAnnotation, Point2D.Double> annotationCoordinates;
 
 	public ForceDirectedLayoutTask( final String displayName,
@@ -63,20 +65,22 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			final UndoSupport undo) {
 		super(displayName, netView, nodesToLayOut, layoutAttribute, undo);
 
-		if(nodeViewList == null)
-			nodeViewList = new ArrayList<View<CyNode>>();
+		if (nodesToLayOut.size() > 0)
+			nodeViewList = new ArrayList<View<CyNode>>(nodesToLayOut);
+		else
+			nodeViewList = new ArrayList<View<CyNode>>(netView.getNodeViews());
 
 		this.netView = netView;
 		this.context = context;
 		this.integrator = integrator;
 		this.registrar = registrar;
-		for(View<CyNode> nodeView : nodesToLayOut)
-			nodeViewList.add(nodeView);
+		this.chosenCategory = layoutAttribute;
 
-		// We should use the context for edge weighting
-		// if (context.categories != null && !context.categories.getSelectedValue().equals("--None--"))
-		// 	this.chosenCategory = context.categories.getSelectedValue();
 		shapeAnnotations = getShapeAnnotations();
+		if (shapeAnnotations == null) {
+			// Use AutoMode
+			shapeAnnotations = AutoMode.createAnnotations(netView, nodesToLayOut, layoutAttribute);
+		}
 		
 		forceItems = new HashMap<View<CyNode>, ForceItem>();
 	}
@@ -123,6 +127,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			Object group = null;
 			if(chosenCategory != null)
 				group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
+
+			System.out.println("Group = "+group.toString());
 			if(group != null) {
 				if(shapeAnnotations.keySet().contains(group)) {
 					Point2D.Double centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
@@ -233,6 +239,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				if(annotation instanceof ShapeAnnotation) {
 					ShapeAnnotation shapeAnnotation = (ShapeAnnotation) annotation;
 					shapeAnnotations.put(shapeAnnotation.getName(), shapeAnnotation);
+					System.out.println("Shape annotation: "+
+					                   getShapeBoundingBox(shapeAnnotation).toString());
 				}
 			return shapeAnnotations;
 		}
@@ -268,7 +276,11 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 	//gets centerpoint for the shape annotation passed
 	private Point2D.Double getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
-		return annotationCoordinates.get(shapeAnnotation);
+		// return annotationCoordinates.get(shapeAnnotation);
+		Rectangle2D boundingBox = getShapeBoundingBox(shapeAnnotation);
+		double centerX = boundingBox.getX()+boundingBox.getWidth()/2.0;
+		double centerY = boundingBox.getY()+boundingBox.getHeight()/2.0;
+		return new Point2D.Double(centerX, centerY);
 	}
 	
 	//initializes the annotationCoordinates HashMap (key is shapeannotation and value is
@@ -282,5 +294,14 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			double yCoordinate = Double.parseDouble(yCoord);
 			annotationCoordinates.put(shapeAnnotation, new Point2D.Double(xCoordinate, yCoordinate));
 		}
+	}
+
+	private Rectangle2D getShapeBoundingBox(ShapeAnnotation shape) {
+		Map<String, String> argMap = shape.getArgMap();
+		double x = Double.parseDouble(argMap.get(ShapeAnnotation.X));
+		double y = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
+		double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH));
+		double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT));
+		return new Rectangle2D.Double(x, y, width, height);
 	}
 }

@@ -89,8 +89,11 @@ public class ForceDirectedLayout extends AbstractLayoutAlgorithm {
 		if (settings == null) {
 			settings = createLayoutContext();
 		}
-		ForceDirectedLayoutTask newTask = new ForceDirectedLayoutTask(toString(), networkView, nodesToLayOut,
-				settings, attrName, integrator, registrar, undoSupport);
+
+		ForceDirectedLayoutTask newTask = 
+			new ForceDirectedLayoutTask(toString(), networkView, nodesToLayOut,
+			                            settings, attrName, integrator, 
+			                            registrar, undoSupport);
 		return new TaskIterator(newTask);
 	}
 

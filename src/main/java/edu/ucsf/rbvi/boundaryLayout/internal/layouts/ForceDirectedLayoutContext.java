@@ -22,40 +22,41 @@ import org.cytoscape.work.TunableValidator;
 import org.cytoscape.work.util.ListSingleSelection;
 
 public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentNetworkListener {	
+
+	@Tunable(description="Edge weight column", groups={"Edge Weight Settings"}, gravity=1.0)
+	public ListSingleSelection<String> edgeWeight = null; 
+
 	@ContainsTunables
 	public EdgeWeighter edgeWeighter = new EdgeWeighter();
-
-	@Tunable(description="Category to group nodes by")
-	public ListSingleSelection<String> categories = null; 
 	
-	@Tunable(description="Number of Iterations:",
+	@Tunable(description="Number of Iterations:", gravity=4.0, groups={"Layout Parameters"},
 			tooltip="The number of iterations to run the algorithm. The higher the "+
 			"number, the better the accuracy yet longer run-time (1000 is recommended).")
 	public int numIterations = 1000;
 
 	@Tunable(description="Default Spring Coefficient",
 			tooltip="The smaller this number is, the more the network "+
-			"topology affects the layout.")
+			"topology affects the layout.", gravity=5.0, groups={"Layout Parameters"})
 	public double defaultSpringCoefficient = 1e-4;
 
-	@Tunable(description="Default Spring Length")
+	@Tunable(description="Default Spring Length", groups={"Layout Parameters"}, gravity=6.0)
 	public double defaultSpringLength = 140.0;
 
-	@Tunable(description="Node mass",
+	@Tunable(description="Node mass", gravity=7.0, groups={"Layout Parameters"},
 			tooltip="The higher the node mass, the less nodes move around the network")
 	public double defaultNodeMass = 3.0;
 
-	@Tunable(description="Force deterministic layouts (slower):")
+	@Tunable(description="Force deterministic layouts (slower):", 
+	         groups={"Layout Parameters"},gravity=8.0)
 	public boolean isDeterministic;
 
-	@Tunable(description="Don't partition graph before layout:", groups="Standard Settings")
-	public boolean singlePartition;
-
-	@Tunable(description="Avoid overlapping nodes (y/n)", 
+	@Tunable(description="Avoid overlapping nodes (y/n)",
+	         groups={"Layout Parameters"},gravity=9.0,	
 			tooltip="Apply a force to minimize node overlap")
 	public boolean avoidOverlap = false;
 
-	@Tunable(description="Force to apply to avoid node overlap")
+	@Tunable(description="Force to apply to avoid node overlap",
+	         groups={"Layout Parameters"},gravity=10.0)
 	public float overlapForce = 1000000000.0f;
 
 	public ForceDirectedLayoutContext(CyServiceRegistrar registrar) {
@@ -92,8 +93,8 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	}
 
 	protected void setColumnTunables(CyNetwork network) {
-		CyTable nodeTable = network.getDefaultNodeTable();
-		Collection<CyColumn> columnsCollection = nodeTable.getColumns();
+		CyTable edgeTable = network.getDefaultEdgeTable();
+		Collection<CyColumn> columnsCollection = edgeTable.getColumns();
 		List<String> columnNames = new ArrayList<String>();
 		for(CyColumn column : columnsCollection)
 		{
@@ -109,7 +110,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 		// Now sort the list
 		Collections.sort(columnNames);
 		columnNames.add(0, "--None--");
-		categories = new ListSingleSelection<String>(columnNames);
+		edgeWeight = new ListSingleSelection<String>(columnNames);
 	}
 
 	@Override
