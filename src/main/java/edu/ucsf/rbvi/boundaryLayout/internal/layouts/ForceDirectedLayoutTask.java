@@ -53,7 +53,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private final String chosenCategory;
 	final CyNetworkView netView;
 	private Map<Object, ShapeAnnotation> shapeAnnotations; 
-	private Map<ShapeAnnotation, Point2D.Double> annotationCoordinates;
+	private Map<ShapeAnnotation, Rectangle2D.Double> annotationBoundingBox;
 
 	public ForceDirectedLayoutTask( final String displayName,
 			final CyNetworkView netView,
@@ -286,22 +286,19 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	//initializes the annotationCoordinates HashMap (key is shapeannotation and value is
 	//its respectful Point2D Location)
 	private void initializeAnnotationCoordinates() {
-		annotationCoordinates = new HashMap<ShapeAnnotation, Point2D.Double>();
+		annotationBoundingBox = new HashMap<ShapeAnnotation, Rectangle2D.Double>();
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations.values()) {
-			String xCoord = shapeAnnotation.getArgMap().get(Annotation.X);
-			String yCoord = shapeAnnotation.getArgMap().get(Annotation.Y);
-			double xCoordinate = Double.parseDouble(xCoord);
-			double yCoordinate = Double.parseDouble(yCoord);
-			annotationCoordinates.put(shapeAnnotation, new Point2D.Double(xCoordinate, yCoordinate));
+			Map<String, String> argMap = shapeAnnotation.getArgMap();
+			double xCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.X));
+			double yCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
+			double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH));
+			double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT));
+			annotationBoundingBox.put(shapeAnnotation, new Rectangle2D.Double(
+					xCoordinate, yCoordinate, width, height));
 		}
 	}
 
 	private Rectangle2D getShapeBoundingBox(ShapeAnnotation shape) {
-		Map<String, String> argMap = shape.getArgMap();
-		double x = Double.parseDouble(argMap.get(ShapeAnnotation.X));
-		double y = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
-		double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH));
-		double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT));
-		return new Rectangle2D.Double(x, y, width, height);
+		return annotationBoundingBox.get(shape);
 	}
 }
