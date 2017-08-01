@@ -1,5 +1,6 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.layouts;
 
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,29 +27,44 @@ public class AutoMode { //AutoMode class called to create all the annotations
 	private Set<View<CyNode>> nodesToLayout;
 	private String categoryColumn;
 	
+	private Map<ShapeAnnotation, Rectangle2D.Double> annotationBoundingBox;
+	
 	public static Map<Object, ShapeAnnotation> createAnnotations(CyNetworkView cNV, 
 					                                                     Set<View<CyNode>> nodesToLayout, 
 						                                                   String categoryColumn) {	
 		
 		//to do 
 		// 1. Get the list of categories and required space for each category	
+		
+		double size = 0.0; 
+		double spacing = 20; //working on getting required spacing for each category
+		
 		CyNetwork network = cNV.getModel();
 		
 		Map<Object, List<View<CyNode>>> categories = new HashMap<Object,List<View<CyNode>>>();
+		Map<Object, Double> sizes = new HashMap<Object, Double>();
 		
-		for (View<CyNode> nv: nodesToLayout) {
+		
+		for (View<CyNode> nv: nodesToLayout) {		
 			CyNode node = nv.getModel();
+			size = nv.getVisualProperty(BasicVisualLexicon.NODE_SIZE);
 			
 			Object cat = network.getRow(node).getRaw(categoryColumn);
 			if(!categories.containsKey(cat)) 
 				categories.put(cat, new ArrayList<View<CyNode>>());
 			categories.get(cat).add(nv);
+			sizes.put(cat, size + sizes.get(cat) + spacing);
 		}
 		
-		double spacing;
+		
 		
 		// 2. For each category create a rounded rectangle annotation of the correct size
+		//call getShapeBoundingBox(); 
 		return null;
+	}
+	
+	private Rectangle2D getShapeBoundingBox(ShapeAnnotation shape) {
+		return annotationBoundingBox.get(shape);
 	}
 	
 	
