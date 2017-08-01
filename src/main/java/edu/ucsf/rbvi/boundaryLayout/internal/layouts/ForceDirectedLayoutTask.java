@@ -12,13 +12,13 @@ import java.util.Set;
 import  java.awt.geom.Point2D;
 import  java.awt.geom.Rectangle2D;
 
+import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.layout.AbstractLayoutTask;
 import org.cytoscape.view.layout.AbstractPartitionLayoutTask;
 import org.cytoscape.view.layout.LayoutEdge;
 import org.cytoscape.view.layout.LayoutNode;
-import org.cytoscape.view.layout.LayoutPartition;
 import org.cytoscape.view.layout.LayoutPoint;
 
 import org.cytoscape.view.model.CyNetworkView;
@@ -41,7 +41,7 @@ import prefuse.util.force.NBodyForce;
 import prefuse.util.force.RectangularWallForce;
 import prefuse.util.force.SpringForce;
 
-// TODO: add circle and wall forces
+//TO DO: (1) AutoMode, (2) line 111 to sort nodes, (3) test on data
 
 public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
@@ -50,6 +50,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private ForceDirectedLayoutContext context;
 	private CyServiceRegistrar registrar;
 	private final List<View<CyNode>> nodeViewList;
+	private final List<View<CyEdge>> edgeViewList;
 	private final String chosenCategory;
 	final CyNetworkView netView;
 	private Map<Object, ShapeAnnotation> shapeAnnotations; 
@@ -70,6 +71,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		else
 			nodeViewList = new ArrayList<View<CyNode>>(netView.getNodeViews());
 
+		edgeViewList = new ArrayList<View<CyEdge>>(netView.getEdgeViews());
+
 		this.netView = netView;
 		this.context = context;
 		this.integrator = integrator;
@@ -81,21 +84,17 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			// Use AutoMode
 			shapeAnnotations = AutoMode.createAnnotations(netView, nodesToLayOut, layoutAttribute);
 		}
-		
+
 		forceItems = new HashMap<View<CyNode>, ForceItem>();
 	}
 
 	@Override
-	protected void doLayout(TaskMonitor arg0) {
-		// System.out.println("layoutPartion: "+part.getEdgeList().size()+" edges");
-		// Calculate our edge weights
-		// System.out.println("layoutPartion: "+part.getEdgeList().size()+" edges after calculateEdgeWeights");
-
-		//m_fsim.setIntegrator(integrator.getNewIntegrator());
-		//m_fsim.clear();
-
+	protected void doLayout(TaskMonitor taskMonitor) {
 		initializeAnnotationCoordinates();
 		ForceSimulator m_fsim = new ForceSimulator();
+
+		m_fsim.setIntegrator(integrator.getNewIntegrator());
+		m_fsim.clear();
 
 		//initialize shape annotations and their forces
 		if(shapeAnnotations != null)
@@ -113,7 +112,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 
 		// initialize node locations and properties
-		
+
 		for (View<CyNode> nodeView : nodeViewList) {
 			ForceItem fitem = forceItems.get(nodeView); 
 			if ( fitem == null ) {
@@ -121,110 +120,57 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				forceItems.put(nodeView, fitem);
 			}
 
-			fitem.mass = getMassValue(nodeView);
+			fitem.mass = (float) context.defaultNodeMass;
 
 			//place each node in its respective ShapeAnnotation
 			Object group = null;
 			if(chosenCategory != null)
 				group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
 
-			System.out.println("Group = "+group.toString());
 			if(group != null) {
 				if(shapeAnnotations.keySet().contains(group)) {
 					Point2D.Double centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
-					System.out.println("Before is " + centerOfShape.getX());
 					fitem.location[0] = (float) centerOfShape.getX(); 
-					System.out.println("During is " + centerOfShape.getX());
 					fitem.location[1] = (float) centerOfShape.getY(); 
 					nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, centerOfShape.getX());
-					System.out.println("After is " + centerOfShape.getX());
 					nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, centerOfShape.getY());
-					System.out.println(nodeView.getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION)+ "," + nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION) + " for group " + group);
 				}
 			}
 
-		/*	double width = nodeView.getVisualProperty(BasicVisualLexicon.NODE_WIDTH) / 2;
+			double width = nodeView.getVisualProperty(BasicVisualLexicon.NODE_WIDTH) / 2;
 			double height = nodeView.getVisualProperty(BasicVisualLexicon.NODE_HEIGHT) / 2;
 			fitem.dimensions[0] = (float) width;
 			fitem.dimensions[1] = (float) height;
-	//		m_fsim.addItem(fitem);
-		*/}
+			m_fsim.addItem(fitem);
+		}
 
 		// initialize edges
-		/*	for (LayoutEdge e: edgeList) {
-					LayoutNode n1 = e.getSource();
-					ForceItem f1 = forceItems.get(n1); 
-					LayoutNode n2 = e.getTarget();
-					ForceItem f2 = forceItems.get(n2); 
-					if ( f1 == null || f2 == null )
-						continue;
-					m_fsim.addSpring(f1, f2, getSpringCoefficient(e), getSpringLength(e)); 
-				}
+		for (View<CyEdge> edgeView : edgeViewList) {
+			CyEdge edge = edgeView.getModel();
+			CyNode n1 = edge.getSource();
+			ForceItem f1 = forceItems.get(n1); 
+			CyNode n2 = edge.getSource();
+			ForceItem f2 = forceItems.get(n2); 
+			if ( f1 == null || f2 == null )
+				continue;
+			m_fsim.addSpring(f1, f2, (float) context.defaultSpringCoefficient, (float) context.defaultSpringLength); 
+		}
 
-				// setTaskStatus(5); // This is a rough approximation, but probably good enough
-				if (taskMonitor != null) {
-					taskMonitor.setStatusMessage("Initializing partition "+part.getPartitionNumber());
-				}
+		// perform layout
+		long timestep = 1000L;
+		for ( int i = 0; i < context.numIterations && !cancelled; i++ ) {
+			timestep *= (1.0 - i/(double)context.numIterations);
+			long step = timestep+50;
+			m_fsim.runSimulator(step);
+			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
+		}
 
-				// Figure out our starting point
-				initialLocation = part.getAverageLocation();
-
-				// perform layout
-				long timestep = 1000L;
-				for ( int i = 0; i < context.numIterations && !cancelled; i++ ) {
-					timestep *= (1.0 - i/(double)context.numIterations);
-					long step = timestep+50;
-					m_fsim.runSimulator(step);
-					setTaskStatus((int)(((double)i/(double)context.numIterations)*90.+5));
-				}
-				// update positions
-				part.resetNodes(); // reset the nodes so we get the new average location
-			/*	for (LayoutNode ln: part.getNodeList()) {
-					if (!ln.isLocked()) {
-						ForceItem fitem = forceItems.get(ln); 
-						ln.setX(fitem.location[0]);
-						ln.setY(fitem.location[1]);
-						part.moveNodeToLocation(ln);
-					}
-				}*/
-	}
-	
-	/**
-	 * Get the mass value associated with the given node. Subclasses should
-	 * override this method to perform custom mass assignment.
-	 * @param n the node for which to compute the mass value
-	 * @return the mass value for the node. By default, all items are given
-	 * a mass value of 1.0.
-	 */
-	protected float getMassValue(View<CyNode> nodeView) {
-		return (float) context.defaultNodeMass;
-	}
-
-	/**
-	 * Get the spring length for the given edge. Subclasses should
-	 * override this method to perform custom spring length assignment.
-	 * @param e the edge for which to compute the spring length
-	 * @return the spring length for the edge. A return value of
-	 * -1 means to ignore this method and use the global default.
-	 */
-	protected float getSpringLength(LayoutEdge e) {
-		double weight = e.getWeight();
-		if (weight == 0.0)
-			return (float)(context.defaultSpringLength);
-
-		return (float)(context.defaultSpringLength/weight);
-	}
-
-	/**
-	 * Get the spring coefficient for the given edge, which controls the
-	 * tension or strength of the spring. Subclasses should
-	 * override this method to perform custom spring tension assignment.
-	 * @param e the edge for which to compute the spring coefficient.
-	 * @return the spring coefficient for the edge. A return value of
-	 * -1 means to ignore this method and use the global default.
-	 */
-	protected float getSpringCoefficient(LayoutEdge e) {
-		return (float)context.defaultSpringCoefficient;
+		// update positions
+		for (View<CyNode> nodeView : forceItems.keySet()) {
+			ForceItem fitem = forceItems.get(nodeView); 
+			nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, fitem.location[0]);
+			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, fitem.location[1]);
+		}
 	}
 
 	//gets all the shape annotations in the network view 
@@ -239,8 +185,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				if(annotation instanceof ShapeAnnotation) {
 					ShapeAnnotation shapeAnnotation = (ShapeAnnotation) annotation;
 					shapeAnnotations.put(shapeAnnotation.getName(), shapeAnnotation);
-					System.out.println("Shape annotation: "+
-					                   getShapeBoundingBox(shapeAnnotation).toString());
 				}
 			return shapeAnnotations;
 		}
@@ -250,27 +194,29 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	//add a force annotation for each of the shape annotations depending on type
 	//of annotation
 	protected void addAnnotationForce(ForceSimulator m_fsim, ShapeAnnotation shapeAnnotation) {
-		float[] annotationDimensions = getAnnotationDimensions(shapeAnnotation);
+		Point2D.Double annotationDimensions = getAnnotationDimensions(shapeAnnotation);
 		Point2D.Double annotationCenter = getAnnotationCenter(shapeAnnotation);
 		switch(shapeAnnotation.getShapeType()) {
 		case "RECTANGLE":
-			m_fsim.addForce(new RectangularWallForce(annotationCenter, annotationDimensions[0], annotationDimensions[1]));
+			m_fsim.addForce(new RectangularWallForce(annotationCenter, annotationDimensions));
 			break;
 		case "ELLIPSE":
-			if(annotationDimensions[0] == annotationDimensions[1])
-				m_fsim.addForce(new CircularWallForce(annotationCenter, annotationDimensions[0]));
+			if(annotationDimensions.getX() == annotationDimensions.getY())
+				m_fsim.addForce(new CircularWallForce(annotationCenter, 
+						(float) annotationDimensions.getX()));
 			//add else for ellipse
 			else {
-				m_fsim.addForce(new EllipseWallForce(annotationCenter, annotationDimensions[0], annotationDimensions[1]));
+				m_fsim.addForce(new EllipseWallForce(annotationCenter, annotationDimensions));
 			}
 			break;
 		}
 	}
 
 	//gets dimensions for the shape annotation passed
-	private static float[] getAnnotationDimensions(ShapeAnnotation shapeAnnotation) {
-		float[] annotationDimensions = {(float)shapeAnnotation.getShape().getBounds2D().getWidth(), 
-				(float)shapeAnnotation.getShape().getBounds2D().getHeight()};
+	private static Point2D.Double getAnnotationDimensions(ShapeAnnotation shapeAnnotation) {
+		Point2D.Double annotationDimensions = new Point2D.Double((float)
+				shapeAnnotation.getShape().getBounds2D().getWidth(), 
+				(float)shapeAnnotation.getShape().getBounds2D().getHeight());
 		return annotationDimensions;
 	}
 
@@ -282,7 +228,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		double centerY = boundingBox.getY()+boundingBox.getHeight()/2.0;
 		return new Point2D.Double(centerX, centerY);
 	}
-	
+
 	//initializes the annotationCoordinates HashMap (key is shapeannotation and value is
 	//its respectful Point2D Location)
 	private void initializeAnnotationCoordinates() {

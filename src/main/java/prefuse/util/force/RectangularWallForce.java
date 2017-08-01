@@ -9,7 +9,7 @@ public class RectangularWallForce extends AbstractForce {
 	public static final int GRAVITATIONAL_CONST = 0;
 
 	private Point2D.Double center;
-	private float height, width;
+	private Point2D.Double dimensions;
 
 	/**
 	 * Create a new CircularWallForce.
@@ -19,11 +19,10 @@ public class RectangularWallForce extends AbstractForce {
 	 * @param r the radius of the circle
 	 */
 	public RectangularWallForce(float gravConst, 
-			Point2D.Double center, float width, float height) {
+			Point2D.Double center, Point2D.Double dimensions) {
 		params = new float[] { gravConst };
 		this.center = center;
-		this.height = height;
-		this.width = width;
+		this.dimensions = dimensions;
 	}
 
 	/**
@@ -33,8 +32,8 @@ public class RectangularWallForce extends AbstractForce {
 	 * @param r the radius of the circle
 	 */
 	public RectangularWallForce(Point2D.Double center, 
-			float width, float height) {
-		this(DEFAULT_GRAV_CONSTANT,center,width,height);
+			Point2D.Double dimensions) {
+		this(DEFAULT_GRAV_CONSTANT,center,dimensions);
 	}
 
 	/**
@@ -63,16 +62,26 @@ public class RectangularWallForce extends AbstractForce {
 			dx = getRandDisplacement();
 			dy = getRandDisplacement();
 		}
-		float drLeft = (this.width / 2) - dx;
-		float drTop = (this.height / 2) - dy;
-		float drRight = this.width - drLeft; 
-		float drBottom = this.height - drTop;
+		
+		//initialize dimensions and displacements
+		float width = (float) this.dimensions.getX();
+		float height = (float) this.dimensions.getY();
+		float drLeft = (width / 2) - dx;
+		float drTop = (height / 2) - dy;
+		float drRight = width - drLeft; 
+		float drBottom = height - drTop;
+		
+		//initialize orientation of shape
 		int cX = (Math.abs(dx) > width / 2 ? -1 : 1);
 		int cY = (Math.abs(dy) > height / 2 ? -1 : 1);
+		
+		//calculate the vector from each side
 		float vLeft = -cX * params[GRAVITATIONAL_CONST]*item.mass / (drLeft * drLeft);
 		float vTop = -cY * params[GRAVITATIONAL_CONST]*item.mass / (drTop * drTop);
 		float vRight = cX * params[GRAVITATIONAL_CONST]*item.mass / (drRight * drRight);
 		float vBottom = cY * params[GRAVITATIONAL_CONST]*item.mass / (drBottom * drBottom);
+		
+		//force is added 
 		item.force[0] += vLeft;
 		item.force[1] += vTop;
 		item.force[0] += vRight;
