@@ -70,6 +70,10 @@ public class RectangularWallForce extends AbstractForce {
 		float drTop = (height / 2) - dy;
 		float drRight = width - drLeft; 
 		float drBottom = height - drTop;
+
+		System.out.println("Node position: "+n[0]+","+n[1]);
+		System.out.println("Annotation center: "+center.getX()+","+center.getY());
+		System.out.println("drLeft: "+drLeft+", drTop: "+drTop+", drRight: "+drRight+", drBottom: "+drBottom);
 		
 		//initialize orientation of shape
 		int cX = (Math.abs(dx) > width / 2 ? -1 : 1);

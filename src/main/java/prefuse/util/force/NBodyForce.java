@@ -314,8 +314,8 @@ public class NBodyForce extends AbstractForce {
 				item.force[0] += (dx < 0 ? overlapForce : -overlapForce);
 				item.force[1] += (dy < 0 ? overlapForce : -overlapForce);
 			} else if(!isOverlapping) {
-				item.force[0] += v*effectivedx;
-				item.force[1] += v*effectivedy;
+				item.force[0] += (dx < 0 ? -v*effectivedx: v*effectivedx);
+				item.force[1] += (dy < 0 ? -v*effectivedy: v*effectivedy);
 			}
 		} else if ( n.hasChildren ) {
 			// recurse for more accurate calculation
@@ -336,8 +336,8 @@ public class NBodyForce extends AbstractForce {
 					item.force[0] += (dx < 0 ? overlapForce : -overlapForce);
 					item.force[1] += (dy < 0 ? overlapForce : -overlapForce);
 				} else if(!isOverlapping) {
-					item.force[0] += v*effectivedx;
-					item.force[1] += v*effectivedy;
+					item.force[0] += (dx < 0 ? -v*effectivedx: v*effectivedx);
+					item.force[1] += (dy < 0 ? -v*effectivedy: v*effectivedy);
 				}
 			}
 		}
