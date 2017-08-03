@@ -5,7 +5,6 @@ import java.awt.geom.Point2D;
 public class RectangularWallForce extends AbstractForce {
 	private static String[] pnames = new String[] { "GravitationalConstant" };
 
-	public static final float DEFAULT_GRAV_CONSTANT = -1000f;
 	public static final int GRAVITATIONAL_CONST = 0;
 
 	private Point2D.Double center;
@@ -32,8 +31,8 @@ public class RectangularWallForce extends AbstractForce {
 	 * @param r the radius of the circle
 	 */
 	public RectangularWallForce(Point2D.Double center, 
-			Point2D.Double dimensions) {
-		this(DEFAULT_GRAV_CONSTANT,center,dimensions);
+			Point2D.Double dimensions, float wallGravitationalConstant) {
+		this(wallGravitationalConstant, center, dimensions);
 	}
 
 	/**
@@ -71,19 +70,24 @@ public class RectangularWallForce extends AbstractForce {
 		float drRight = width - drLeft; 
 		float drBottom = height - drTop;
 
-		System.out.println("Node position: "+n[0]+","+n[1]);
-		System.out.println("Annotation center: "+center.getX()+","+center.getY());
-		System.out.println("drLeft: "+drLeft+", drTop: "+drTop+", drRight: "+drRight+", drBottom: "+drBottom);
+	//	System.out.println("Node position: "+n[0]+","+n[1]);
+	//	System.out.println("Annotation center: "+center.getX()+","+center.getY());
+	//	System.out.println("drLeft: "+drLeft+", drTop: "+drTop+", drRight: "+drRight+", drBottom: "+drBottom);
 		
 		//initialize orientation of shape
 		int cX = (Math.abs(dx) > width / 2 ? -1 : 1);
 		int cY = (Math.abs(dy) > height / 2 ? -1 : 1);
 		
+		if(cX + cY != 2)
+			return;
+		
 		//calculate the vector from each side
-		float vLeft = -cX * params[GRAVITATIONAL_CONST]*item.mass / (drLeft * drLeft);
-		float vTop = -cY * params[GRAVITATIONAL_CONST]*item.mass / (drTop * drTop);
-		float vRight = cX * params[GRAVITATIONAL_CONST]*item.mass / (drRight * drRight);
-		float vBottom = cY * params[GRAVITATIONAL_CONST]*item.mass / (drBottom * drBottom);
+		float vLeft = -cX * params[GRAVITATIONAL_CONST] * item.mass / (drLeft * drLeft);
+		float vTop = -cY * params[GRAVITATIONAL_CONST] * item.mass / (drTop * drTop);
+		float vRight = cX * params[GRAVITATIONAL_CONST] * item.mass / (drRight * drRight);
+		float vBottom = cY * params[GRAVITATIONAL_CONST] * item.mass / (drBottom * drBottom);
+		
+	//	System.out.println(vLeft + ", " + vRight + " ... " + vTop + ", " + vBottom);
 		
 		//force is added 
 		item.force[0] += vLeft;
@@ -93,6 +97,6 @@ public class RectangularWallForce extends AbstractForce {
 	}
 	
 	private float getRandDisplacement() {
-		return ((float)Math.random()-0.5f) / 50.0f;
+		return ((float)Math.random() - 0.5f) / 50.0f;
 	}
 }

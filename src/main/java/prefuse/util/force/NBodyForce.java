@@ -64,9 +64,7 @@ public class NBodyForce extends AbstractForce {
 	 * Create a new NBodyForce with default parameters.
 	 */
 	public NBodyForce(boolean disableOverlapping, float overlapForce) {
-		this(DEFAULT_GRAV_CONSTANT, DEFAULT_DISTANCE, DEFAULT_THETA);
-		this.disableOverlapping = disableOverlapping;
-		this.overlapForce = overlapForce;
+		this(DEFAULT_GRAV_CONSTANT, DEFAULT_DISTANCE, DEFAULT_THETA, disableOverlapping, overlapForce);
 	}
 
 	/**
@@ -80,13 +78,16 @@ public class NBodyForce extends AbstractForce {
 	 * an aggregated mass is used rather than drilling down to individual
 	 * item mass values.
 	 */
-	public NBodyForce(float gravConstant, float minDistance, float theta) {
+	public NBodyForce(float gravConstant, float minDistance, float theta, 
+			boolean disableOverlapping, float overlapForce) {
 		params = new float[] { gravConstant, minDistance, theta };
 		minValues = new float[] { DEFAULT_MIN_GRAV_CONSTANT,
 				DEFAULT_MIN_DISTANCE, DEFAULT_MIN_THETA };
 		maxValues = new float[] { DEFAULT_MAX_GRAV_CONSTANT,
 				DEFAULT_MAX_DISTANCE, DEFAULT_MAX_THETA };
 		root = factory.getQuadTreeNode();
+		this.disableOverlapping = disableOverlapping;
+		this.overlapForce = overlapForce;
 	}
 
 	/**

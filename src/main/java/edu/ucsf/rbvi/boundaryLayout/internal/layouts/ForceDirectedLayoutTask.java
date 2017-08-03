@@ -1,10 +1,7 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.layouts;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,17 +13,12 @@ import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.layout.AbstractLayoutTask;
-import org.cytoscape.view.layout.AbstractPartitionLayoutTask;
-import org.cytoscape.view.layout.LayoutEdge;
-import org.cytoscape.view.layout.LayoutNode;
-import org.cytoscape.view.layout.LayoutPoint;
 
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.annotations.Annotation;
 import org.cytoscape.view.presentation.annotations.AnnotationManager;
 import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
-import org.cytoscape.view.presentation.annotations.ShapeAnnotation.ShapeType;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 
 import org.cytoscape.work.TaskMonitor;
@@ -80,10 +72,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		this.chosenCategory = layoutAttribute;
 
 		shapeAnnotations = getShapeAnnotations();
-		if (shapeAnnotations == null) {
-			// Use AutoMode
+		if (shapeAnnotations == null) 
 			shapeAnnotations = AutoMode.createAnnotations(netView, nodesToLayOut, layoutAttribute);
-		}
 
 		forceItems = new HashMap<CyNode, ForceItem>();
 	}
@@ -112,7 +102,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 
 		// initialize node locations and properties
-
 		for (View<CyNode> nodeView : nodeViewList) {
 			ForceItem fitem = forceItems.get(nodeView.getModel()); 
 			if ( fitem == null ) {
@@ -132,8 +121,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					Point2D.Double centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
 					fitem.location[0] = (float) centerOfShape.getX(); 
 					fitem.location[1] = (float) centerOfShape.getY(); 
-					nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, centerOfShape.getX());
-					nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, centerOfShape.getY());
 				}
 			}
 
@@ -169,6 +156,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		for (CyNode node : forceItems.keySet()) {
 			ForceItem fitem = forceItems.get(node); 
 			View<CyNode> nodeView = netView.getNodeView(node);
+			System.out.println(fitem.location[0] + " ... " + fitem.location[1] + " is where the node is put");
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double)fitem.location[0]);
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double)fitem.location[1]);
 		}
@@ -199,21 +187,17 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		Point2D.Double annotationCenter = getAnnotationCenter(shapeAnnotation);
 		switch(shapeAnnotation.getShapeType()) {
 		case "Rounded Rectangle":
-			System.out.println("Annotation center = "+annotationCenter);
-			System.out.println("Annotation dimensions = "+annotationDimensions);
-			m_fsim.addForce(new RectangularWallForce(annotationCenter, annotationDimensions));
-			break;
 		case "Rectangle":
-			m_fsim.addForce(new RectangularWallForce(annotationCenter, annotationDimensions));
+			m_fsim.addForce(new RectangularWallForce(annotationCenter, 
+					annotationDimensions, context.wallGravitationalConstant));
 			break;
 		case "Ellipse":
 			if(annotationDimensions.getX() == annotationDimensions.getY())
 				m_fsim.addForce(new CircularWallForce(annotationCenter, 
-						(float) annotationDimensions.getX()));
-			//add else for ellipse
-			else {
-				m_fsim.addForce(new EllipseWallForce(annotationCenter, annotationDimensions));
-			}
+						(float) annotationDimensions.getX(), context.wallGravitationalConstant));
+			else 
+				m_fsim.addForce(new EllipseWallForce(annotationCenter, 
+						annotationDimensions, context.wallGravitationalConstant));
 			break;
 		}
 	}
@@ -230,8 +214,9 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private Point2D.Double getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
 		// return annotationCoordinates.get(shapeAnnotation);
 		Rectangle2D boundingBox = getShapeBoundingBox(shapeAnnotation);
-		double centerX = boundingBox.getX()+boundingBox.getWidth()/2.0;
-		double centerY = boundingBox.getY()+boundingBox.getHeight()/2.0;
+		double centerX = boundingBox.getX() + boundingBox.getWidth() / 2.0;
+		double centerY = boundingBox.getY() + boundingBox.getHeight() / 2.0;
+		System.out.println(centerX + " ... " + centerY + " is for getting method");
 		return new Point2D.Double(centerX, centerY);
 	}
 
@@ -245,6 +230,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			double yCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
 			double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH));
 			double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT));
+			System.out.println(xCoordinate + " ... " + yCoordinate + " is for initializing");
 			annotationBoundingBox.put(shapeAnnotation, new Rectangle2D.Double(
 					xCoordinate, yCoordinate, width, height));
 		}

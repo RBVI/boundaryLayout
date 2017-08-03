@@ -82,12 +82,11 @@ public class ForceDirectedLayout extends AbstractLayoutAlgorithm {
 	@Override
 	public TaskIterator createTaskIterator(CyNetworkView networkView, Object context, 
 			Set<View<CyNode>> nodesToLayOut, String attrName) {
-		ForceDirectedLayoutContext settings = null;
-		settings = createLayoutContext();
+		ForceDirectedLayoutContext settings = (ForceDirectedLayoutContext) context;
 		ForceDirectedLayoutTask newTask = 
-			new ForceDirectedLayoutTask(toString(), networkView, nodesToLayOut,
-			                            settings, attrName, integrator, 
-			                            registrar, undoSupport);
+				new ForceDirectedLayoutTask(toString(), networkView, nodesToLayOut,
+						settings, attrName, integrator, 
+						registrar, undoSupport);
 		return new TaskIterator(newTask);
 	}
 

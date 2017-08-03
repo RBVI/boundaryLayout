@@ -3,9 +3,8 @@ package prefuse.util.force;
 import java.awt.geom.Point2D;
 
 public class EllipseWallForce extends AbstractForce {
-	private static String[] pnames = new String[] { "GravitationalConstant" };
+	private static String[] pnames = new String[] {"GravitationalConstant"};
 
-	public static final float DEFAULT_GRAV_CONSTANT = -1f;
 	public static final int GRAVITATIONAL_CONST = 0;
 
 	private Point2D.Double center;
@@ -33,8 +32,9 @@ public class EllipseWallForce extends AbstractForce {
 	 * @param y the center y-coordinate of the circle
 	 * @param r the radius of the circle
 	 */
-	public EllipseWallForce(Point2D.Double center, Point2D.Double r) {
-		this(DEFAULT_GRAV_CONSTANT, center, r);
+	public EllipseWallForce(Point2D.Double center, 
+			Point2D.Double r, float wallGravitationalConstant) {
+		this(wallGravitationalConstant, center, r);
 	}
 
 
@@ -59,18 +59,18 @@ public class EllipseWallForce extends AbstractForce {
 		float dy = ((float) center.getX()) - n[1];
 
 		if ( dx == 0.0 && dy == 0.0 ) {
-			dx = ((float)Math.random()-0.5f) / 50.0f;
-			dy = ((float)Math.random()-0.5f) / 50.0f;
+			dx = ((float) Math.random() - 0.5f) / 50.0f;
+			dy = ((float) Math.random() - 0.5f) / 50.0f;
 		}
 
 		float rX = (float) r.getX();
 		float rY = (float) r.getY();
 		
-		float fociC = (float)(Math.sqrt((rX*rX) - (rY * rY))); 
+		float fociC = (float)(Math.sqrt((rX * rX) - (rY * rY))); 
 
 		float foci1Dist = 0.0f;
 
-		float height = 2 * (rY);
+		float height = 2 * rY;
 		float width = 2 * rX;
 
 		float cX = 0.0f;

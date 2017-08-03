@@ -18,7 +18,7 @@ public class ForceSimulator {
 	private Force[] sforces;
 	private int iflen, sflen;
 	private Integrator integrator;
-	private float speedLimit = 1.0f;
+	private float speedLimit = .001f;
 
 	/**
 	 * Create a new, empty ForceSimulator. A RungeKuttaIntegrator is used
