@@ -46,7 +46,7 @@ import prefuse.util.force.SpringForce;
 public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 	private ForceDirectedLayout.Integrators integrator;
-	private Map<View<CyNode>,ForceItem> forceItems;
+	private Map<CyNode,ForceItem> forceItems;
 	private ForceDirectedLayoutContext context;
 	private CyServiceRegistrar registrar;
 	private final List<View<CyNode>> nodeViewList;
@@ -67,11 +67,11 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		super(displayName, netView, nodesToLayOut, layoutAttribute, undo);
 
 		if (nodesToLayOut.size() > 0)
-			nodeViewList = new ArrayList<View<CyNode>>(nodesToLayOut);
+			nodeViewList = new ArrayList<>(nodesToLayOut);
 		else
-			nodeViewList = new ArrayList<View<CyNode>>(netView.getNodeViews());
+			nodeViewList = new ArrayList<>(netView.getNodeViews());
 
-		edgeViewList = new ArrayList<View<CyEdge>>(netView.getEdgeViews());
+		edgeViewList = new ArrayList<>(netView.getEdgeViews());
 
 		this.netView = netView;
 		this.context = context;
@@ -85,13 +85,16 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			shapeAnnotations = AutoMode.createAnnotations(netView, nodesToLayOut, layoutAttribute);
 		}
 
-		forceItems = new HashMap<View<CyNode>, ForceItem>();
+		forceItems = new HashMap<CyNode, ForceItem>();
 	}
 
 	@Override
 	protected void doLayout(TaskMonitor taskMonitor) {
 		initializeAnnotationCoordinates();
 		ForceSimulator m_fsim = new ForceSimulator();
+
+		m_fsim.setIntegrator(integrator.getNewIntegrator());
+		m_fsim.clear();
 
 		//initialize shape annotations and their forces
 		if(shapeAnnotations != null)
@@ -109,11 +112,12 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 
 		// initialize node locations and properties
+
 		for (View<CyNode> nodeView : nodeViewList) {
-			ForceItem fitem = forceItems.get(nodeView); 
+			ForceItem fitem = forceItems.get(nodeView.getModel()); 
 			if ( fitem == null ) {
 				fitem = new ForceItem();
-				forceItems.put(nodeView, fitem);
+				forceItems.put(nodeView.getModel(), fitem);
 			}
 
 			fitem.mass = (float) context.defaultNodeMass;
@@ -144,9 +148,9 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		for (View<CyEdge> edgeView : edgeViewList) {
 			CyEdge edge = edgeView.getModel();
 			CyNode n1 = edge.getSource();
-			ForceItem f1 = forceItems.get(netView.getNodeView(n1)); 
+			ForceItem f1 = forceItems.get(n1); 
 			CyNode n2 = edge.getTarget();
-			ForceItem f2 = forceItems.get(netView.getNodeView(n2));
+			ForceItem f2 = forceItems.get(n2); 
 			if ( f1 == null || f2 == null )
 				continue;
 			m_fsim.addSpring(f1, f2, (float) context.defaultSpringCoefficient, (float) context.defaultSpringLength); 
@@ -162,10 +166,11 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 
 		// update positions
-		for (View<CyNode> nodeView : forceItems.keySet()) {
-			ForceItem fitem = forceItems.get(nodeView); 
-			nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double) fitem.location[0]);
-			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double) fitem.location[1]);
+		for (CyNode node : forceItems.keySet()) {
+			ForceItem fitem = forceItems.get(node); 
+			View<CyNode> nodeView = netView.getNodeView(node);
+			nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double)fitem.location[0]);
+			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double)fitem.location[1]);
 		}
 	}
 
@@ -193,10 +198,15 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		Point2D.Double annotationDimensions = getAnnotationDimensions(shapeAnnotation);
 		Point2D.Double annotationCenter = getAnnotationCenter(shapeAnnotation);
 		switch(shapeAnnotation.getShapeType()) {
-		case "RECTANGLE":
+		case "Rounded Rectangle":
+			System.out.println("Annotation center = "+annotationCenter);
+			System.out.println("Annotation dimensions = "+annotationDimensions);
 			m_fsim.addForce(new RectangularWallForce(annotationCenter, annotationDimensions));
 			break;
-		case "ELLIPSE":
+		case "Rectangle":
+			m_fsim.addForce(new RectangularWallForce(annotationCenter, annotationDimensions));
+			break;
+		case "Ellipse":
 			if(annotationDimensions.getX() == annotationDimensions.getY())
 				m_fsim.addForce(new CircularWallForce(annotationCenter, 
 						(float) annotationDimensions.getX()));

@@ -1,12 +1,15 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.layouts;
 
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.cytoscape.view.presentation.annotations.Annotation;
 import org.cytoscape.view.presentation.annotations.AnnotationFactory;
 import org.cytoscape.view.presentation.annotations.AnnotationManager;
 import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
@@ -27,7 +30,7 @@ public class AutoMode { //AutoMode class called to create all the annotations
 	private Set<View<CyNode>> nodesToLayout;
 	private String categoryColumn;
 	
-	private Map<ShapeAnnotation, Rectangle2D.Double> annotationBoundingBox;
+	//private Map<ShapeAnnotation, Rectangle2D.Double> annotationBoundingBox;
 	
 	public static Map<Object, ShapeAnnotation> createAnnotations(CyNetworkView cNV, 
 					                                                     Set<View<CyNode>> nodesToLayout, 
@@ -37,6 +40,7 @@ public class AutoMode { //AutoMode class called to create all the annotations
 		
 		double height = 0.0; 
 		double width = 0.0; 
+		int categoryCount = 0;
 		
 		CyNetwork network = cNV.getModel();
 		
@@ -56,17 +60,56 @@ public class AutoMode { //AutoMode class called to create all the annotations
 			if(!categories.containsKey(cat)) 
 				categories.put(cat, new ArrayList<View<CyNode>>());
 			categories.get(cat).add(nv);
+			categoryCount++;
 			
 			spacing = getMaxVal(heights, widths);
 			heights.put(cat, height + heights.get(cat) + spacing);
-			widths.put(cat, width + widths.get(cat) + spacing);
-			
+			widths.put(cat, width + widths.get(cat) + spacing);			
 		}
-				
+	
 		// 2. For each category create a rounded rectangle annotation of the correct size
-		//call getShapeBoundingBox(); 
+		Double maxW = getMaxWidth(widths); //using the max width 
+		Double maxH = getMaxHeight(heights);//using the max height 
+		
+		int numRows = (int) Math.sqrt(categoryCount); //round down for rows 
+		int numCols = (int) Math.sqrt(categoryCount) + 1; ;//round up for columns
+		for (Object category: nodesToLayout) {
+			for (int i = 0; i < numRows; i++ ) {
+				for (int j = 0; j < numCols; j++ ) {
+					//create a rounded rectangle annotation with max height and max width 
+					//x and y coord are hard coded right now 
+					RoundRectangle2D annotation = new RoundRectangle2D.Double(0, 0, maxW, maxH, 50, 50); //still working on the x,y coord				
+				}
+			}		
+		}			
 		return null;
 	}
+	
+	
+	private static Double getMaxHeight(Map<Object, Double> heights) {
+		Object maxHeightKey=null;
+		Double maxHeight = 0.0;
+		for(Map.Entry<Object,Double> entry : heights.entrySet()) {
+		     if(entry.getValue() > maxHeight) {
+		         maxHeight = entry.getValue();
+		         maxHeightKey = entry.getKey();
+		     }
+		}
+		return maxHeight;
+	}
+	
+	private static Double getMaxWidth(Map<Object, Double> widths) {
+		Object maxHeightKey=null;
+		Double maxWidth = 0.0;
+		for(Map.Entry<Object,Double> entry : widths.entrySet()) {
+		     if(entry.getValue() > maxWidth) {
+		         maxWidth = entry.getValue();
+		         maxHeightKey = entry.getKey();
+		     }
+		}
+		return maxWidth;
+	}
+	
 	
 	
 	private static Double getMaxVal(Map<Object, Double> heights, Map<Object, Double> widths) {
@@ -79,7 +122,8 @@ public class AutoMode { //AutoMode class called to create all the annotations
 		         maxHeightValue = entry.getValue();
 		         maxHeightKey = entry.getKey();
 		     }
-		}		
+		}	 
+		
 		Object maxWidthKey= null;
 		Double maxWidthValue = Double.MIN_VALUE; 
 		for(Map.Entry<Object,Double> entry : widths.entrySet()) {
@@ -96,10 +140,5 @@ public class AutoMode { //AutoMode class called to create all the annotations
 		}		
 		return maxVal;	
 	}
-	
-	private Rectangle2D getShapeBoundingBox(ShapeAnnotation shape) {
-		return annotationBoundingBox.get(shape);
-	}
-	
 	
 }
