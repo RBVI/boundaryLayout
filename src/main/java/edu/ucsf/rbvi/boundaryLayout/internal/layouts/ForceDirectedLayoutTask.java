@@ -93,9 +93,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		initializeAnnotationCoordinates();
 		ForceSimulator m_fsim = new ForceSimulator();
 
-		m_fsim.setIntegrator(integrator.getNewIntegrator());
-		m_fsim.clear();
-
 		//initialize shape annotations and their forces
 		if(shapeAnnotations != null)
 			for(Object category : shapeAnnotations.keySet())
@@ -112,7 +109,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 
 		// initialize node locations and properties
-
 		for (View<CyNode> nodeView : nodeViewList) {
 			ForceItem fitem = forceItems.get(nodeView); 
 			if ( fitem == null ) {
@@ -148,9 +144,9 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		for (View<CyEdge> edgeView : edgeViewList) {
 			CyEdge edge = edgeView.getModel();
 			CyNode n1 = edge.getSource();
-			ForceItem f1 = forceItems.get(n1); 
-			CyNode n2 = edge.getSource();
-			ForceItem f2 = forceItems.get(n2); 
+			ForceItem f1 = forceItems.get(netView.getNodeView(n1)); 
+			CyNode n2 = edge.getTarget();
+			ForceItem f2 = forceItems.get(netView.getNodeView(n2));
 			if ( f1 == null || f2 == null )
 				continue;
 			m_fsim.addSpring(f1, f2, (float) context.defaultSpringCoefficient, (float) context.defaultSpringLength); 
@@ -168,8 +164,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		// update positions
 		for (View<CyNode> nodeView : forceItems.keySet()) {
 			ForceItem fitem = forceItems.get(nodeView); 
-			nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, fitem.location[0]);
-			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, fitem.location[1]);
+			nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double) fitem.location[0]);
+			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double) fitem.location[1]);
 		}
 	}
 

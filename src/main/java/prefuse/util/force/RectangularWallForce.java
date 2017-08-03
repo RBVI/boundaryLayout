@@ -5,7 +5,7 @@ import java.awt.geom.Point2D;
 public class RectangularWallForce extends AbstractForce {
 	private static String[] pnames = new String[] { "GravitationalConstant" };
 
-	public static final float DEFAULT_GRAV_CONSTANT = -500f;
+	public static final float DEFAULT_GRAV_CONSTANT = -1000f;
 	public static final int GRAVITATIONAL_CONST = 0;
 
 	private Point2D.Double center;
