@@ -70,6 +70,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		this.integrator = integrator;
 		this.registrar = registrar;
 		this.chosenCategory = layoutAttribute;
+		// We don't want to recenter or we'll move all of our nodes away from the annotations
+		recenter = false; // This is provided by AbstractLayoutTask
 
 		shapeAnnotations = getShapeAnnotations();
 		if (shapeAnnotations == null) 
@@ -156,7 +158,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		for (CyNode node : forceItems.keySet()) {
 			ForceItem fitem = forceItems.get(node); 
 			View<CyNode> nodeView = netView.getNodeView(node);
-			System.out.println(fitem.location[0] + " ... " + fitem.location[1] + " is where the node is put");
+			System.out.println((double)fitem.location[0] + " ... " + 
+			                   (double)fitem.location[1] + " is where the node "+nodeView.getModel()+" is put");
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double)fitem.location[0]);
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double)fitem.location[1]);
 		}
@@ -230,7 +233,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			double yCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
 			double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH));
 			double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT));
-			System.out.println(xCoordinate + " ... " + yCoordinate + " is for initializing");
+			System.out.println(xCoordinate + " ... " + yCoordinate + " " + width + " X " + height+" is for initializing");
 			annotationBoundingBox.put(shapeAnnotation, new Rectangle2D.Double(
 					xCoordinate, yCoordinate, width, height));
 		}
