@@ -47,6 +47,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	final CyNetworkView netView;
 	private Map<Object, ShapeAnnotation> shapeAnnotations; 
 	private Map<ShapeAnnotation, Rectangle2D.Double> annotationBoundingBox;
+	private Map<ShapeAnnotation, Point2D.Double> initializingNodeLocations;
 
 	public ForceDirectedLayoutTask( final String displayName,
 			final CyNetworkView netView,
@@ -103,6 +104,9 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			//sort nodes views in some way ADD <---------------
 		}
 
+		for(ShapeAnnotation shapeAnnotation : shapeAnnotations.values())
+			initNodeLocations(shapeAnnotation);
+		
 		// initialize node locations and properties
 		for (View<CyNode> nodeView : nodeViewList) {
 			ForceItem fitem = forceItems.get(nodeView.getModel()); 
@@ -120,9 +124,9 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 			if(group != null) {
 				if(shapeAnnotations.keySet().contains(group)) {
-					Point2D.Double centerOfShape = getAnnotationCenter(shapeAnnotations.get(group));
-					fitem.location[0] = (float) centerOfShape.getX(); 
-					fitem.location[1] = (float) centerOfShape.getY(); 
+					Point2D.Double initPosition = getNodeLocation(shapeAnnotations.get(group));
+					fitem.location[0] = (float) initPosition.getX(); 
+					fitem.location[1] = (float) initPosition.getY(); 
 				}
 			}
 
@@ -159,7 +163,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			ForceItem fitem = forceItems.get(node); 
 			View<CyNode> nodeView = netView.getNodeView(node);
 			System.out.println((double)fitem.location[0] + " ... " + 
-			                   (double)fitem.location[1] + " is where the node "+nodeView.getModel()+" is put");
+					(double)fitem.location[1] + " is where the node "+nodeView.getModel()+" is put");
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double)fitem.location[0]);
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double)fitem.location[1]);
 		}
@@ -215,18 +219,62 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 	//gets centerpoint for the shape annotation passed
 	private Point2D.Double getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
-		// return annotationCoordinates.get(shapeAnnotation);
 		Rectangle2D boundingBox = getShapeBoundingBox(shapeAnnotation);
-		double centerX = boundingBox.getX() + boundingBox.getWidth() / 2.0;
-		double centerY = boundingBox.getY() + boundingBox.getHeight() / 2.0;
-		System.out.println(centerX + " ... " + centerY + " is for getting method");
-		return new Point2D.Double(centerX, centerY);
+		double xCenter = boundingBox.getX() + boundingBox.getWidth() / 2.0;
+		double yCenter = boundingBox.getY() + boundingBox.getHeight() / 2.0;
+		System.out.println(xCenter + " ... " + yCenter + " is for getting method");
+		return new Point2D.Double(xCenter, yCenter);
+	}
+
+	//returns the desired point where the node should be initialized to
+	private void initNodeLocations(ShapeAnnotation shapeAnnotation) { 
+		initializingNodeLocations = new HashMap<>();
+		Rectangle2D boundingBox = getShapeBoundingBox(shapeAnnotation);
+		boolean annotationIsNested = annotationIsNested(shapeAnnotation, boundingBox);
+		boolean annotationIsIntersected = annotationIsIntersected(shapeAnnotation, boundingBox);//change to calculate
+		double xPos = 0.0;
+		double yPos = 0.0;
+		if(annotationIsNested && annotationIsIntersected) {
+			System.out.println("Nested and Intersected!");
+		}
+		else if(annotationIsNested) {
+			System.out.println("Nested!");
+		}
+		else if(annotationIsIntersected) {
+			System.out.println("Intersected!");
+		}
+		else {//independent shape annotation
+			xPos = boundingBox.getX() + boundingBox.getWidth() / 2.0;
+			yPos = boundingBox.getY() + boundingBox.getHeight() / 2.0;
+		}
+		System.out.println(xPos + " ... " + yPos + " is for getting method");
+		initializingNodeLocations.put(shapeAnnotation, new Point2D.Double(xPos, yPos));
+	}
+	
+	private Point2D.Double getNodeLocation(ShapeAnnotation shapeAnnotation) {
+		return initializingNodeLocations.get(shapeAnnotation);
+	}
+
+	private boolean annotationIsNested(ShapeAnnotation shapeAnnotation, Rectangle2D boundingBox) { 
+		for(ShapeAnnotation comparedShapeAnnotation : annotationBoundingBox.keySet())
+			if(boundingBox.contains(annotationBoundingBox.get(comparedShapeAnnotation)) 
+					&& shapeAnnotation != comparedShapeAnnotation)
+				return true;
+		return false;
+	}
+
+	private boolean annotationIsIntersected(ShapeAnnotation shapeAnnotation, Rectangle2D boundingBox) { 
+		for(ShapeAnnotation comparedShapeAnnotation : annotationBoundingBox.keySet())
+			if(boundingBox.intersects(annotationBoundingBox.get(comparedShapeAnnotation)) 
+					&& shapeAnnotation != comparedShapeAnnotation)
+				return true;
+		return false;
 	}
 
 	//initializes the annotationCoordinates HashMap (key is shapeannotation and value is
 	//its respectful Point2D Location)
 	private void initializeAnnotationCoordinates() {
-		annotationBoundingBox = new HashMap<ShapeAnnotation, Rectangle2D.Double>();
+		annotationBoundingBox = new HashMap<>();
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations.values()) {
 			Map<String, String> argMap = shapeAnnotation.getArgMap();
 			double xCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.X));
