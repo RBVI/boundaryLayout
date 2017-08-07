@@ -230,22 +230,12 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private void initNodeLocations(ShapeAnnotation shapeAnnotation) { 
 		initializingNodeLocations = new HashMap<>();
 		Rectangle2D boundingBox = getShapeBoundingBox(shapeAnnotation);
-		boolean annotationIsNested = annotationIsNested(shapeAnnotation, boundingBox);
-		boolean annotationIsIntersected = annotationIsIntersected(shapeAnnotation, boundingBox);//change to calculate
-		double xPos = 0.0;
-		double yPos = 0.0;
-		if(annotationIsNested && annotationIsIntersected) {
-			System.out.println("Nested and Intersected!");
-		}
-		else if(annotationIsNested) {
-			System.out.println("Nested!");
-		}
-		else if(annotationIsIntersected) {
-			System.out.println("Intersected!");
-		}
-		else {//independent shape annotation
-			xPos = boundingBox.getX() + boundingBox.getWidth() / 2.0;
-			yPos = boundingBox.getY() + boundingBox.getHeight() / 2.0;
+		boolean applySpecialInitialization = applySpecialInitialization(shapeAnnotation, boundingBox);
+		double xPos = boundingBox.getX() + boundingBox.getWidth() / 2.0;
+		double yPos = boundingBox.getY() + boundingBox.getHeight() / 2.0;
+		if(applySpecialInitialization) {
+			//apply special initialization where nodes are placed in the edge 
+			//of its respective shape annotation
 		}
 		System.out.println(xPos + " ... " + yPos + " is for getting method");
 		initializingNodeLocations.put(shapeAnnotation, new Point2D.Double(xPos, yPos));
@@ -255,9 +245,18 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		return initializingNodeLocations.get(shapeAnnotation);
 	}
 
-	private boolean annotationIsNested(ShapeAnnotation shapeAnnotation, Rectangle2D boundingBox) { 
+	private boolean applySpecialInitialization(ShapeAnnotation 
+			shapeAnnotation, Rectangle2D boundingBox) {
+		for(Rectangle2D.Double comparedBoundingBox : annotationBoundingBox.values())
+			if(comparedBoundingBox.intersects(boundingBox) && 
+					!comparedBoundingBox.contains(boundingBox))
+				return true;
+		return false;
+	}
+	
+	/*private boolean annotationIsNested(ShapeAnnotation shapeAnnotation, Rectangle2D boundingBox) { 
 		for(ShapeAnnotation comparedShapeAnnotation : annotationBoundingBox.keySet())
-			if(boundingBox.contains(annotationBoundingBox.get(comparedShapeAnnotation)) 
+			if(annotationBoundingBox.get(comparedShapeAnnotation).contains(boundingBox) 
 					&& shapeAnnotation != comparedShapeAnnotation)
 				return true;
 		return false;
@@ -269,7 +268,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					&& shapeAnnotation != comparedShapeAnnotation)
 				return true;
 		return false;
-	}
+	}*/
 
 	//initializes the annotationCoordinates HashMap (key is shapeannotation and value is
 	//its respectful Point2D Location)
