@@ -48,6 +48,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private Map<Object, ShapeAnnotation> shapeAnnotations; 
 	private Map<ShapeAnnotation, Rectangle2D.Double> annotationBoundingBox;
 	private Map<ShapeAnnotation, Point2D.Double> initializingNodeLocations;
+	private TaskMonitor taskMonitor;
 
 	public ForceDirectedLayoutTask( final String displayName,
 			final CyNetworkView netView,
@@ -74,6 +75,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		// We don't want to recenter or we'll move all of our nodes away from the annotations
 		recenter = false; // This is provided by AbstractLayoutTask
 
+		initializingNodeLocations = new HashMap<>();
+
 		shapeAnnotations = getShapeAnnotations();
 		if (shapeAnnotations == null) 
 			shapeAnnotations = AutoMode.createAnnotations(netView, nodesToLayOut, layoutAttribute);
@@ -83,6 +86,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 	@Override
 	protected void doLayout(TaskMonitor taskMonitor) {
+		this.taskMonitor = taskMonitor;
 		initializeAnnotationCoordinates();
 		ForceSimulator m_fsim = new ForceSimulator();
 
@@ -246,12 +250,12 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 * initialized.
 	 * */
 	private void initNodeLocations(ShapeAnnotation shapeAnnotation) { 
-		initializingNodeLocations = new HashMap<>();
 		Rectangle2D boundingBox = getShapeBoundingBox(shapeAnnotation);
-		boolean applySpecialInitialization = applySpecialInitialization(shapeAnnotation, boundingBox);
+		List<Rectangle2D> applySpecialInitialization = 
+				applySpecialInitialization(shapeAnnotation, boundingBox);
 		double xPos = boundingBox.getX() + boundingBox.getWidth() / 2.0;
 		double yPos = boundingBox.getY() + boundingBox.getHeight() / 2.0;
-		if(applySpecialInitialization) {
+		if(!applySpecialInitialization.isEmpty()) {
 			//apply special initialization where nodes are placed in the edge 
 			//of its respective shape annotation
 		}
@@ -270,19 +274,21 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 	/* @param shapeAnnotation stores an existing ShapeAnnotation.
 	 * @param boundingBox stores the Rectangle2D of the shapeAnnotation.
-	 * @return true if this shapeAnnotation is intersected by another.
-	 * shape annotation but while the other shape annotation does not contain
-	 * this shapeAnnotation.
-	 * These are the conditions in which the program should apply a specialized
-	 * method of initializing nodes' location.
+	 * @return list of Rectangle2D's of shape annotations that boundingBox
+	 * contains.
 	 * */
-	private boolean applySpecialInitialization(ShapeAnnotation 
+	private List<Rectangle2D> applySpecialInitialization(ShapeAnnotation 
 			shapeAnnotation, Rectangle2D boundingBox) {
-		for(Rectangle2D.Double comparedBoundingBox : annotationBoundingBox.values())
+		List<Rectangle2D> listOfContainments = new ArrayList<>();
+		for(Rectangle2D.Double comparedBoundingBox : annotationBoundingBox.values()) {
 			if(comparedBoundingBox.intersects(boundingBox) && 
-					!comparedBoundingBox.contains(boundingBox))
-				return true;
-		return false;
+					!comparedBoundingBox.contains(boundingBox) && 
+					!boundingBox.contains(comparedBoundingBox)) 
+				taskMonitor.showMessage(TaskMonitor.Level.ERROR, "Do not draw intersecting boundaries!");
+			if(boundingBox.contains(comparedBoundingBox)) 
+				listOfContainments.add(comparedBoundingBox);
+		}
+		return listOfContainments;
 	}
 
 	/* This method calculates and initializes a HashMap of key ShapeAnnotation
