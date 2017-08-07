@@ -169,14 +169,17 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 	}
 
-	//gets all the shape annotations in the network view 
-	//and returns a HashMap of key category name with its
-	//corresponding ShapeAnnotation value
+	/* @return the HashMap shapeAnnotations which consists of 
+	 * all of the Shape Annotations in the current network view and
+	 * maps them to their respective name. null is returned if
+	 * the user did not create any Shape Annotations, which would
+	 * means AutoMode must be run.
+	 * */
 	protected Map<Object, ShapeAnnotation> getShapeAnnotations() {
 		List<Annotation> annotations = 
 				registrar.getService(AnnotationManager.class).getAnnotations(netView);
 		if(annotations != null) {
-			Map<Object, ShapeAnnotation> shapeAnnotations = new HashMap<Object, ShapeAnnotation>();
+			Map<Object, ShapeAnnotation> shapeAnnotations = new HashMap<>();
 			for(Annotation annotation : annotations)
 				if(annotation instanceof ShapeAnnotation) {
 					ShapeAnnotation shapeAnnotation = (ShapeAnnotation) annotation;
@@ -187,8 +190,11 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		else return null;
 	}
 
-	//add a force annotation for each of the shape annotations depending on type
-	//of annotation
+	/* @param m_fsim is the ForceSimulator instance that this
+	 * added force belongs to.
+	 * @param shapeAnnotation stores an existing ShapeAnnotation.
+	 * This method adds the wall force associated with shapeAnnotation parameter.
+	 * */
 	protected void addAnnotationForce(ForceSimulator m_fsim, ShapeAnnotation shapeAnnotation) {
 		Point2D.Double annotationDimensions = getAnnotationDimensions(shapeAnnotation);
 		Point2D.Double annotationCenter = getAnnotationCenter(shapeAnnotation);
@@ -209,7 +215,11 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 	}
 
-	//gets dimensions for the shape annotation passed
+	/* @param shapeAnnotation stores an existing ShapeAnnotation.
+	 * @return the Point2D.Double dimensions of shapeAnnotation where 
+	 * the x value of the point holds the width and the y value of the 
+	 * point holds the height.
+	 * */
 	private static Point2D.Double getAnnotationDimensions(ShapeAnnotation shapeAnnotation) {
 		Point2D.Double annotationDimensions = new Point2D.Double((float)
 				shapeAnnotation.getShape().getBounds2D().getWidth(), 
@@ -217,7 +227,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		return annotationDimensions;
 	}
 
-	//gets centerpoint for the shape annotation passed
+	/* @param shapeAnnotation stores an existing ShapeAnnotation.
+	 * @return the Point2D.Double location where the center of the shapeAnnotation
+	 * is.
+	 * */
 	private Point2D.Double getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
 		Rectangle2D boundingBox = getShapeBoundingBox(shapeAnnotation);
 		double xCenter = boundingBox.getX() + boundingBox.getWidth() / 2.0;
@@ -226,7 +239,12 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		return new Point2D.Double(xCenter, yCenter);
 	}
 
-	//returns the desired point where the node should be initialized to
+	/* @param shapeAnnotation stores an existing ShapeAnnotation.
+	 * This method calculates and initializes a HashMap of key ShapeAnnotation
+	 * and value Point2D.Double where the Point2D.Double is the location
+	 * where all of the nodes of that respective shape annotation are to be
+	 * initialized.
+	 * */
 	private void initNodeLocations(ShapeAnnotation shapeAnnotation) { 
 		initializingNodeLocations = new HashMap<>();
 		Rectangle2D boundingBox = getShapeBoundingBox(shapeAnnotation);
@@ -241,10 +259,23 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		initializingNodeLocations.put(shapeAnnotation, new Point2D.Double(xPos, yPos));
 	}
 	
+	/* @param shapeAnnotation stores an existing ShapeAnnotation.
+	 * @return the Point2D.Double location where the node that belongs to 
+	 * shapeAnnotation should be initialized, using the previously initialized
+	 * HashMap initializingNodeLocations
+	 * */
 	private Point2D.Double getNodeLocation(ShapeAnnotation shapeAnnotation) {
 		return initializingNodeLocations.get(shapeAnnotation);
 	}
 
+	/* @param shapeAnnotation stores an existing ShapeAnnotation.
+	 * @param boundingBox stores the Rectangle2D of the shapeAnnotation.
+	 * @return true if this shapeAnnotation is intersected by another.
+	 * shape annotation but while the other shape annotation does not contain
+	 * this shapeAnnotation.
+	 * These are the conditions in which the program should apply a specialized
+	 * method of initializing nodes' location.
+	 * */
 	private boolean applySpecialInitialization(ShapeAnnotation 
 			shapeAnnotation, Rectangle2D boundingBox) {
 		for(Rectangle2D.Double comparedBoundingBox : annotationBoundingBox.values())
@@ -253,25 +284,12 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				return true;
 		return false;
 	}
-	
-	/*private boolean annotationIsNested(ShapeAnnotation shapeAnnotation, Rectangle2D boundingBox) { 
-		for(ShapeAnnotation comparedShapeAnnotation : annotationBoundingBox.keySet())
-			if(annotationBoundingBox.get(comparedShapeAnnotation).contains(boundingBox) 
-					&& shapeAnnotation != comparedShapeAnnotation)
-				return true;
-		return false;
-	}
 
-	private boolean annotationIsIntersected(ShapeAnnotation shapeAnnotation, Rectangle2D boundingBox) { 
-		for(ShapeAnnotation comparedShapeAnnotation : annotationBoundingBox.keySet())
-			if(boundingBox.intersects(annotationBoundingBox.get(comparedShapeAnnotation)) 
-					&& shapeAnnotation != comparedShapeAnnotation)
-				return true;
-		return false;
-	}*/
-
-	//initializes the annotationCoordinates HashMap (key is shapeannotation and value is
-	//its respectful Point2D Location)
+	/* This method calculates and initializes a HashMap of key ShapeAnnotation
+	 * and value Rectangle2D.Double where the Rectangle2D.Double is the rectangle
+	 * that represents its respective shape annotation and stores the width, height,
+	 * location and other features of its respective shape annotation. 
+	 * */
 	private void initializeAnnotationCoordinates() {
 		annotationBoundingBox = new HashMap<>();
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations.values()) {
@@ -286,7 +304,11 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 	}
 
-	private Rectangle2D getShapeBoundingBox(ShapeAnnotation shape) {
-		return annotationBoundingBox.get(shape);
+	/* @param shapeAnnotation stores an existing ShapeAnnotation.
+	 * @return the Rectangle2D.Double representation of its respective
+	 * shapeAnnotation, which is the passed parameter.
+	 * */
+	private Rectangle2D.Double getShapeBoundingBox(ShapeAnnotation shapeAnnotation) {
+		return annotationBoundingBox.get(shapeAnnotation);
 	}
 }
