@@ -61,7 +61,7 @@ public class RectangularWallForce extends AbstractForce {
 			dx = getRandDisplacement();
 			dy = getRandDisplacement();
 		}
-		
+
 		//initialize dimensions and displacements
 		float width = (float) this.dimensions.getX();
 		float height = (float) this.dimensions.getY();
@@ -70,32 +70,41 @@ public class RectangularWallForce extends AbstractForce {
 		float drRight = width - drLeft; 
 		float drBottom = height - drTop;
 
-	//	System.out.println("Node position: "+n[0]+","+n[1]);
-	//	System.out.println("Annotation center: "+center.getX()+","+center.getY());
-	//	System.out.println("drLeft: "+drLeft+", drTop: "+drTop+", drRight: "+drRight+", drBottom: "+drBottom);
-		
+		//	System.out.println("Node position: "+n[0]+","+n[1]);
+		//	System.out.println("Annotation center: "+center.getX()+","+center.getY());
+		//	System.out.println("drLeft: "+drLeft+", drTop: "+drTop+", drRight: "+drRight+", drBottom: "+drBottom);
+
 		//initialize orientation of shape
 		int cX = (Math.abs(dx) > width / 2 ? -1 : 1);
 		int cY = (Math.abs(dy) > height / 2 ? -1 : 1);
-		
+
 		if(cX + cY != 2)
 			return;
 		
-		//calculate the vector from each side
 		float vLeft = -cX * params[GRAVITATIONAL_CONST] * item.mass / (drLeft * drLeft);
 		float vTop = -cY * params[GRAVITATIONAL_CONST] * item.mass / (drTop * drTop);
 		float vRight = cX * params[GRAVITATIONAL_CONST] * item.mass / (drRight * drRight);
 		float vBottom = cY * params[GRAVITATIONAL_CONST] * item.mass / (drBottom * drBottom);
 		
-	//	System.out.println(vLeft + ", " + vRight + " ... " + vTop + ", " + vBottom);
-		
-		//force is added 
-		item.force[0] += vLeft;
-		item.force[1] += vTop;
-		item.force[0] += vRight;
-		item.force[1] += vBottom;
+		/*ADD -- FORCE IN BETWEEN NORMAL LINES AND CORNER FORCE - BOTH ARE FOR OUTSIDE*/
+		//case where node exists completely within shape annotation
+		if(cX + cY == -2) {
+			//calculate vector between center of shape annotation and point
+			//and then apply that vector as both the vX and the vY
+		} else if(cX == -1) {
+			item.force[0] += vLeft;
+			item.force[0] += vRight;
+		} else if(cY == -1) {
+			item.force[1] += vTop;
+			item.force[1] += vBottom;
+		} else {
+			item.force[0] += vLeft;
+			item.force[1] += vTop;
+			item.force[0] += vRight;
+			item.force[1] += vBottom;
+		}
 	}
-	
+
 	private float getRandDisplacement() {
 		return ((float)Math.random() - 0.5f) / 50.0f;
 	}
