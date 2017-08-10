@@ -86,18 +86,26 @@ public class RectangularWallForce extends AbstractForce {
 		float vRight = cX * params[GRAVITATIONAL_CONST] * item.mass / (drRight * drRight);
 		float vBottom = cY * params[GRAVITATIONAL_CONST] * item.mass / (drBottom * drBottom);
 		
-		/*ADD -- FORCE IN BETWEEN NORMAL LINES AND CORNER FORCE - BOTH ARE FOR OUTSIDE*/
-		//case where node exists completely within shape annotation
-		if(cX + cY == -2) {
-			//calculate vector between center of shape annotation and point
-			//and then apply that vector as both the vX and the vY
-		} else if(cX == -1) {
+		if(cX + cY == -2) {//case where the node is outside the corner of the shape
+			float xPlaneDimensions = (float) (dx > 0 ? -dimensions.getX() : dimensions.getX());
+			float yPlaneDimensions = (float) (dy > 0 ? -dimensions.getY() : dimensions.getY());
+			float xCorner = (float) center.getX() + xPlaneDimensions;
+			float yCorner = (float) center.getY() + yPlaneDimensions;
+			float dxCorner = n[0] - xCorner;
+			float dyCorner = n[1] - yCorner;
+			float dCorner = (float) Math.sqrt(Math.pow(dxCorner, 2) + Math.pow(dyCorner, 2));
+			float vCorner = params[GRAVITATIONAL_CONST] * item.mass / (dCorner * dCorner * dCorner);
+			float vxCorner = vCorner * dxCorner;
+			float vyCorner = vCorner * dyCorner;
+			item.force[0] += vxCorner;
+			item.force[1] += vyCorner;
+		} else if(cX == -1) {//case where the node is within the x normal lines of the shape
 			item.force[0] += vLeft;
 			item.force[0] += vRight;
-		} else if(cY == -1) {
+		} else if(cY == -1) {//case where the node is within the y normal lines of the shape
 			item.force[1] += vTop;
 			item.force[1] += vBottom;
-		} else {
+		} else {//case where the node is completely inside the shape
 			item.force[0] += vLeft;
 			item.force[1] += vTop;
 			item.force[0] += vRight;

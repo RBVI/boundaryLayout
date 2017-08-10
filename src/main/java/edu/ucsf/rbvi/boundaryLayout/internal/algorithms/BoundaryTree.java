@@ -134,10 +134,11 @@ public class BoundaryTree {
 			return;
 		if(!bNode.hasChildren()) {
 			double area = bNode.entry.getWidth() * bNode.entry.getHeight();
-			if(areas.size() > 4)
+			if(areas.size() > 4) {
 				for(Rectangle2D.Double comparedArea : areas)
 					if(area > comparedArea.getWidth() * comparedArea.getHeight()) 
 						comparedArea = bNode.entry;
+			}
 			else 
 				areas.add(bNode.entry);
 		} else 

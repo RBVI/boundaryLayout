@@ -24,6 +24,7 @@ import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.undo.UndoSupport;
 
+import edu.ucsf.rbvi.boundaryLayout.internal.algorithms.BoundaryContainsAlgorithm;
 import prefuse.util.force.CircularWallForce;
 import prefuse.util.force.DragForce;
 import prefuse.util.force.EllipseWallForce;
@@ -110,7 +111,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations.values())
 			initNodeLocations(shapeAnnotation);
-		
+
 		// initialize node locations and properties
 		for (View<CyNode> nodeView : nodeViewList) {
 			ForceItem fitem = forceItems.get(nodeView.getModel()); 
@@ -166,8 +167,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		for (CyNode node : forceItems.keySet()) {
 			ForceItem fitem = forceItems.get(node); 
 			View<CyNode> nodeView = netView.getNodeView(node);
-			System.out.println((double)fitem.location[0] + " ... " + 
-					(double)fitem.location[1] + " is where the node "+nodeView.getModel()+" is put");
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double)fitem.location[0]);
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double)fitem.location[1]);
 		}
@@ -239,7 +238,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		Rectangle2D boundingBox = getShapeBoundingBox(shapeAnnotation);
 		double xCenter = boundingBox.getX() + boundingBox.getWidth() / 2.0;
 		double yCenter = boundingBox.getY() + boundingBox.getHeight() / 2.0;
-		System.out.println(xCenter + " ... " + yCenter + " is for getting method");
 		return new Point2D.Double(xCenter, yCenter);
 	}
 
@@ -250,19 +248,21 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 * initialized.
 	 * */
 	private void initNodeLocations(ShapeAnnotation shapeAnnotation) { 
-		Rectangle2D boundingBox = getShapeBoundingBox(shapeAnnotation);
-		List<Rectangle2D> applySpecialInitialization = 
+		Rectangle2D.Double boundingBox = getShapeBoundingBox(shapeAnnotation);
+		List<Rectangle2D.Double> applySpecialInitialization = 
 				applySpecialInitialization(shapeAnnotation, boundingBox);
 		double xPos = boundingBox.getX() + boundingBox.getWidth() / 2.0;
 		double yPos = boundingBox.getY() + boundingBox.getHeight() / 2.0;
 		if(!applySpecialInitialization.isEmpty()) {
-			//apply special initialization where nodes are placed in the edge 
-			//of its respective shape annotation
+			applySpecialInitialization = BoundaryContainsAlgorithm.doAlgorithm(
+					annotationBoundingBox.get(shapeAnnotation), applySpecialInitialization);
+			Rectangle2D.Double placeNodes = applySpecialInitialization.get(0);
+			xPos = placeNodes.getX() + placeNodes.getWidth() / 2;
+			yPos = placeNodes.getY() + placeNodes.getHeight() / 2;
 		}
-		System.out.println(xPos + " ... " + yPos + " is for getting method");
 		initializingNodeLocations.put(shapeAnnotation, new Point2D.Double(xPos, yPos));
 	}
-	
+
 	/* @param shapeAnnotation stores an existing ShapeAnnotation.
 	 * @return the Point2D.Double location where the node that belongs to 
 	 * shapeAnnotation should be initialized, using the previously initialized
@@ -277,15 +277,19 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 * @return list of Rectangle2D's of shape annotations that boundingBox
 	 * contains.
 	 * */
-	private List<Rectangle2D> applySpecialInitialization(ShapeAnnotation 
-			shapeAnnotation, Rectangle2D boundingBox) {
-		List<Rectangle2D> listOfContainments = new ArrayList<>();
-		for(Rectangle2D.Double comparedBoundingBox : annotationBoundingBox.values()) {
-			if(comparedBoundingBox.intersects(boundingBox) && 
-					!comparedBoundingBox.contains(boundingBox) && 
-					!boundingBox.contains(comparedBoundingBox)) 
+	private List<Rectangle2D.Double> applySpecialInitialization(ShapeAnnotation 
+			shapeAnnotation, Rectangle2D.Double boundingBox) {
+		List<Rectangle2D.Double> listOfContainments = new ArrayList<>();
+		for(ShapeAnnotation comparedShape : annotationBoundingBox.keySet()) {
+			Rectangle2D.Double comparedBoundingBox = annotationBoundingBox.get(comparedShape);
+			System.out.println(comparedShape.getName() + "is being compared!");
+			if(comparedShape.getName().equals(shapeAnnotation.getName())) {
+				System.out.println("has the same name!");
+			} else if(comparedBoundingBox.intersects(boundingBox) && 
+					!contains(comparedBoundingBox, boundingBox) &&
+					!contains(boundingBox, comparedBoundingBox)) 
 				taskMonitor.showMessage(TaskMonitor.Level.ERROR, "Do not draw intersecting boundaries!");
-			if(boundingBox.contains(comparedBoundingBox)) 
+			else if(boundingBox.contains(comparedBoundingBox)) 
 				listOfContainments.add(comparedBoundingBox);
 		}
 		return listOfContainments;
@@ -304,7 +308,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			double yCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
 			double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH));
 			double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT));
-			System.out.println(xCoordinate + " ... " + yCoordinate + " " + width + " X " + height+" is for initializing");
+		//System.out.println(xCoordinate + " ... " + yCoordinate + " " + width + " X " + height+" is for initializing");
 			annotationBoundingBox.put(shapeAnnotation, new Rectangle2D.Double(
 					xCoordinate, yCoordinate, width, height));
 		}
@@ -316,5 +320,15 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 * */
 	private Rectangle2D.Double getShapeBoundingBox(ShapeAnnotation shapeAnnotation) {
 		return annotationBoundingBox.get(shapeAnnotation);
+	}
+	
+	private static boolean contains(Rectangle2D.Double thisRectangle, 
+			Rectangle2D.Double containedRectangle) {
+		return (thisRectangle.getX() < containedRectangle.getX() && 
+				thisRectangle.getX() + thisRectangle.getWidth() >
+				containedRectangle.getX() + containedRectangle.getWidth() &&
+				thisRectangle.getY() < containedRectangle.getY() && 
+				thisRectangle.getY() + thisRectangle.getHeight() >
+				containedRectangle.getY() + containedRectangle.getHeight());
 	}
 }

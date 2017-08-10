@@ -16,7 +16,7 @@ public class BoundaryContainsAlgorithm {
 		}
 		
 		largestAreas = shapeTree.getLargestAreas(); 
-		
+			
 		return largestAreas;
 	}
 }
