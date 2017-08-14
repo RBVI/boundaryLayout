@@ -26,18 +26,22 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 
 public class AutoMode { //AutoMode class called to create all the annotations 
-	private CyNetworkView cNV;
-	private Set<View<CyNode>> nodesToLayout;
-	private String categoryColumn;
+//	private CyNetworkView cNV;
+//	private Set<View<CyNode>> nodesToLayout;
+//	private String categoryColumn;
 	
 	//private Map<ShapeAnnotation, Rectangle2D.Double> annotationBoundingBox;
 	
 	public static Map<Object, ShapeAnnotation> createAnnotations(CyNetworkView cNV, 
-					                                                     Set<View<CyNode>> nodesToLayout, 
-						                                                   String categoryColumn) {		
+					                                                     Set<View<CyNode>> nodesToLayout, String categoryColumn, CyServiceRegistrar r) {	
+						                                   
+	
+	//AnnotationFactory/Manager moved from CyActivator to here
+	AnnotationFactory<ShapeAnnotation> shapeFactory = r.getService(AnnotationFactory.class, "(type=ShapeAnnotation.class)");
+	AnnotationManager annotationManager = r.getService(AnnotationManager.class) ;			                                                   
 		//to do 
 		// 1. Get the list of categories and required space for each category	
-		
+
 		double height = 0.0; 
 		double width = 0.0; 
 		int categoryCount = 0;
@@ -70,15 +74,21 @@ public class AutoMode { //AutoMode class called to create all the annotations
 		// 2. For each category create a rounded rectangle annotation of the correct size
 		Double maxW = getMaxWidth(widths); //using the max width 
 		Double maxH = getMaxHeight(heights);//using the max height 
+		double x;
+		double y;
+		ShapeAnnotation shapeToAdd = null;
+		shapeToAdd.setShapeType("Rounded Rectangle");
 		
 		int numRows = (int) Math.sqrt(categoryCount); //round down for rows 
 		int numCols = (int) Math.sqrt(categoryCount) + 1; ;//round up for columns
-		for (Object category: nodesToLayout) {
+		for (Object category: categories.keySet()) {
 			for (int i = 0; i < numRows; i++ ) {
 				for (int j = 0; j < numCols; j++ ) {
-					//create a rounded rectangle annotation with max height and max width 
-					//x and y coord are hard coded right now 
-					RoundRectangle2D annotation = new RoundRectangle2D.Double(0, 0, maxW, maxH, 50, 50); //still working on the x,y coord				
+					x =  1 + (maxW * i) + (4 * i); //hard coded value for now 
+					y = 30 + (maxH * j) + (4 * j) ;
+					//create rounded rectangle annotation with max height and max width 
+					//RoundRectangle2D annotation = new RoundRectangle2D.Double(x, y, maxW, maxH, 50, 50); //still working on the x,y coord				
+				//	shapeToAdd.setCustomShape(annotation);
 				}
 			}		
 		}			

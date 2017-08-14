@@ -52,7 +52,7 @@ public class CyActivator extends AbstractCyActivator {
 		registerService(bc, forceDirectedLayoutAlgorithm, CyLayoutAlgorithm.class, forceDirectedLayoutAlgorithmProps);
 	
 		//annotations
-		AnnotationFactory<ShapeAnnotation> shapeFactory = (AnnotationFactory<ShapeAnnotation>) getService(bc, AnnotationFactory.class, "(type=ShapeAnnotation.class)");
-		AnnotationManager annotationManager = getService(bc, AnnotationManager.class);
+		//AnnotationFactory<ShapeAnnotation> shapeFactory = (AnnotationFactory<ShapeAnnotation>) getService(bc, AnnotationFactory.class, "(type=ShapeAnnotation.class)");
+		//AnnotationManager annotationManager = getService(bc, AnnotationManager.class);
 	}
 }
