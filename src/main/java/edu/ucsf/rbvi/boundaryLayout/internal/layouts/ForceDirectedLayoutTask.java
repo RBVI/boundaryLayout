@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import  java.awt.geom.Point2D;
@@ -80,7 +81,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 		shapeAnnotations = getShapeAnnotations();
 		if (shapeAnnotations == null) 
-			shapeAnnotations = AutoMode.createAnnotations(netView, nodesToLayOut, layoutAttribute);
+			shapeAnnotations = AutoMode.createAnnotations(netView, nodesToLayOut, layoutAttribute, registrar);
 
 		forceItems = new HashMap<CyNode, ForceItem>();
 	}
@@ -256,7 +257,9 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if(!applySpecialInitialization.isEmpty()) {
 			applySpecialInitialization = BoundaryContainsAlgorithm.doAlgorithm(
 					annotationBoundingBox.get(shapeAnnotation), applySpecialInitialization);
-			Rectangle2D.Double placeNodes = applySpecialInitialization.get(0);
+			Random rand = new Random();
+			int index = rand.nextInt(applySpecialInitialization.size());
+			Rectangle2D.Double placeNodes = applySpecialInitialization.get(index);
 			xPos = placeNodes.getX() + placeNodes.getWidth() / 2;
 			yPos = placeNodes.getY() + placeNodes.getHeight() / 2;
 		}
@@ -282,7 +285,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		List<Rectangle2D.Double> listOfContainments = new ArrayList<>();
 		for(ShapeAnnotation comparedShape : annotationBoundingBox.keySet()) {
 			Rectangle2D.Double comparedBoundingBox = annotationBoundingBox.get(comparedShape);
-			System.out.println(comparedShape.getName() + "is being compared!");
 			if(comparedShape.getName().equals(shapeAnnotation.getName())) {
 				System.out.println("has the same name!");
 			} else if(comparedBoundingBox.intersects(boundingBox) && 
@@ -308,7 +310,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			double yCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
 			double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH));
 			double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT));
-		//System.out.println(xCoordinate + " ... " + yCoordinate + " " + width + " X " + height+" is for initializing");
 			annotationBoundingBox.put(shapeAnnotation, new Rectangle2D.Double(
 					xCoordinate, yCoordinate, width, height));
 		}

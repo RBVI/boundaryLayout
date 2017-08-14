@@ -122,14 +122,26 @@ public class BoundaryTree {
 		}
 	}
 
+	/*
+	 * @return a list of the largest rectangles which are leaves
+	 * 
+	 * Method call to preorder which does a recursive preorder search and gets
+	 * a list of the largest areas which is put into bTree variable
+	 * */
 	public List<Rectangle2D.Double> getLargestAreas() {
 		List<Rectangle2D.Double> bTree = new ArrayList<>();
 		preorder(bTree, root);
 		return bTree;
 	}
 
-	public void preorder(List<Rectangle2D.Double> areas, BoundaryTreeNode bNode)
-	{
+	/*
+	 * @param List<Rectangle2D.Double> areas holds the largest area rectangle
+	 * leaves in the tree
+	 * @param BoundaryTreeNode bNode is the node currently being traversed
+	 * 
+	 * preorder does a preorder search of the tree and only looks at the leaves
+	 * */
+	public void preorder(List<Rectangle2D.Double> areas, BoundaryTreeNode bNode) {
 		if(bNode == null) 
 			return;
 		if(!bNode.hasChildren()) {
