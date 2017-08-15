@@ -257,8 +257,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if(!applySpecialInitialization.isEmpty()) {
 			Rectangle2D.Double thisBoundingBox = annotationBoundingBox.get(shapeAnnotation);
 			if(shapeAnnotation.getShapeType().equals("Ellipse")) {
-				double width = Math.sqrt(thisBoundingBox.getWidth() / 2) * 2;
-				double height = Math.sqrt(thisBoundingBox.getHeight() / 2) * 2;
+				double width = Math.sqrt(2 * thisBoundingBox.getWidth());
+				double height = Math.sqrt(2 * thisBoundingBox.getHeight());
 				double x = thisBoundingBox.getX() + ((thisBoundingBox.getWidth() - width) / 2);
 				double y = thisBoundingBox.getY() + ((thisBoundingBox.getHeight() - height) / 2);
 				thisBoundingBox = new Rectangle2D.Double(x, y, width, height);
