@@ -8,6 +8,7 @@ public class BoundaryContainsAlgorithm {
 	public static List<Rectangle2D.Double> doAlgorithm(Rectangle2D.Double thisShape, 
 			List<Rectangle2D.Double> containedShapes) {
 		List<Rectangle2D.Double> largestAreas = new ArrayList<>();
+		
 		BoundaryTree shapeTree = new BoundaryTree(new BoundaryTreeNode(thisShape));
 		
 		while(!containedShapes.isEmpty()) {

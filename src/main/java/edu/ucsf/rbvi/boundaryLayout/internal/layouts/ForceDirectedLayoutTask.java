@@ -62,7 +62,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			final UndoSupport undo) {
 		super(displayName, netView, nodesToLayOut, layoutAttribute, undo);
 
-		if (nodesToLayOut.size() > 0)
+		if (nodesToLayOut != null && nodesToLayOut.size() > 0)
 			nodeViewList = new ArrayList<>(nodesToLayOut);
 		else
 			nodeViewList = new ArrayList<>(netView.getNodeViews());
@@ -81,7 +81,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 		shapeAnnotations = getShapeAnnotations();
 		if (shapeAnnotations == null) 
-			shapeAnnotations = AutoMode.createAnnotations(netView, nodesToLayOut, layoutAttribute, registrar);
+			shapeAnnotations = AutoMode.createAnnotations(netView, nodeViewList, layoutAttribute, registrar);
 
 		forceItems = new HashMap<CyNode, ForceItem>();
 	}
@@ -236,7 +236,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 * is.
 	 * */
 	private Point2D.Double getAnnotationCenter(ShapeAnnotation shapeAnnotation) { 
-		Rectangle2D boundingBox = getShapeBoundingBox(shapeAnnotation);
+		Rectangle2D.Double boundingBox = getShapeBoundingBox(shapeAnnotation);
 		double xCenter = boundingBox.getX() + boundingBox.getWidth() / 2.0;
 		double yCenter = boundingBox.getY() + boundingBox.getHeight() / 2.0;
 		return new Point2D.Double(xCenter, yCenter);
@@ -255,6 +255,14 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		double xPos = boundingBox.getX() + boundingBox.getWidth() / 2.0;
 		double yPos = boundingBox.getY() + boundingBox.getHeight() / 2.0;
 		if(!applySpecialInitialization.isEmpty()) {
+			Rectangle2D.Double thisBoundingBox = annotationBoundingBox.get(shapeAnnotation);
+			if(shapeAnnotation.getShapeType().equals("Ellipse")) {
+				double width = Math.sqrt(thisBoundingBox.getWidth() / 2) * 2;
+				double height = Math.sqrt(thisBoundingBox.getHeight() / 2) * 2;
+				double x = thisBoundingBox.getX() + ((thisBoundingBox.getWidth() - width) / 2);
+				double y = thisBoundingBox.getY() + ((thisBoundingBox.getHeight() - height) / 2);
+				thisBoundingBox = new Rectangle2D.Double(x, y, width, height);
+			}
 			applySpecialInitialization = BoundaryContainsAlgorithm.doAlgorithm(
 					annotationBoundingBox.get(shapeAnnotation), applySpecialInitialization);
 			Random rand = new Random();

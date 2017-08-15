@@ -25,7 +25,8 @@ import org.cytoscape.view.model.View;
 */
 public class AutoMode {
 	public static Map<Object, ShapeAnnotation> createAnnotations(CyNetworkView netView, 
-			Set<View<CyNode>> nodesToLayout, String categoryColumn, CyServiceRegistrar registrar) {	
+			List<View<CyNode>> nodesToLayout, String categoryColumn, CyServiceRegistrar registrar) {	
+		System.out.println("Auto!");
 		AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
 				AnnotationFactory.class, "(type=ShapeAnnotation.class)");
 		AnnotationManager annotationManager = registrar.getService(
@@ -67,33 +68,40 @@ public class AutoMode {
 		int categoryNamesIndex = 0;
 		double x = 0.0;
 		double y = 0.0;
-		int numRows = (int) Math.sqrt(categoryLists.size());
 		int numCols = (int) Math.sqrt(categoryLists.size()) + 1;
 
-		for (int i = 0; i < numRows; i++ ) {
-			for (int j = 0; j < numCols; j++ ) {
-				Map<String, String> argMap = new HashMap<>();
-				argMap.put(ShapeAnnotation.NAME, "" + 
-						categoryLists.get(categoryNames.get(categoryNamesIndex)));
-				argMap.put(ShapeAnnotation.X, "" + x);
-				argMap.put(ShapeAnnotation.Y, "" + y);
-				argMap.put(ShapeAnnotation.Z, "");
-				argMap.put(ShapeAnnotation.WIDTH, "" + maxDimensions.getX());
-				argMap.put(ShapeAnnotation.HEIGHT, "" + maxDimensions.getY());
-				argMap.put(ShapeAnnotation.SHAPETYPE, "Rounded Rectangle");
-				Annotation addedShape = shapeFactory.createAnnotation(
-						ShapeAnnotation.class, netView, argMap);
-				annotationManager.addAnnotation(addedShape);
-				x += maxDimensions.getX();
+		while(categoryNamesIndex < categoryLists.size()) {
+			Map<String, String> argMap = new HashMap<>();
+			argMap.put(ShapeAnnotation.NAME, "" + 
+					categoryLists.get(categoryNames.get(categoryNamesIndex)));
+			argMap.put(ShapeAnnotation.X, "" + x);
+			argMap.put(ShapeAnnotation.Y, "" + y);
+			argMap.put(ShapeAnnotation.Z, "");
+			argMap.put(ShapeAnnotation.WIDTH, "" + maxDimensions.getX());
+			argMap.put(ShapeAnnotation.HEIGHT, "" + maxDimensions.getY());
+			argMap.put(ShapeAnnotation.SHAPETYPE, "Rounded Rectangle");
+			Annotation addedShape = shapeFactory.createAnnotation(
+					ShapeAnnotation.class, netView, argMap);
+			annotationManager.addAnnotation(addedShape);
+			addedShape.update();
+			x += maxDimensions.getX() + 100;
+			categoryNamesIndex++;
+			if(categoryNamesIndex % numCols == 0) {
+				x = 0.0;
+				y += maxDimensions.getY() + 100;
 			}
-			x = 0;
-			y += maxDimensions.getY();
-		}			
+		}		
+		
+		netView.updateView();
 
 		Map<Object, ShapeAnnotation> shapeAnnotations = new HashMap<>();
 
 		initShapeAnnotations(shapeAnnotations, annotationManager, netView);
 
+		for(ShapeAnnotation shapeAnnotation : shapeAnnotations.values()) {
+			System.out.println(shapeAnnotation.getName());
+		}
+		
 		return shapeAnnotations;
 	}
 
@@ -108,11 +116,14 @@ public class AutoMode {
 	 * */
 	private static void initShapeAnnotations(Map<Object, ShapeAnnotation> shapeAnnotations, 
 			AnnotationManager annotationManager, CyNetworkView netView) {
+		System.out.println("init!");
 		List<Annotation> annotations = annotationManager.getAnnotations(netView);
 		if(annotations != null) {
 			for(Annotation annotation : annotations)
 				if(annotation instanceof ShapeAnnotation) {
+					System.out.println("instance of shape annotation!");
 					ShapeAnnotation shapeAnnotation = (ShapeAnnotation) annotation;
+					shapeAnnotation.setName(shapeAnnotation.getArgMap().get(ShapeAnnotation.NAME));
 					shapeAnnotations.put(shapeAnnotation.getName(), shapeAnnotation);
 				}
 		}
@@ -127,6 +138,7 @@ public class AutoMode {
 	 * This is used to create shapes of the same size
 	 * */
 	private static Point2D.Double getMaxDimensions(Map<Object, Point2D.Double> dimensions) { 
+		System.out.println("max dimensions!");
 		Point2D.Double maxDimensions = new Point2D.Double();
 
 		for(Point2D.Double thisDimensions : dimensions.values()) {
