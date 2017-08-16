@@ -8,7 +8,7 @@ public class EllipseWallForce extends AbstractForce {
 	public static final int GRAVITATIONAL_CONST = 0;
 
 	private Point2D.Double center;
-	private Point2D.Double r;
+	private Point2D.Double dimensions;
 
 	/**
 	 * Create a new CircularWallForce.
@@ -23,7 +23,7 @@ public class EllipseWallForce extends AbstractForce {
 	{
 		params = new float[] { gravConst };
 		this.center = center;
-		this.r = r;
+		this.dimensions = r;
 	}
 
 	/**
@@ -49,65 +49,88 @@ public class EllipseWallForce extends AbstractForce {
 
 	@Override
 	protected String[] getParameterNames() {
-		// TODO Auto-generated method stub
 		return pnames;
 	}
 
 	public void getForce(ForceItem item) {
-		float[] n = item.location; //current location of forceitem
-		float dx = ((float) center.getX()) - n[0];
-		float dy = ((float) center.getX()) - n[1];
-
-		if ( dx == 0.0 && dy == 0.0 ) {
-			dx = ((float) Math.random() - 0.5f) / 50.0f;
-			dy = ((float) Math.random() - 0.5f) / 50.0f;
+		float[] itemLocation = item.location;
+		float dx = ((float) center.getX()) - itemLocation[0];
+		float dy = ((float) center.getY()) - itemLocation[1];
+		if ( dx == 0.0 && dy == 0.0) {
+			dx = getRandDisplacement();
+			dy = getRandDisplacement();
 		}
 
-		float rX = (float) r.getX();
-		float rY = (float) r.getY();
+		//initialize dimensions and displacements
+		float xAxisWidth = (float) this.dimensions.getX();
+		float yAxisHeight = (float) this.dimensions.getY();
 		
-		float fociC = (float)(Math.sqrt((rX * rX) - (rY * rY))); 
+		double xFormula = 1 - (Math.pow(Math.abs(dy), 2) 
+				/ Math.pow(Math.abs(yAxisHeight), 2));
+		double yFormula = 1 - (Math.pow(Math.abs(dx), 2) 
+				/ Math.pow(Math.abs(xAxisWidth), 2));
+		int cX = (xFormula < 0 ? -1 : 1);
+		int cY = (yFormula < 0 ? -1 : 1);
 
-		float foci1Dist = 0.0f;
+		if(cX + cY != 2)
+			return;
+		
+		float drLeft = (xAxisWidth / 2) - dx;
+		float drTop = (yAxisHeight / 2) - dy;
+		float drRight = xAxisWidth - drLeft; 
+		float drBottom = yAxisHeight - drTop;
+		if(xFormula < 0 || yFormula < 0) {
+			float dxBoundingLeft = (xAxisWidth / 2) - xAxisWidth * 
+					(float) Math.abs(1 - (Math.pow(Math.abs(dy), 2) 
+					/ Math.pow(Math.abs(yAxisHeight), 2)));
+			float dyBoundingTop = (yAxisHeight / 2) - yAxisHeight * 
+					(float) Math.abs(1 - (Math.pow(Math.abs(dx), 2) 
+					/ Math.pow(Math.abs(xAxisWidth), 2)));
+			drLeft = (xAxisWidth / 2) - dx - dxBoundingLeft;
+			drTop = (yAxisHeight / 2) - dy - dyBoundingTop;
+			drRight = xAxisWidth - drLeft - 2 * dxBoundingLeft; 
+			drBottom = yAxisHeight - drTop - 2 * dyBoundingTop;
+		}
 
-		float height = 2 * rY;
-		float width = 2 * rX;
+		//	System.out.println("Node position: "+n[0]+","+n[1]);
+		//	System.out.println("Annotation center: "+center.getX()+","+center.getY());
+		//	System.out.println("drLeft: "+drLeft+", drTop: "+drTop+", drRight: "+drRight+", drBottom: "+drBottom);
 
-		float cX = 0.0f;
-		float cY = 0.0f;
+		//initialize orientation of shape
 
-		if (width > height) {
-			float foci1X = ((float) center.getX()) + fociC;     
-			float foci2X = ((float) center.getX()) - fociC;
-			float fociY = ((float) center.getY()); 	
-			foci1Dist = (float)(Math.sqrt(Math.pow((n[0] - foci1X), 2)) + Math.pow(n[1] - fociY, 2));
+		float vLeft = -cX * params[GRAVITATIONAL_CONST] * item.mass / (drLeft * drLeft);
+		float vTop = -cY * params[GRAVITATIONAL_CONST] * item.mass / (drTop * drTop);
+		float vRight = cX * params[GRAVITATIONAL_CONST] * item.mass / (drRight * drRight);
+		float vBottom = cY * params[GRAVITATIONAL_CONST] * item.mass / (drBottom * drBottom);
 
-			float drLeft = foci1X - n[0];
-			float drRight = foci2X - n[0];
-
-			cX =  drLeft > foci1Dist ? -1 : 1;  
-
-			float vLeft =  -cX * params[GRAVITATIONAL_CONST] * item.mass / (drLeft * drLeft); 
-			float vRight = cX * params[GRAVITATIONAL_CONST] * item.mass / (drRight * drRight); 
-
+		if(cX + cY == -2) {//case where the node is outside the corner of the shape
+			float xPlaneDimensions = (float) (dx > 0 ? -dimensions.getX() : dimensions.getX());
+			float yPlaneDimensions = (float) (dy > 0 ? -dimensions.getY() : dimensions.getY());
+			float xCorner = (float) center.getX() + xPlaneDimensions;
+			float yCorner = (float) center.getY() + yPlaneDimensions;
+			float dxCorner = itemLocation[0] - xCorner;
+			float dyCorner = itemLocation[1] - yCorner;
+			float dCorner = (float) Math.sqrt(Math.pow(dxCorner, 2) + Math.pow(dyCorner, 2));
+			float vCorner = params[GRAVITATIONAL_CONST] * item.mass / (dCorner * dCorner * dCorner);
+			float vxCorner = vCorner * dxCorner;
+			float vyCorner = vCorner * dyCorner;
+			item.force[0] += vxCorner;
+			item.force[1] += vyCorner;
+		} else if(cX == -1) {//case where the node is within the x normal lines of the shape
 			item.force[0] += vLeft;
 			item.force[0] += vRight;
-		} else {
-			float foci1Y = ((float) center.getY()) + fociC;     
-			float foci2Y = ((float) center.getY()) - fociC;
-			float fociX = ((float) center.getX()); 	
-			foci1Dist = (float)(Math.sqrt(Math.pow((n[0] - fociX), 2)) + Math.pow(n[1] - foci1Y, 2));
-
-			float drUp = foci1Y - n[1];
-			float drDown = foci2Y - n[1];
-
-			cY =  drUp > foci1Dist ? -1 : 1;  
-
-			float vUp =  -cY * params[GRAVITATIONAL_CONST] * item.mass / (drUp * drUp); 
-			float vDown = cY * params[GRAVITATIONAL_CONST] * item.mass / (drDown * drDown); 
-
-			item.force[1] += vUp;
-			item.force[1] += vDown;		
+		} else if(cY == -1) {//case where the node is within the y normal lines of the shape
+			item.force[1] += vTop;
+			item.force[1] += vBottom;
+		} else {//case where the node is completely inside the shape
+			item.force[0] += vLeft;
+			item.force[1] += vTop;
+			item.force[0] += vRight;
+			item.force[1] += vBottom;
 		}
+	}
+
+	private float getRandDisplacement() {
+		return ((float)Math.random() - 0.5f) / 50.0f;
 	}
 }

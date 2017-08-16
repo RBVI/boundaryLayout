@@ -209,12 +209,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					annotationDimensions, context.wallGravitationalConstant));
 			break;
 		case "Ellipse":
-			if(annotationDimensions.getX() == annotationDimensions.getY())
-				m_fsim.addForce(new CircularWallForce(annotationCenter, 
-						(float) annotationDimensions.getX(), context.wallGravitationalConstant));
-			else 
-				m_fsim.addForce(new EllipseWallForce(annotationCenter, 
-						annotationDimensions, context.wallGravitationalConstant));
+			m_fsim.addForce(new EllipseWallForce(annotationCenter, 
+					annotationDimensions, context.wallGravitationalConstant));
 			break;
 		}
 	}
@@ -330,14 +326,14 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private Rectangle2D.Double getShapeBoundingBox(ShapeAnnotation shapeAnnotation) {
 		return annotationBoundingBox.get(shapeAnnotation);
 	}
-	
+
 	private static boolean contains(Rectangle2D.Double thisRectangle, 
 			Rectangle2D.Double containedRectangle) {
 		return (thisRectangle.getX() < containedRectangle.getX() && 
 				thisRectangle.getX() + thisRectangle.getWidth() >
-				containedRectangle.getX() + containedRectangle.getWidth() &&
-				thisRectangle.getY() < containedRectangle.getY() && 
-				thisRectangle.getY() + thisRectangle.getHeight() >
-				containedRectangle.getY() + containedRectangle.getHeight());
+		containedRectangle.getX() + containedRectangle.getWidth() &&
+		thisRectangle.getY() < containedRectangle.getY() && 
+		thisRectangle.getY() + thisRectangle.getHeight() >
+		containedRectangle.getY() + containedRectangle.getHeight());
 	}
 }
