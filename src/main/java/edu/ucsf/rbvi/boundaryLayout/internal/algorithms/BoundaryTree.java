@@ -1,9 +1,9 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.algorithms;
 
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.PriorityQueue;
 import java.util.Queue;
 
 public class BoundaryTree {
@@ -33,16 +33,18 @@ public class BoundaryTree {
 	 * */
 	public List<BoundaryTreeNode> find(Rectangle2D.Double partitioningRectangle) {
 		List<BoundaryTreeNode> intersectedNodes = new ArrayList<>();
-		Queue<BoundaryTreeNode> findQueue = new PriorityQueue<>();
+		Queue<BoundaryTreeNode> findQueue = new ArrayDeque<>();
 		findQueue.add(root);
+		int i = 0;
 
 		while(!findQueue.isEmpty()) {
 			BoundaryTreeNode thisNode = findQueue.poll();
+			System.out.println(thisNode.entry.getX() + "," + thisNode.entry.getY() + " for " + (i++));
 			if(thisNode.entry.intersects(partitioningRectangle)) {//if statement theoretically not needed 
 				if(thisNode.hasChildren()) {
 					for(BoundaryTreeNode childNode : thisNode.children.values())
 						if(childNode != null)
-							if(childNode.entry.intersects(partitioningRectangle))
+							if(childNode.entry.intersects(partitioningRectangle)) 
 								findQueue.add(childNode);
 				}
 				else {

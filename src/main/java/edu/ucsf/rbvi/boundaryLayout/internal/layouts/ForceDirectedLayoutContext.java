@@ -53,11 +53,11 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	@Tunable(description="Avoid overlapping nodes (y/n)",
 	         groups={"Layout Parameters"},gravity=9.0,	
 			tooltip="Apply a force to minimize node overlap")
-	public boolean avoidOverlap = false;
+	public boolean avoidOverlap = true;
 
 	@Tunable(description="Force to apply to avoid node overlap",
 	         groups={"Layout Parameters"},gravity=10.0)
-	public float overlapForce = 100000.0f;
+	public float overlapForce = 0.82f;
 	
 	@Tunable(description="Strength of boundaries", gravity=11.0)
 	public float wallGravitationalConstant = -12.0f;

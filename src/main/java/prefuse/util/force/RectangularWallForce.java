@@ -114,6 +114,6 @@ public class RectangularWallForce extends AbstractForce {
 	}
 
 	private float getRandDisplacement() {
-		return ((float)Math.random() - 0.5f) / 50.0f;
+		return ((float)Math.random() - 1f) / 50.0f;
 	}
 }
