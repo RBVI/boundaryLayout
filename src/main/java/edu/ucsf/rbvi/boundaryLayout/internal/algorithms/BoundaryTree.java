@@ -35,11 +35,9 @@ public class BoundaryTree {
 		List<BoundaryTreeNode> intersectedNodes = new ArrayList<>();
 		Queue<BoundaryTreeNode> findQueue = new ArrayDeque<>();
 		findQueue.add(root);
-		int i = 0;
 
 		while(!findQueue.isEmpty()) {
 			BoundaryTreeNode thisNode = findQueue.poll();
-			System.out.println(thisNode.entry.getX() + "," + thisNode.entry.getY() + " for " + (i++));
 			if(thisNode.entry.intersects(partitioningRectangle)) {//if statement theoretically not needed 
 				if(thisNode.hasChildren()) {
 					for(BoundaryTreeNode childNode : thisNode.children.values())
@@ -74,22 +72,24 @@ public class BoundaryTree {
 	 * This method adds children to the tree corresponding to the newly added
 	 * rectangle.
 	 * */
-	public void do2DShapePartitioning(List<BoundaryTreeNode> 
-	intersectedNodes, Rectangle2D.Double partitioningRectangle) {
+	public void do2DShapePartitioning(List<BoundaryTreeNode> intersectedNodes, 
+			Rectangle2D.Double partitioningRectangle) {
 		for(BoundaryTreeNode intersectedNode : intersectedNodes) {
 			Rectangle2D.Double intersectedNodeRectangle = intersectedNode.entry;
 			//index 0 represents the left side of the rectangle, rotating clockwise
 			BoundaryTreeNode[] partitionChildren = new BoundaryTreeNode[4];
+			for(BoundaryTreeNode boundaryNode : partitionChildren)
+				boundaryNode = null;
 			double distanceFromLeft = partitioningRectangle.getX() - 
 					intersectedNodeRectangle.getX();
 			double distanceFromTop = partitioningRectangle.getY() - 
 					intersectedNodeRectangle.getY();
 			double distanceFromRight = 
-					(intersectedNodeRectangle.getX() + intersectedNodeRectangle.width) - 
-					(partitioningRectangle.getX() + partitioningRectangle.width);
+					(intersectedNodeRectangle.getX() + intersectedNodeRectangle.getWidth()) - 
+					(partitioningRectangle.getX() + partitioningRectangle.getWidth());
 			double distanceFromBottom = 
-					(intersectedNodeRectangle.getY() + intersectedNodeRectangle.height) -
-					(partitioningRectangle.getY() + partitioningRectangle.height);
+					(intersectedNodeRectangle.getY() + intersectedNodeRectangle.getHeight()) -
+					(partitioningRectangle.getY() + partitioningRectangle.getHeight());
 			if(distanceFromLeft > 0) {//left
 				Rectangle2D.Double leftRectangle = new Rectangle2D.Double(
 						intersectedNodeRectangle.getX(), intersectedNodeRectangle.getY(), 
@@ -147,16 +147,35 @@ public class BoundaryTree {
 		if(bNode == null) 
 			return;
 		if(!bNode.hasChildren()) {
-			double area = bNode.entry.getWidth() * bNode.entry.getHeight();
-			if(areas.size() > 4) {
-				for(Rectangle2D.Double comparedArea : areas)
-					if(area > comparedArea.getWidth() * comparedArea.getHeight()) 
-						comparedArea = bNode.entry;
-			}
+			System.out.println("For leaf: " + (bNode.entry.getWidth() * bNode.entry.getHeight()));
+			if(areas.size() > 2)
+				changeMinimum(areas, bNode.entry);
 			else 
 				areas.add(bNode.entry);
-		} else 
+		} else {
+			System.out.println("For non-leaf: " + 
+					(bNode.entry.getWidth() * bNode.entry.getHeight()));
 			for(BoundaryTreeNode childNode : bNode.children.values())
 				preorder(areas, childNode);
+		}
+	}
+
+	private static void changeMinimum(List<Rectangle2D.Double> areas, 
+			Rectangle2D.Double leafAreaRectangle) {
+		int minAreaIndex = 0;
+		Rectangle2D.Double minAreaRectangle = areas.get(minAreaIndex);
+		for(int i = 1; i < areas.size(); i++) {
+			Rectangle2D.Double thisAreaRectangle = areas.get(i);
+			if(minAreaRectangle.getHeight() * minAreaRectangle.getWidth() > 
+			thisAreaRectangle.getHeight() * thisAreaRectangle.getWidth()) {
+				minAreaIndex = i;
+				minAreaRectangle = thisAreaRectangle;
+			}
+		}
+
+		if(minAreaRectangle.getHeight() * minAreaRectangle.getWidth() < 
+				leafAreaRectangle.getHeight() * leafAreaRectangle.getWidth()) {
+			areas.set(minAreaIndex, leafAreaRectangle);
+		}
 	}
 }

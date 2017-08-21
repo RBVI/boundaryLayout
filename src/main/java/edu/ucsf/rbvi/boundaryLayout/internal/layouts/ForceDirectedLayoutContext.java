@@ -29,10 +29,8 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	@ContainsTunables
 	public EdgeWeighter edgeWeighter = new EdgeWeighter();
 	
-	@Tunable(description="Number of Iterations:", gravity=4.0, groups={"Layout Parameters"},
-			tooltip="The number of iterations to run the algorithm. The higher the "+
-			"number, the better the accuracy yet longer run-time (1000 is recommended).")
-	public int numIterations = 1000;
+	@Tunable(description="Number of Iterations:", gravity=4.0, groups={"Layout Parameters"})
+	public int numIterations = 290;
 
 	@Tunable(description="Default Spring Coefficient",
 			tooltip="The smaller this number is, the more the network "+

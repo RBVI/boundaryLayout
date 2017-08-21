@@ -1,5 +1,7 @@
 package prefuse.util.force;
 
+import java.awt.geom.Point2D;
+
 /**
  * Represents a point particle in a force simulation, maintaining values for
  * mass, forces, velocity, and position.
@@ -20,6 +22,8 @@ public class ForceItem implements Cloneable {
         k = new float[4][2];
         l = new float[4][2];
         dimensions = new float[]{0.f, 0.f};
+        category = new Object();
+        coords = new Point2D.Double();
     }
     
     /**
@@ -57,6 +61,10 @@ public class ForceItem implements Cloneable {
     public float[][] l;
     
     public float[] dimensions;
+    
+    public Object category;
+    
+    public Point2D.Double coords;
     
     /**
      * Checks a ForceItem to make sure its values are all valid numbers
