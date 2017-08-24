@@ -116,6 +116,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 
 	@Override
 	public void handleEvent(SetCurrentNetworkEvent ev) {
-		setColumnTunables(ev.getNetwork());
+		if (ev.getNetwork() != null)
+			setColumnTunables(ev.getNetwork());
 	}
 }
