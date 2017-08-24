@@ -35,8 +35,6 @@ import prefuse.util.force.NBodyForce;
 import prefuse.util.force.RectangularWallForce;
 import prefuse.util.force.SpringForce;
 
-//TO DO: (1) AutoMode, (2) line 111 to sort nodes, (3) test on data
-
 public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 	private ForceDirectedLayout.Integrators integrator;
@@ -136,10 +134,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					Point2D.Double initPosition = getNodeLocation(shapeAnnotations.get(group));
 					fitem.location[0] = (float) initPosition.getX(); 
 					fitem.location[1] = (float) initPosition.getY(); 
-					fitem.coords.setLocation(new Point2D.Double((double) 
-							fitem.location[0], (double) fitem.location[1]));
-					System.out.println("For group: " + group);
-					System.out.println(fitem.coords);
 				}
 			}
 
@@ -164,28 +158,19 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					(float) context.defaultSpringLength); 
 		}
 
+		final int checkCenter = (context.numIterations / 10) + 1;
+		
 		// perform layout
 		long timestep = 1000L;
 		for ( int i = 0; i < context.numIterations && !cancelled; i++ ) {
 			timestep *= (1.0 - i/(double)context.numIterations);
-			long step = timestep+50;
+			long step = timestep + 50;
 			m_fsim.runSimulator(step);
-			/*Iterator itemsIterator = m_fsim.getItems();
-			while(itemsIterator.hasNext()) {
-				ForceItem nextItem = (ForceItem) itemsIterator.next();
-				ShapeAnnotation nextShape = shapeAnnotations.get(nextItem.category);
-				if(!annotationBoundingBox.get(nextShape).contains(nextItem.coords)) {
-					List<Point2D.Double> reInitializations = 
-							initializingNodeLocations.get(nextShape);
-					Point2D.Double reInitialize = 
-							reInitializations.get(RANDOM.nextInt(reInitializations.size()));
-					nextItem.coords.setLocation(reInitialize);
-					nextItem.location[0] = (float) reInitialize.getX();
-					nextItem.location[1] = (float) reInitialize.getY();
-				}
-			}*/
+			if(i % checkCenter == 0) 
+				checkCenter(m_fsim);
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
 		}
+		checkCenter(m_fsim);
 
 		// update positions
 		for (CyNode node : forceItems.keySet()) {
@@ -193,6 +178,26 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			View<CyNode> nodeView = netView.getNodeView(node);
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double)fitem.location[0]);
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double)fitem.location[1]);
+		}
+	}
+	
+	private void checkCenter(ForceSimulator m_fsim) {
+		Iterator itemsIterator = m_fsim.getItems();
+		while(itemsIterator.hasNext()) {
+			ForceItem nextItem = (ForceItem) itemsIterator.next();
+			ShapeAnnotation nextShape = shapeAnnotations.get(nextItem.category);
+			if(!annotationBoundingBox.get(nextShape).contains(new 
+					Point2D.Double((double) nextItem.location[0], 
+							(double) nextItem.location[1]))) {
+				List<Point2D.Double> reInitializations = 
+						initializingNodeLocations.get(nextShape);
+				Point2D.Double reInitialize = 
+						reInitializations.get(RANDOM.nextInt(reInitializations.size()));
+				nextItem.location[0] = (float) reInitialize.getX();
+				nextItem.location[1] = (float) reInitialize.getY();
+				nextItem.plocation[0] = nextItem.location[0];
+				nextItem.plocation[1] = nextItem.location[1];
+			}
 		}
 	}
 
@@ -229,11 +234,11 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		case "Rounded Rectangle":
 		case "Rectangle":
 			m_fsim.addForce(new RectangularWallForce(annotationCenter, 
-					annotationDimensions, context.wallGravitationalConstant));
+					annotationDimensions, -1 * context.wallGravitationalConstant));
 			break;
 		case "Ellipse":
 			m_fsim.addForce(new EllipseWallForce(annotationCenter, 
-					annotationDimensions, context.wallGravitationalConstant));
+					annotationDimensions, -1 * context.wallGravitationalConstant));
 			break;
 		}
 	}

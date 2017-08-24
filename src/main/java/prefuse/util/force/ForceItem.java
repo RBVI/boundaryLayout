@@ -23,7 +23,6 @@ public class ForceItem implements Cloneable {
         l = new float[4][2];
         dimensions = new float[]{0.f, 0.f};
         category = new Object();
-        coords = new Point2D.Double();
     }
     
     /**
@@ -63,9 +62,7 @@ public class ForceItem implements Cloneable {
     public float[] dimensions;
     
     public Object category;
-    
-    public Point2D.Double coords;
-    
+        
     /**
      * Checks a ForceItem to make sure its values are all valid numbers
      * (i.e., not NaNs).

@@ -58,7 +58,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	public float overlapForce = 0.82f;
 	
 	@Tunable(description="Strength of boundaries", gravity=11.0)
-	public float wallGravitationalConstant = -12.0f;
+	public float wallGravitationalConstant = 12.0f;
 
 	public ForceDirectedLayoutContext(CyServiceRegistrar registrar) {
 		super();
