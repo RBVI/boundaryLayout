@@ -37,7 +37,7 @@ public class AutoMode {
 		Map<Object, Point2D.Double> dimensions = new HashMap<>();
 		List<Object> categoryNames = new ArrayList<>();
 
-		double spacing = 40.0; 
+		double spacing = 110.0; 
 		double height = 0.0; 
 		double width = 0.0; 
 
