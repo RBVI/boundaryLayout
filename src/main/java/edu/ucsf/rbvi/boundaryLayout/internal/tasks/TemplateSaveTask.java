@@ -24,7 +24,7 @@ public class TemplateSaveTask extends AbstractTask {
 	final CyServiceRegistrar registrar;
 
 	@Tunable(description="File containing templates", params="input=true;fileCategory=unspecified")
-	public File bTemplates;
+	private File bTemplate;
 
 	public TemplateSaveTask(CyServiceRegistrar registrar, CyNetworkView networkView) {
 		super();
@@ -57,11 +57,11 @@ public class TemplateSaveTask extends AbstractTask {
 	}
 	
 	private void saveToFile(List<ShapeAnnotation> shapeAnnotations) throws IOException {
-		if(!bTemplates.exists())
-			bTemplates.createNewFile();
-		BufferedWriter bTempWriter = new BufferedWriter(new FileWriter(bTemplates.getAbsolutePath()));
+		if(!bTemplate.exists())
+			bTemplate.createNewFile();
+		BufferedWriter bTempWriter = new BufferedWriter(new FileWriter(bTemplate.getAbsolutePath()));
 		char shapeAnnotationIndex = 'a';
-		bTempWriter.write(bTemplates.getName());
+		//bTempWriter.write(bTemplate.getName());
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations) { 
 			bTempWriter.newLine();
 			bTempWriter.write("   " + (shapeAnnotationIndex++) + ") " + shapeAnnotation.getArgMap());
@@ -76,15 +76,15 @@ public class TemplateSaveTask extends AbstractTask {
 
 	/*private void saveToFile(List<ShapeAnnotation> shapeAnnotations) throws IOException {
 		templateName = "\"" + templateName + "\"";
-		if(!bTemplates.exists())
-			bTemplates.createNewFile();
-		BufferedWriter bTempWriter = new BufferedWriter(new FileWriter(bTemplates.getAbsolutePath()));
+		if(!bTemplate.exists())
+			bTemplate.createNewFile();
+		BufferedWriter bTempWriter = new BufferedWriter(new FileWriter(bTemplate.getAbsolutePath()));
 
 		List<String> tempLines = new ArrayList<>();
 		boolean isOverWritten = checkOverwrite(tempLines);
-		File newBTemplates = new File("temp.txt");
-		newBTemplates.renameTo(bTemplates);
-		bTemplates.delete();
+		File newbTemplate = new File("temp.txt");
+		newbTemplate.renameTo(bTemplate);
+		bTemplate.delete();
 		if(tempLines.get(0).equals(""))
 			tempLines.add(templateName + ",");
 
@@ -117,7 +117,7 @@ public class TemplateSaveTask extends AbstractTask {
 	}
 
 	private boolean checkOverwrite(List<String> templateLines) throws IOException {
-		templateLines = getFileLines(bTemplates);
+		templateLines = getFileLines(bTemplate);
 		if(templateLines.get(0).contains(templateName)) 
 			for(int lineIndex = 0; lineIndex < templateLines.size(); lineIndex++) 
 					if(templateLines.get(lineIndex).charAt(0) == '\"' && 

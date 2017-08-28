@@ -62,14 +62,12 @@ public class CyActivator extends AbstractCyActivator {
 		templateSaveProps.setProperty(MENU_GRAVITY, "1");
 		registerService(bc, templateSaveFactory, NetworkViewTaskFactory.class, templateSaveProps);
 		
-		/*final BasicCyFileFilter templateLoadFilter = new BasicCyFileFilter(new String[] { "mat" },
-                new String[] { "application/text" }, "Adjacency Matrix Reader", DataCategory.NETWORK, streamUtil);
-		InputStreamTaskFactory templateLoadFactory = new TemplateLoad(registrar, templateLoadFilter);
+		TaskFactory templateLoadFactory = new TemplateLoad(registrar);
 		Properties templateLoadProps = new Properties();
 		templateSaveProps.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
 		templateSaveProps.setProperty(TITLE, "Load Template");
 		templateSaveProps.setProperty(IN_MENU_BAR, "true");
 		templateSaveProps.setProperty(MENU_GRAVITY, "2");
-		registerService(bc, templateLoadFactory, InputStreamTaskFactory.class, templateLoadProps);*/
+		registerService(bc, templateLoadFactory, TaskFactory.class, templateLoadProps);
 	}
 }
