@@ -61,7 +61,9 @@ public class TemplateSaveTask extends AbstractTask {
 			bTemplates.createNewFile();
 		BufferedWriter bTempWriter = new BufferedWriter(new FileWriter(bTemplates.getAbsolutePath()));
 		char shapeAnnotationIndex = 'a';
-
+		
+		/*ADD: Overwriting a previous save*/
+		
 		bTempWriter.write("\"" + templateName + "\"");
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations) { 
 			bTempWriter.newLine();
