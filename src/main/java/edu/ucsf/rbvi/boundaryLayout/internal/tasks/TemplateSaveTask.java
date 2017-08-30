@@ -24,7 +24,7 @@ public class TemplateSaveTask extends AbstractTask {
 	final CyServiceRegistrar registrar;
 
 	@Tunable(description="File containing templates", params="input=true;fileCategory=unspecified")
-	private File bTemplate;
+	public File bTemplate;
 
 	public TemplateSaveTask(CyServiceRegistrar registrar, CyNetworkView networkView) {
 		super();
@@ -57,14 +57,16 @@ public class TemplateSaveTask extends AbstractTask {
 	}
 	
 	private void saveToFile(List<ShapeAnnotation> shapeAnnotations) throws IOException {
+		if(shapeAnnotations == null || bTemplate == null)
+			return;
 		if(!bTemplate.exists())
 			bTemplate.createNewFile();
 		BufferedWriter bTempWriter = new BufferedWriter(new FileWriter(bTemplate.getAbsolutePath()));
 		char shapeAnnotationIndex = 'a';
 		//bTempWriter.write(bTemplate.getName());
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations) { 
-			bTempWriter.newLine();
 			bTempWriter.write("   " + (shapeAnnotationIndex++) + ") " + shapeAnnotation.getArgMap());
+			bTempWriter.newLine();
 		}
 		try {
 			bTempWriter.close();

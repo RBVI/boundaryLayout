@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 import org.cytoscape.service.util.CyServiceRegistrar;
+import org.cytoscape.task.AbstractNetworkViewTask;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.annotations.Annotation;
 import org.cytoscape.view.presentation.annotations.AnnotationFactory;
@@ -21,38 +22,41 @@ import org.cytoscape.work.Tunable;
 
 public class TemplateLoadTask extends AbstractTask {	
 	final CyServiceRegistrar registrar;
-	
+	final CyNetworkView netView;
+
 	@Tunable(description = "Choose the template text file to import")
-	private File bTemplate;
-	
-	public TemplateLoadTask(CyServiceRegistrar registrar) {
+	public File bTemplate;
+
+	public TemplateLoadTask(CyServiceRegistrar registrar, CyNetworkView netView) {
 		super();
+		this.netView = netView;
 		this.registrar = registrar;
 	}
 
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {	
+		if(!bTemplate.exists())
+			return;
 		AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
 				AnnotationFactory.class, "(type=ShapeAnnotation.class)");
 		AnnotationManager annotationManager = registrar.getService(
 				AnnotationManager.class);	
-		CyNetworkView netView = registrar.getService(CyNetworkView.class);
-		if(!bTemplate.exists())
-			return;
 		Scanner templateScanner = new Scanner(new BufferedReader(new 
 				FileReader(bTemplate.getAbsolutePath())));
 		List<String> shapeAnnotationLines = new ArrayList<>();
-		
+
 		while(templateScanner.hasNext()) 
 			shapeAnnotationLines.add(templateScanner.nextLine());
 		templateScanner.close();
-		
+
 		for(String shapeAnnotationArgs : shapeAnnotationLines) {
 			String[] argsArray = shapeAnnotationArgs.substring(
-					shapeAnnotationArgs.indexOf(')') + 3).split(", ");
+					shapeAnnotationArgs.indexOf(')') + 3, 
+					shapeAnnotationArgs.length() - 1).split(", ");
 			Map<String, String> argMap = new HashMap<>();
 			for(String arg : argsArray) {
 				String[] keyValuePair = arg.split("=");
+				System.out.println(keyValuePair[0] + "=" + keyValuePair[1]);
 				argMap.put(keyValuePair[0], keyValuePair[1]);
 			}
 			Annotation addedShape = shapeFactory.createAnnotation(
@@ -61,5 +65,6 @@ public class TemplateLoadTask extends AbstractTask {
 			annotationManager.addAnnotation(addedShape);
 			addedShape.update();
 		}
+		netView.updateView();
 	}
 }

@@ -19,6 +19,7 @@ import org.cytoscape.io.read.InputStreamTaskFactory;
 import org.cytoscape.io.util.StreamUtil;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
+import org.cytoscape.task.NetworkTaskFactory;
 import org.cytoscape.task.NetworkViewTaskFactory;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
 import org.cytoscape.work.TaskFactory;
@@ -38,7 +39,6 @@ public class CyActivator extends AbstractCyActivator {
 	public void start(BundleContext bc) {
 		// See if we have a graphics console or not
 		boolean haveGUI = true;
-		final StreamUtil streamUtil = getService(bc, StreamUtil.class);
 		final CySwingApplication cyApplication = getService(bc, CySwingApplication.class);
 		final CyServiceRegistrar registrar = getService(bc, CyServiceRegistrar.class);
 				
@@ -47,27 +47,27 @@ public class CyActivator extends AbstractCyActivator {
 		
 		/* Layouts */
 		UndoSupport undoSupport = getService(bc, UndoSupport.class);
+		NetworkViewTaskFactory templateSaveFactory = new TemplateSave(registrar);
+		Properties templateSaveProps = new Properties();
+		templateSaveProps.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
+		templateSaveProps.setProperty(TITLE, "Save Template");
+		templateSaveProps.setProperty(IN_MENU_BAR, "true");
+		templateSaveProps.setProperty(MENU_GRAVITY, "1.0");
+		registerService(bc, templateSaveFactory, NetworkViewTaskFactory.class, templateSaveProps);
+		
+		NetworkViewTaskFactory templateLoadFactory = new TemplateLoad(registrar);
+		Properties templateLoadProps = new Properties();
+		templateLoadProps.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
+		templateLoadProps.setProperty(TITLE, "Load Template");
+		templateLoadProps.setProperty(IN_MENU_BAR, "true");
+		templateLoadProps.setProperty(MENU_GRAVITY, "2.0");
+		registerService(bc, templateLoadFactory, NetworkViewTaskFactory.class, templateLoadProps);
+		
 		CyLayoutAlgorithm forceDirectedLayoutAlgorithm = new ForceDirectedLayout(registrar, undoSupport);
 		Properties forceDirectedLayoutAlgorithmProps = new Properties();
 		forceDirectedLayoutAlgorithmProps.setProperty("preferredTaskManager", "menu");
 		forceDirectedLayoutAlgorithmProps.setProperty(TITLE, forceDirectedLayoutAlgorithmProps.toString());
 		forceDirectedLayoutAlgorithmProps.setProperty(MENU_GRAVITY, "20.1");
 		registerService(bc, forceDirectedLayoutAlgorithm, CyLayoutAlgorithm.class, forceDirectedLayoutAlgorithmProps);
-		
-		NetworkViewTaskFactory templateSaveFactory = new TemplateSave(registrar);
-		Properties templateSaveProps = new Properties();
-		templateSaveProps.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
-		templateSaveProps.setProperty(TITLE, "Save Template");
-		templateSaveProps.setProperty(IN_MENU_BAR, "true");
-		templateSaveProps.setProperty(MENU_GRAVITY, "1");
-		registerService(bc, templateSaveFactory, NetworkViewTaskFactory.class, templateSaveProps);
-		
-		TaskFactory templateLoadFactory = new TemplateLoad(registrar);
-		Properties templateLoadProps = new Properties();
-		templateSaveProps.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
-		templateSaveProps.setProperty(TITLE, "Load Template");
-		templateSaveProps.setProperty(IN_MENU_BAR, "true");
-		templateSaveProps.setProperty(MENU_GRAVITY, "2");
-		registerService(bc, templateLoadFactory, TaskFactory.class, templateLoadProps);
 	}
 }
