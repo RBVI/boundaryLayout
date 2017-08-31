@@ -21,6 +21,9 @@ import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateUse;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateDelete;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateExport;
+import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateImport;
+import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateNetworkRemove;
+import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateOverwrite;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSave;
 
 public class CyActivator extends AbstractCyActivator {
@@ -42,12 +45,20 @@ public class CyActivator extends AbstractCyActivator {
 		UndoSupport undoSupport = getService(bc, UndoSupport.class);
 		
 		/* Tasks */
+		TaskFactory templateImportFactory = new TemplateImport(templateManager);
+		Properties templateImportProperties = new Properties();
+		templateImportProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
+		templateImportProperties.setProperty(TITLE, "Import Template");
+		templateImportProperties.setProperty(IN_MENU_BAR, "true");
+		templateImportProperties.setProperty(MENU_GRAVITY, "1.0");
+		registerService(bc, templateImportFactory, TaskFactory.class, templateImportProperties);
+		
 		TaskFactory templateExportFactory = new TemplateExport(templateManager);
 		Properties templateExportProperties = new Properties();
 		templateExportProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
 		templateExportProperties.setProperty(TITLE, "Export Template");
 		templateExportProperties.setProperty(IN_MENU_BAR, "true");
-		templateExportProperties.setProperty(MENU_GRAVITY, "1.0");
+		templateExportProperties.setProperty(MENU_GRAVITY, "1.1");
 		registerService(bc, templateExportFactory, TaskFactory.class, templateExportProperties);
 		
 		NetworkViewTaskFactory templateSaveFactory = new TemplateSave(registrar, templateManager);
@@ -57,6 +68,14 @@ public class CyActivator extends AbstractCyActivator {
 		templateSaveProperties.setProperty(IN_MENU_BAR, "true");
 		templateSaveProperties.setProperty(MENU_GRAVITY, "0.9");
 		registerService(bc, templateSaveFactory, NetworkViewTaskFactory.class, templateSaveProperties);
+		
+		NetworkViewTaskFactory templateOverwriteFactory = new TemplateOverwrite(registrar, templateManager);
+		Properties templateOverwriteProperties = new Properties();
+		templateOverwriteProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
+		templateOverwriteProperties.setProperty(TITLE, "Overwrite Template");
+		templateOverwriteProperties.setProperty(IN_MENU_BAR, "true");
+		templateOverwriteProperties.setProperty(MENU_GRAVITY, "0.95");
+		registerService(bc, templateOverwriteFactory, NetworkViewTaskFactory.class, templateOverwriteProperties);
 		
 		NetworkViewTaskFactory templateUseFactory = new TemplateUse(templateManager);
 		Properties templateUseProperties = new Properties();
@@ -73,6 +92,14 @@ public class CyActivator extends AbstractCyActivator {
 		templateDeleteProperties.setProperty(IN_MENU_BAR, "true");
 		templateDeleteProperties.setProperty(MENU_GRAVITY, "3.0");
 		registerService(bc, templateDeleteFactory, TaskFactory.class, templateDeleteProperties);
+		
+		NetworkViewTaskFactory templateNetworkRemoveFactory = new TemplateNetworkRemove(templateManager);
+		Properties templateNetworkRemoveProperties = new Properties();
+		templateNetworkRemoveProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
+		templateNetworkRemoveProperties.setProperty(TITLE, "Remove Template from View");
+		templateNetworkRemoveProperties.setProperty(IN_MENU_BAR, "true");
+		templateNetworkRemoveProperties.setProperty(MENU_GRAVITY, "2.9");
+		registerService(bc, templateNetworkRemoveFactory, NetworkViewTaskFactory.class, templateNetworkRemoveProperties);
 		
 		CyLayoutAlgorithm forceDirectedLayoutAlgorithm = new ForceDirectedLayout(registrar, undoSupport);
 		Properties forceDirectedLayoutAlgorithmProperties = new Properties();

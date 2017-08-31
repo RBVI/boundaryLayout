@@ -15,7 +15,7 @@ public class TemplateExportTask extends AbstractTask {
 	@Tunable (description = "Choose template to export: ")
 	public ListSingleSelection<String> templateNames = null;
 	
-	@Tunable (description = "Location of exported file: ")
+	@Tunable (description = "Location to export file: ")
 	public Path filePath = null;
 
 	public TemplateExportTask(TemplateManager templateManager) {

@@ -7,11 +7,11 @@ import org.cytoscape.work.TaskIterator;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
-public class TemplateSave extends AbstractNetworkViewTaskFactory {
+public class TemplateOverwrite extends AbstractNetworkViewTaskFactory {
 	private TemplateManager templateManager;
 	private final CyServiceRegistrar registrar;
 	
-	public TemplateSave(CyServiceRegistrar registrar, 
+	public TemplateOverwrite(CyServiceRegistrar registrar, 
 			TemplateManager templateManager) {
 		super();
 		this.registrar = registrar;
@@ -20,7 +20,7 @@ public class TemplateSave extends AbstractNetworkViewTaskFactory {
 	
 	@Override
 	public TaskIterator createTaskIterator(CyNetworkView networkView) {
-		return new TaskIterator(new TemplateSaveTask(
+		return new TaskIterator(new TemplateOverwriteTask(
 				registrar, networkView, templateManager));
 	}
 }
