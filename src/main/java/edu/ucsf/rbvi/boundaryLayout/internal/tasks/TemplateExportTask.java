@@ -1,5 +1,6 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.tasks;
 
+import java.io.File;
 import java.nio.file.Path;
 
 import org.cytoscape.work.AbstractTask;
@@ -16,7 +17,7 @@ public class TemplateExportTask extends AbstractTask {
 	public ListSingleSelection<String> templateNames = null;
 	
 	@Tunable (description = "Location to export file: ")
-	public Path filePath = null;
+	public File exportTemplateFile = null;
 
 	public TemplateExportTask(TemplateManager templateManager) {
 		super();
@@ -28,6 +29,6 @@ public class TemplateExportTask extends AbstractTask {
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {	
 		templateManager.exportTemplate(
-				templateNames.getSelectedValue(), filePath.toString());
+				templateNames.getSelectedValue(), exportTemplateFile.getAbsolutePath());
 	}
 }

@@ -1,14 +1,14 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.tasks;
 
+import org.cytoscape.task.AbstractNetworkViewTask;
 import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.Tunable;
 import org.cytoscape.work.util.ListSingleSelection;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
-public class TemplateUseTask extends AbstractTask {	
+public class TemplateUseTask extends AbstractNetworkViewTask {	
 	private TemplateManager templateManager;
 	private CyNetworkView networkView;
 	
@@ -17,7 +17,7 @@ public class TemplateUseTask extends AbstractTask {
 
 	public TemplateUseTask(CyNetworkView networkView, 
 			TemplateManager templateManager) {
-		super();
+		super(networkView);
 		this.networkView = networkView;
 		this.templateManager = templateManager;
 		templateNames = new ListSingleSelection<>(

@@ -11,12 +11,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.cytoscape.model.CyColumn;
+import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.annotations.Annotation;
 import org.cytoscape.view.presentation.annotations.AnnotationFactory;
 import org.cytoscape.view.presentation.annotations.AnnotationManager;
+import org.cytoscape.view.presentation.annotations.ArrowAnnotation;
+import org.cytoscape.view.presentation.annotations.BoundedTextAnnotation;
+import org.cytoscape.view.presentation.annotations.GroupAnnotation;
+import org.cytoscape.view.presentation.annotations.ImageAnnotation;
+import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
+import org.cytoscape.view.presentation.annotations.TextAnnotation;
 
 public class TemplateManager {
 	private Map<String, List<String>> templates;
@@ -58,13 +66,10 @@ public class TemplateManager {
 		return true;
 	}
 
-	@SuppressWarnings("unchecked")
 	public boolean useTemplate(String templateName, 
 			CyNetworkView networkView) {
 		if(!templates.containsKey(templateName))
 			return false;
-		AnnotationFactory<Annotation> shapeFactory = 
-				registrar.getService(AnnotationFactory.class);
 		AnnotationManager annotationManager = registrar.getService(
 				AnnotationManager.class);	
 		List<String> templateInformation = templates.get(templateName);
@@ -76,22 +81,22 @@ public class TemplateManager {
 			Map<String, String> argMap = new HashMap<>();
 			for(String arg : argsArray) {
 				String[] keyValuePair = arg.split("=");
-				System.out.println(keyValuePair[0] + "=" + keyValuePair[1]);
 				argMap.put(keyValuePair[0], keyValuePair[1]);
 			}
-			Annotation addedShape = shapeFactory.createAnnotation(
-					Annotation.class, networkView, argMap);
-			addedShape.setName(argMap.get(Annotation.NAME));
+			Annotation addedShape = getCreatedAnnotation(
+					templateName, networkView, argMap);
+			System.out.println(addedShape);
+			System.out.println(addedShape.getArgMap().get("name") + " is the name! ahhhhh");
+			addedShape.setName(argMap.get("name"));
 			annotationManager.addAnnotation(addedShape);
 			addedShape.update();
 		}
-		CyTable networkTable = networkView.getModel().getDefaultNetworkTable();
-		networkTable.createListColumn("Templates Applied", String.class, false);
-		
+		appendTemplatesActive(networkView, templateName);
+
 		networkView.updateView();
 		return true;
 	}
-	
+
 	public boolean importTemplate(String templateName,
 			File templateFile) throws IOException {
 		if(!templateFile.exists())
@@ -129,9 +134,8 @@ public class TemplateManager {
 		BufferedWriter templateWriter = new 
 				BufferedWriter(new FileWriter(exportedFile));
 		for(String annotationInformation : templates.get(templateName)) {
-			//MODIFY WHAT IS EXPORTED - CURRENTLY EXPORTING
-			//RAW DATA
 			templateWriter.write(annotationInformation);
+			templateWriter.newLine();
 		}
 		try {
 			templateWriter.close();
@@ -142,7 +146,7 @@ public class TemplateManager {
 		}
 		return true;
 	}
-	
+
 	public void networkRemoveTemplates(CyNetworkView networkView, 
 			List<String> templateRemoveNames) {
 		AnnotationManager annotationManager = registrar.
@@ -167,12 +171,20 @@ public class TemplateManager {
 				}
 			}
 		}
-		for(Annotation annotation : annotations)
-			if(uuidsToRemove.contains(annotation.getUUID()))
-				annotationManager.removeAnnotation(annotation);
-		networkView.updateView();
+
+		//make sure that the annotation is only deleted in the specific network view and 
+		//not all views
+		if(annotations != null) {
+			for(Annotation annotation : annotations)  
+				if(uuidsToRemove.contains(annotation.getUUID().toString())) {
+					annotationManager.removeAnnotation(annotation);
+					annotation.removeAnnotation();
+				}
+			removeTemplatesActive(networkView, templateRemoveNames);
+			networkView.updateView();
+		}
 	}
-	
+ 
 	private static List<String> getAnnotationInformation(
 			List<Annotation> annotations) {
 		List<String> annotationsInfo = new ArrayList<>();
@@ -183,5 +195,81 @@ public class TemplateManager {
 
 	public List<String> getTemplateNames() {
 		return new ArrayList<>(templates.keySet());
+	}
+
+	@SuppressWarnings("unchecked")
+	private void appendTemplatesActive(CyNetworkView networkView, 
+			String templateName) {
+		CyTable networkTable = networkView.getModel().getDefaultNetworkTable();
+		if(!columnAlreadyExists(networkTable, NETWORK_TEMPLATES))
+			networkTable.createListColumn(NETWORK_TEMPLATES, String.class, false);
+		CyRow networkRow = networkTable.getRow(networkView.getSUID());
+		List<String> activeTemplates = (List<String>) 
+				networkRow.getRaw(NETWORK_TEMPLATES);
+		if(activeTemplates == null)
+			activeTemplates = new ArrayList<>();
+		activeTemplates.add(templateName);
+		networkRow.set(NETWORK_TEMPLATES, activeTemplates);		
+	}
+
+	@SuppressWarnings("unchecked")
+	private void removeTemplatesActive(CyNetworkView networkView, 
+			List<String> templateRemoveNames) {
+		CyTable networkTable = networkView.getModel().getDefaultNetworkTable();
+		if(!columnAlreadyExists(networkTable, NETWORK_TEMPLATES))
+			networkTable.createListColumn(NETWORK_TEMPLATES, String.class, false);
+		CyRow networkRow = networkTable.getRow(networkView.getSUID());
+		List<String> activeTemplates = (List<String>) 
+				networkRow.getRaw(NETWORK_TEMPLATES);
+		for(String templateRemoveName : templateRemoveNames)
+			if(activeTemplates.contains(templateRemoveName))
+				activeTemplates.remove(templateRemoveName);
+		networkRow.set(NETWORK_TEMPLATES, activeTemplates);		
+	}
+
+	private boolean columnAlreadyExists(CyTable networkTable, String columnName) {
+		for(CyColumn networkColumn : networkTable.getColumns())
+			if(networkColumn.getName().equals(columnName))
+				return true;
+		return false;
+	}
+
+	@SuppressWarnings("unchecked")
+	private Annotation getCreatedAnnotation(String templateName, 
+			CyNetworkView networkView, Map<String, String> argMap) {
+		String annotationType = argMap.get("type");
+		Annotation addedShape = null;
+		if(annotationType.contains("ShapeAnnotation")) {
+			AnnotationFactory<ShapeAnnotation> annotationFactory = registrar.getService(
+					AnnotationFactory.class, "(type=ShapeAnnotation.class)");
+			addedShape = annotationFactory.createAnnotation(
+					ShapeAnnotation.class, networkView, argMap);
+		} else if(annotationType.contains("TextAnnotation")) {
+			AnnotationFactory<TextAnnotation> annotationFactory = registrar.getService(
+					AnnotationFactory.class, "(type=TextAnnotation.class)");
+			addedShape = annotationFactory.createAnnotation(
+					TextAnnotation.class, networkView, argMap);
+		} else if(annotationType.contains("ImageAnnotation")) {
+			AnnotationFactory<ImageAnnotation> annotationFactory = registrar.getService(
+					AnnotationFactory.class, "(type=ImageAnnotation.class)");
+			addedShape = annotationFactory.createAnnotation(
+					ImageAnnotation.class, networkView, argMap);
+		} else if(annotationType.contains("GroupAnnotation")) {
+			AnnotationFactory<GroupAnnotation> annotationFactory = registrar.getService(
+					AnnotationFactory.class, "(type=GroupAnnotation.class)");
+			addedShape = annotationFactory.createAnnotation(
+					GroupAnnotation.class, networkView, argMap);
+		} else if(annotationType.contains("ArrowAnnotation")) {
+			AnnotationFactory<ArrowAnnotation> annotationFactory = registrar.getService(
+					AnnotationFactory.class, "(type=ArrowAnnotation.class)");
+			addedShape = annotationFactory.createAnnotation(
+					ArrowAnnotation.class, networkView, argMap);
+		} else if(annotationType.contains("BoundedTextAnnotation")) {
+			AnnotationFactory<BoundedTextAnnotation> annotationFactory = registrar.getService(
+					AnnotationFactory.class, "(type=BoundedTextAnnotation.class)");
+			addedShape = annotationFactory.createAnnotation(
+					BoundedTextAnnotation.class, networkView, argMap);
+		}
+		return addedShape;
 	}
 }

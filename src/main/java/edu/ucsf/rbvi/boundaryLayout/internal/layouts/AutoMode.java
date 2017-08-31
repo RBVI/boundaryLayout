@@ -24,6 +24,7 @@ import org.cytoscape.view.model.View;
  * in the instance where the user does not create any
  */
 public class AutoMode {
+	@SuppressWarnings("unchecked")
 	public static Map<Object, ShapeAnnotation> createAnnotations(CyNetworkView netView, 
 			List<View<CyNode>> nodesToLayout, String categoryColumn, CyServiceRegistrar registrar) {	
 		AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
@@ -181,29 +182,5 @@ public class AutoMode {
 		}
 
 		return new Point2D.Double(maxHeightQuantity, maxHeight / maxHeightQuantity);
-	}
-	
-	/*
-	 * @param Map<Object, Point2D.Double> dimensions is a Map 
-	 * of the name of the shape annotation to its width and height
-	 * represented by a Point2D object
-	 * @return the largest width and height that exist
-	 * 
-	 * This is used to create shapes of the same size
-	 * */
-	private static Point2D.Double getMaxDimensions(Map<Object, Point2D.Double> dimensions) { 
-		Point2D.Double maxDimensions = new Point2D.Double();
-
-		for(Point2D.Double thisDimensions : dimensions.values()) {
-			double maxW = maxDimensions.getX();
-			double maxH = maxDimensions.getY();
-			if(maxW < thisDimensions.getX())
-				maxW = thisDimensions.getX();
-			if(maxH < thisDimensions.getY()) 
-				maxH = thisDimensions.getY();
-			maxDimensions.setLocation(maxW, maxH);
-		}
-
-		return maxDimensions;
 	}
 }
