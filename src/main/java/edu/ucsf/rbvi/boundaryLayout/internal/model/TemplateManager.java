@@ -38,11 +38,15 @@ public class TemplateManager {
 
 	public boolean addTemplate(String templateName, 
 			List<Annotation> annotations) {
-		if(templates.containsKey(templateName))
-			return overwriteTemplate(templateName, annotations);
 		List<String> annotationsInfo = 
 				getAnnotationInformation(annotations);
-		templates.put(templateName, annotationsInfo);
+		return addTemplateStrings(templateName, annotationsInfo);
+	}
+
+	public boolean addTemplateStrings(String templateName, List<String> annotations) {
+		if(templates.containsKey(templateName))
+			return overwriteTemplateStrings(templateName, annotations);
+		templates.put(templateName, annotations);
 		if(templates.containsKey(templateName)) 
 			return true;
 		return false;
@@ -57,13 +61,18 @@ public class TemplateManager {
 		return false;
 	}
 
-	public boolean overwriteTemplate(String templateName, 
-			List<Annotation> annotations) {
+	public boolean overwriteTemplateStrings(String templateName, 
+			List<String> annotations) {
 		if(!templates.containsKey(templateName))
 			return false;
-		templates.replace(templateName, 
-				getAnnotationInformation(annotations));
+		templates.replace(templateName, annotations);
 		return true;
+	}
+
+	public boolean overwriteTemplate(String templateName, 
+			List<Annotation> annotations) {
+		List<String> annotationsInfo = getAnnotationInformation(annotations);
+		return overwriteTemplateStrings(templateName, annotationsInfo);
 	}
 
 	public boolean useTemplate(String templateName, 

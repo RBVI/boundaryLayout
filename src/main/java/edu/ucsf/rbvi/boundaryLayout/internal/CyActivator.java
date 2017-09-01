@@ -45,7 +45,7 @@ public class CyActivator extends AbstractCyActivator {
 			haveGUI = false;
 		
 		TemplateManager templateManager = new TemplateManager(registrar);
-		TemplateListener templateListener = new TemplateListener();
+		TemplateListener templateListener = new TemplateListener(templateManager, registrar);
 		UndoSupport undoSupport = getService(bc, UndoSupport.class);
 		registerService(bc, templateListener, CyShutdownListener.class, new Properties());
 		registerService(bc, templateListener, CyStartListener.class, new Properties());
