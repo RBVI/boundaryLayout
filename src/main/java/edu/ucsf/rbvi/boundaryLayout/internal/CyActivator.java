@@ -7,6 +7,8 @@ import static org.cytoscape.work.ServiceProperties.TITLE;
 
 import java.util.Properties;
 
+import org.cytoscape.application.events.CyShutdownListener;
+import org.cytoscape.application.events.CyStartListener;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
@@ -17,6 +19,7 @@ import org.cytoscape.work.undo.UndoSupport;
 import org.osgi.framework.BundleContext;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.layouts.ForceDirectedLayout;
+import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateListener;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateUse;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateDelete;
@@ -42,7 +45,10 @@ public class CyActivator extends AbstractCyActivator {
 			haveGUI = false;
 		
 		TemplateManager templateManager = new TemplateManager(registrar);
+		TemplateListener templateListener = new TemplateListener();
 		UndoSupport undoSupport = getService(bc, UndoSupport.class);
+		registerService(bc, templateListener, CyShutdownListener.class, new Properties());
+		registerService(bc, templateListener, CyStartListener.class, new Properties());
 		
 		/* Tasks */
 		TaskFactory templateImportFactory = new TemplateImport(templateManager);

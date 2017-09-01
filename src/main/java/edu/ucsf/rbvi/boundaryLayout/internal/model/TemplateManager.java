@@ -119,6 +119,7 @@ public class TemplateManager {
 					templateReader.toString() + 
 					"[" + e.getMessage()+ "]");
 		}
+		System.out.println(templateFile.getAbsolutePath());
 		if(templates.containsKey(templateName))
 			return true;
 		return false;
@@ -271,5 +272,9 @@ public class TemplateManager {
 					BoundedTextAnnotation.class, networkView, argMap);
 		}
 		return addedShape;
+	}
+	
+	public Map<String, List<String>> getTemplateMap() {
+		return templates;
 	}
 }
