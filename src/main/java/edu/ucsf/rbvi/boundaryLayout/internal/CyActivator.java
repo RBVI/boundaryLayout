@@ -8,7 +8,6 @@ import static org.cytoscape.work.ServiceProperties.TITLE;
 import java.util.Properties;
 
 import org.cytoscape.application.events.CyShutdownListener;
-import org.cytoscape.application.events.CyStartListener;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
@@ -48,7 +47,6 @@ public class CyActivator extends AbstractCyActivator {
 		TemplateListener templateListener = new TemplateListener(templateManager, registrar);
 		UndoSupport undoSupport = getService(bc, UndoSupport.class);
 		registerService(bc, templateListener, CyShutdownListener.class, new Properties());
-		registerService(bc, templateListener, CyStartListener.class, new Properties());
 		
 		/* Tasks */
 		TaskFactory templateImportFactory = new TemplateImport(templateManager);
