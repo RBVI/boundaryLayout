@@ -9,6 +9,7 @@ import java.util.Properties;
 
 import org.cytoscape.application.events.CyShutdownListener;
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.task.NetworkViewTaskFactory;
@@ -21,6 +22,8 @@ import edu.ucsf.rbvi.boundaryLayout.internal.layouts.ForceDirectedLayout;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateListener;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateUse;
+import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
+import edu.ucsf.rbvi.boundaryLayout.internal.tasks.CreateTemplateThumbnailTaskFactory;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateDelete;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateExport;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateImport;
@@ -47,6 +50,14 @@ public class CyActivator extends AbstractCyActivator {
 		TemplateListener templateListener = new TemplateListener(templateManager, registrar);
 		UndoSupport undoSupport = getService(bc, UndoSupport.class);
 		registerService(bc, templateListener, CyShutdownListener.class, new Properties());
+		
+		NetworkViewTaskFactory templateThumbnailFactory = new CreateTemplateThumbnailTaskFactory(registrar); 
+		Properties templateThumbnailProperties = new Properties();
+		templateThumbnailProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App.Visualizations");
+		templateThumbnailProperties.setProperty(TITLE, "Create Thumbnail of Templates");
+		templateThumbnailProperties.setProperty(IN_MENU_BAR, "true");
+		templateThumbnailProperties.setProperty(MENU_GRAVITY, "10.0");
+		registerService(bc, templateThumbnailFactory, NetworkViewTaskFactory.class, templateThumbnailProperties);
 		
 		/* Tasks */
 		TaskFactory templateImportFactory = new TemplateImport(templateManager);

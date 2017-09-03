@@ -42,8 +42,8 @@
 						<Private-Package>${bundle.namespace}.*,prefuse.*</Private-Package>
 						<Bundle-Activator>${bundle.namespace}.CyActivator</Bundle-Activator>
 						<Embed-Dependency>*;scope=!provided</Embed-Dependency>
-            <Embed-Transitive>true</Embed-Transitive>
-            <Import-Package>*;resolution:=optional</Import-Package>
+						<Embed-Transitive>true</Embed-Transitive>
+						<Import-Package>*;resolution:=optional</Import-Package>
 					</instructions>
 				</configuration>
 			</plugin>
@@ -173,6 +173,12 @@
 			<artifactId>json-simple</artifactId>
 			<version>1.1.1</version>
 			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.cytoscape</groupId>
+			<artifactId>vizmap-api</artifactId>
+			<version>${cytoscape.api.version}</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 </project>

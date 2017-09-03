@@ -61,18 +61,18 @@ public class TemplateManager {
 		return false;
 	}
 
+	public boolean overwriteTemplate(String templateName, 
+			List<Annotation> annotations) {
+		List<String> annotationsInfo = getAnnotationInformation(annotations);
+		return overwriteTemplateStrings(templateName, annotationsInfo);
+	}
+
 	public boolean overwriteTemplateStrings(String templateName, 
 			List<String> annotations) {
 		if(!templates.containsKey(templateName))
 			return false;
 		templates.replace(templateName, annotations);
 		return true;
-	}
-
-	public boolean overwriteTemplate(String templateName, 
-			List<Annotation> annotations) {
-		List<String> annotationsInfo = getAnnotationInformation(annotations);
-		return overwriteTemplateStrings(templateName, annotationsInfo);
 	}
 
 	public boolean useTemplate(String templateName, 
@@ -94,8 +94,6 @@ public class TemplateManager {
 			}
 			Annotation addedShape = getCreatedAnnotation(
 					templateName, networkView, argMap);
-			System.out.println(addedShape);
-			System.out.println(addedShape.getArgMap().get("name") + " is the name! ahhhhh");
 			addedShape.setName(argMap.get("name"));
 			annotationManager.addAnnotation(addedShape);
 			addedShape.update();
@@ -128,7 +126,6 @@ public class TemplateManager {
 					templateReader.toString() + 
 					"[" + e.getMessage()+ "]");
 		}
-		System.out.println(templateFile.getAbsolutePath());
 		if(templates.containsKey(templateName))
 			return true;
 		return false;
@@ -194,12 +191,13 @@ public class TemplateManager {
 			networkView.updateView();
 		}
 	}
- 
+
 	private static List<String> getAnnotationInformation(
 			List<Annotation> annotations) {
 		List<String> annotationsInfo = new ArrayList<>();
-		for(Annotation annotation : annotations)
-			annotationsInfo.add(annotation.getArgMap().toString());
+		if(annotations != null)
+			for(Annotation annotation : annotations)
+				annotationsInfo.add(annotation.getArgMap().toString());
 		return annotationsInfo;
 	}
 
@@ -282,7 +280,7 @@ public class TemplateManager {
 		}
 		return addedShape;
 	}
-	
+
 	public Map<String, List<String>> getTemplateMap() {
 		return templates;
 	}
