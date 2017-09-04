@@ -17,6 +17,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JWindow;
+import javax.swing.ScrollPaneLayout;
 import javax.swing.SwingUtilities;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
@@ -45,7 +46,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 
 		// This will contain all of our template buttons
 		scrollPane = new JScrollPane();
-		scrollPane.setLayout(new BoxLayout(scrollPane, BoxLayout.PAGE_AXIS));
+		scrollPane.setLayout(new ScrollPaneLayout());
 		this.add(scrollPane);
 
 		// Draw our panel
@@ -53,7 +54,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	}
 
 	public void updatePanel() {
-		for (String template: manager.getTemplateNames()) {
+		for (String template : manager.getTemplateNames()) {
 			Image thumbnail = manager.getThumbnail(template);
 			JButton templateButton = new JButton(template, new ImageIcon(thumbnail));
 			templateButton.setActionCommand(template);
@@ -88,5 +89,4 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		String template = e.getActionCommand();
 		// Replace (add) template
 	}
-
 }

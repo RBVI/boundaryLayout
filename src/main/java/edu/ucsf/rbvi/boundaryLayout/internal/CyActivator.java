@@ -57,7 +57,7 @@ public class CyActivator extends AbstractCyActivator {
 		templateThumbnailProperties.setProperty(TITLE, "Create Thumbnail of Templates");
 		templateThumbnailProperties.setProperty(IN_MENU_BAR, "true");
 		templateThumbnailProperties.setProperty(MENU_GRAVITY, "10.0");
-		registerService(bc, templateThumbnailFactory, NetworkViewTaskFactory.class, templateThumbnailProperties);
+		registerService(bc, templateThumbnailFactory, TaskFactory.class, templateThumbnailProperties);
 		
 		/* Tasks */
 		TaskFactory templateImportFactory = new TemplateImport(templateManager);

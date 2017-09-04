@@ -29,7 +29,7 @@ public class CreateTemplateThumbnailTask extends AbstractTask {
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {
 		CySwingApplication swingApplication = registrar.getService(CySwingApplication.class);
-		CytoPanel cytoPanel = swingApplication.getCytoPanel(CytoPanelName.EAST);
+		CytoPanel cytoPanel = swingApplication.getCytoPanel(CytoPanelName.WEST);
 		thumbnail = new TemplateThumbnailPanel(registrar, manager);
 		registrar.registerService(thumbnail, CytoPanelComponent.class, new Properties());
 		if (cytoPanel.getState() == CytoPanelState.HIDE)

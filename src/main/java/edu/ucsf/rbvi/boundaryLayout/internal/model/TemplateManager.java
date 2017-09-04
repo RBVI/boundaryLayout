@@ -18,10 +18,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.imageio.ImageIO;
 
@@ -275,10 +275,14 @@ public class TemplateManager {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static Annotation getCreatedAnnotation(CyServiceRegistrar registrar, 
+	public Annotation getCreatedAnnotation(CyServiceRegistrar registrar, 
 			CyNetworkView networkView, Map<String, String> argMap) {
 		String annotationType = argMap.get("type");
 		Annotation addedShape = null;
+		if(networkView.getModel().getDefaultNetworkTable().getColumn("__Annotations") == null) {
+			networkView.getModel().getDefaultNetworkTable().createListColumn("__Annotations", 
+					String.class, false, Collections.EMPTY_LIST);
+		}
 		if(annotationType.contains("ShapeAnnotation")) {
 			AnnotationFactory<ShapeAnnotation> annotationFactory = registrar.getService(
 					AnnotationFactory.class, "(type=ShapeAnnotation.class)");
@@ -322,7 +326,6 @@ public class TemplateManager {
 			return templates.get(template);
 		return null;
 	}
-
 
 	// Thumbnail handling
 	public String getEncodedThumbnail(String template) {
@@ -385,10 +388,9 @@ public class TemplateManager {
 		useTemplate(template, view);
 
 		// Get the image
-		return null;
+		return getViewImage(view);
 	}
 
-	@SuppressWarnings("unchecked")
 	private Image getViewImage(CyNetworkView view) {
 		int width = 100;
 		int height = 100;
@@ -397,37 +399,37 @@ public class TemplateManager {
 		final Graphics2D g = (Graphics2D) image.getGraphics();
 
 		SwingUtilities.invokeLater(new Runnable() {
-      //@Override
-      public void run() {
-        try {
-          final Dimension size = new Dimension(width, height);
+			//@Override
+			public void run() {
+				try {
+					final Dimension size = new Dimension(width, height);
 
-          JPanel panel = new JPanel();
-          panel.setPreferredSize(size);
-          panel.setSize(size);
-          panel.setMinimumSize(size);
-          panel.setMaximumSize(size);
-          panel.setBackground(Color.WHITE);
+					JPanel panel = new JPanel();
+					panel.setPreferredSize(size);
+					panel.setSize(size);
+					panel.setMinimumSize(size);
+					panel.setMaximumSize(size);
+					panel.setBackground(Color.WHITE);
 
-          JWindow window = new JWindow();
-          window.getContentPane().add(panel, BorderLayout.CENTER);
+					JWindow window = new JWindow();
+					window.getContentPane().add(panel, BorderLayout.CENTER);
 
-          RenderingEngine<CyNetwork> re = renderingEngineFactory.createRenderingEngine(panel, view);
+					RenderingEngine<CyNetwork> re = renderingEngineFactory.createRenderingEngine(panel, view);
 
-          view.fitContent();
-          view.updateView();
-          window.pack();
-          window.repaint();
+					view.fitContent();
+					view.updateView();
+					window.pack();
+					window.repaint();
 
-          re.createImage(width, height);
-          re.printCanvas(g);
-          g.dispose();
+					re.createImage(width, height);
+					re.printCanvas(g);
+					g.dispose();
 
-        } catch (Exception ex) {
-          throw new RuntimeException(ex);
-        }
-      }
-    });
+				} catch (Exception ex) {
+					throw new RuntimeException(ex);
+				}
+			}
+		});
 
 		return image;
 	}
