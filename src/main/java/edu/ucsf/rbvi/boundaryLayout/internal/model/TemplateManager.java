@@ -92,11 +92,11 @@ public class TemplateManager {
 				String[] keyValuePair = arg.split("=");
 				argMap.put(keyValuePair[0], keyValuePair[1]);
 			}
-			Annotation addedShape = getCreatedAnnotation(
-					templateName, networkView, argMap);
-			addedShape.setName(argMap.get("name"));
-			annotationManager.addAnnotation(addedShape);
-			addedShape.update();
+			Annotation addedAnnotation = getCreatedAnnotation(registrar,
+					networkView, argMap);
+			addedAnnotation.setName(argMap.get("name"));
+			annotationManager.addAnnotation(addedAnnotation);
+			addedAnnotation.update();
 		}
 		appendTemplatesActive(networkView, templateName);
 
@@ -243,7 +243,7 @@ public class TemplateManager {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Annotation getCreatedAnnotation(String templateName, 
+	public static Annotation getCreatedAnnotation(CyServiceRegistrar registrar, 
 			CyNetworkView networkView, Map<String, String> argMap) {
 		String annotationType = argMap.get("type");
 		Annotation addedShape = null;

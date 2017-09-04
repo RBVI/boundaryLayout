@@ -31,13 +31,16 @@ import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyle;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
 
+import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
+
 public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent {
 	private static final long serialVersionUID = 1L;
 	private CyNetworkView networkView;
 	private CyServiceRegistrar registrar;
-	private static final int graphPicSize = 80;
+	private static final int graphPicSize = 180;
 	private static final int defaultRowHeight = graphPicSize + 8;
 	private VisualStyle templateStyle;
+	private ImageIcon templateIcon;
 	
 	public TemplateThumbnailPanel() {
 		this(null, null);
@@ -48,8 +51,8 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		super();
 		this.registrar = registrar;
 		this.networkView = networkView;
+		this.setLayout(new BorderLayout());
 		final Image templateImage = createTemplateImage(graphPicSize, graphPicSize);
-		TemplateImageIcon templateIcon;
 		if(templateImage != null) 
 			templateIcon = new TemplateImageIcon(templateImage);
 		else
@@ -65,7 +68,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 
 	@Override
 	public CytoPanelName getCytoPanelName() {
-		return CytoPanelName.WEST;
+		return CytoPanelName.EAST;
 	}
 
 	@Override
@@ -99,74 +102,26 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 				getService(AnnotationManager.class);
 		List<Annotation> annotations = annotationManager.
 				getAnnotations(networkView);
-		RenderingEngineFactory renderingEngineFactory = registrar.
-				getService(RenderingEngineFactory.class);
 
 		if(annotations != null)
 			for(Annotation annotation : annotations) {
-				
+				Annotation addedAnnotation = TemplateManager.getCreatedAnnotation(registrar,
+						templateView, annotation.getArgMap());
+				addedAnnotation.setName(annotation.getArgMap().get("name"));
+				annotationManager.addAnnotation(addedAnnotation);
+				addedAnnotation.update();
 			}
+		templateView.updateView();
 
-		final Image image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		final Graphics2D graphics = (Graphics2D) image.getGraphics();
+		final Image image = new BufferedImage(width, height, BufferedImage.);
 		
-		SwingUtilities.invokeLater(new Runnable() {
-			@SuppressWarnings("unchecked")
-			public void run() {
-				try {
-					final Dimension size = new Dimension(width, height);
-
-					JPanel panel = new JPanel();
-					panel.setPreferredSize(size);
-					panel.setSize(size);
-					panel.setMinimumSize(size);
-					panel.setMaximumSize(size);
-					panel.setBackground((Color) visualStyle.getDefaultValue(
-							BasicVisualLexicon.NETWORK_BACKGROUND_PAINT));
-
-					JWindow window = new JWindow();
-					window.getContentPane().add(panel, BorderLayout.CENTER);
-
-					RenderingEngine<CyNetwork> renderingEngine = renderingEngineFactory.
-							createRenderingEngine(panel, templateView);
-
-					visualStyle.apply(templateView);
-					templateView.fitContent();
-					templateView.updateView();
-					window.pack();
-					window.repaint();
-
-					renderingEngine.createImage(width, height);
-					renderingEngine.printCanvas(graphics);
-					graphics.dispose();
-				} catch (Exception ex) {
-					throw new RuntimeException(ex);
-				}
-			}
-		});
-
 		return image;
 	}
 	
 	public VisualStyle getTemplateStyle() {
 		VisualStyleFactory visualStyleFactory = registrar.getService(VisualStyleFactory.class);
-		if (templateStyle == null) {
+		if (templateStyle == null)
 			templateStyle = visualStyleFactory.createVisualStyle("Template");
-
-			templateStyle.setDefaultValue(BasicVisualLexicon.NODE_SIZE, 40.0);
-			templateStyle.setDefaultValue(BasicVisualLexicon.NODE_WIDTH, 40.0);
-			templateStyle.setDefaultValue(BasicVisualLexicon.NODE_HEIGHT, 40.0);
-			templateStyle.setDefaultValue(BasicVisualLexicon.NODE_PAINT, Color.RED);
-			templateStyle.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.RED);
-			templateStyle.setDefaultValue(BasicVisualLexicon.NODE_BORDER_WIDTH, 0.0);
-
-			templateStyle.setDefaultValue(BasicVisualLexicon.EDGE_WIDTH, 5.0);
-			templateStyle.setDefaultValue(BasicVisualLexicon.EDGE_PAINT, Color.BLUE);
-			templateStyle.setDefaultValue(BasicVisualLexicon.EDGE_UNSELECTED_PAINT, Color.BLUE);
-			templateStyle.setDefaultValue(BasicVisualLexicon.EDGE_STROKE_UNSELECTED_PAINT, Color.BLUE);
-			templateStyle.setDefaultValue(BasicVisualLexicon.EDGE_SELECTED_PAINT, Color.BLUE);
-			templateStyle.setDefaultValue(BasicVisualLexicon.EDGE_STROKE_SELECTED_PAINT, Color.BLUE);
-		}
 
 		return templateStyle;
 	}
@@ -186,7 +141,6 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	
 	private class TemplateImageIcon extends ImageIcon {
 		static final long serialVersionUID = 1L;
-
 
 		public TemplateImageIcon() {
 			super();
