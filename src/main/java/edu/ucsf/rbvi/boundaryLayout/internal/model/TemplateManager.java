@@ -1,21 +1,45 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.model;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.awt.image.WritableRaster;
+import java.awt.Graphics2D;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import javax.imageio.ImageIO;
+
+import javax.swing.JPanel;
+import javax.swing.JWindow;
+import javax.swing.SwingUtilities;
 
 import org.cytoscape.model.CyColumn;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
+import org.cytoscape.model.SavePolicy;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.CyNetworkViewFactory;
+import org.cytoscape.view.presentation.RenderingEngine;
+import org.cytoscape.view.presentation.RenderingEngineFactory;
 import org.cytoscape.view.presentation.annotations.Annotation;
 import org.cytoscape.view.presentation.annotations.AnnotationFactory;
 import org.cytoscape.view.presentation.annotations.AnnotationManager;
@@ -25,15 +49,27 @@ import org.cytoscape.view.presentation.annotations.GroupAnnotation;
 import org.cytoscape.view.presentation.annotations.ImageAnnotation;
 import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
 import org.cytoscape.view.presentation.annotations.TextAnnotation;
+import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 
 public class TemplateManager {
 	private Map<String, List<String>> templates;
+	private Map<String, Image> templateThumbnails;
 	private final CyServiceRegistrar registrar;
+	private final AnnotationManager annotationManager;
+	private final CyNetworkFactory networkFactory;
+	private final CyNetworkViewFactory networkViewFactory;
+	private final RenderingEngineFactory<CyNetwork> renderingEngineFactory;
 	public static final String NETWORK_TEMPLATES = "Templates Applied";
 
+	@SuppressWarnings("unchecked")
 	public TemplateManager(CyServiceRegistrar registrar) {
 		templates = new HashMap<>();
+		templateThumbnails = new HashMap<>();
 		this.registrar = registrar;
+		annotationManager = registrar.getService(AnnotationManager.class);	
+		networkFactory = registrar.getService(CyNetworkFactory.class);	
+		networkViewFactory = registrar.getService(CyNetworkViewFactory.class);	
+		renderingEngineFactory = registrar.getService(RenderingEngineFactory.class);	
 	}
 
 	public boolean addTemplate(String templateName, 
@@ -79,8 +115,6 @@ public class TemplateManager {
 			CyNetworkView networkView) {
 		if(!templates.containsKey(templateName))
 			return false;
-		AnnotationManager annotationManager = registrar.getService(
-				AnnotationManager.class);	
 		List<String> templateInformation = templates.get(templateName);
 
 		for(String annotationInformation : templateInformation) {
@@ -156,8 +190,6 @@ public class TemplateManager {
 
 	public void networkRemoveTemplates(CyNetworkView networkView, 
 			List<String> templateRemoveNames) {
-		AnnotationManager annotationManager = registrar.
-				getService(AnnotationManager.class);
 		List<Annotation> annotations = annotationManager.
 				getAnnotations(networkView);
 		List<String> uuidsToRemove = new ArrayList<>();
@@ -283,5 +315,120 @@ public class TemplateManager {
 
 	public Map<String, List<String>> getTemplateMap() {
 		return templates;
+	}
+
+	public List<String> getTemplate(String template) {
+		if (templates.containsKey(template))
+			return templates.get(template);
+		return null;
+	}
+
+
+	// Thumbnail handling
+	public String getEncodedThumbnail(String template) {
+		Image th = getThumbnail(template);
+		if (th == null) return null;
+
+		WritableRaster raster = ((BufferedImage)th).getRaster();
+		DataBufferByte data = (DataBufferByte) raster.getDataBuffer();
+		return new String(Base64.getEncoder().encode(data.getData()));
+	}
+
+	public Image getThumbnail(String template) {
+		if (templateThumbnails.containsKey(template))
+			return templateThumbnails.get(template);
+		if (templates.containsKey(template)) {
+			// Create the thumbnail
+			Image thumbnail = createThumbnail(template);
+			templateThumbnails.put(template, thumbnail);
+			return thumbnail;
+		}
+		return null;
+	}
+
+	public void addThumbnail(String template, Image thumbnail) {
+		if (!templates.containsKey(template))
+			return;
+
+		templateThumbnails.put(template, thumbnail);
+	}
+
+	public void addThumbnail(String template, String thumbnail) {
+		if (template == null || thumbnail == null) return;
+		if (!templates.containsKey(template))
+			return;
+
+		byte[] bytes = thumbnail.getBytes();
+		byte[] imageBytes = Base64.getDecoder().decode(bytes);
+		try {
+			BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
+			addThumbnail(template, image);
+		} catch(IOException e) {
+			return;
+		}
+
+	}
+
+	private Image createThumbnail(String template) {
+		if (template == null || !templates.containsKey(template))
+			return null;
+
+		// Create a network
+		CyNetwork net = networkFactory.createNetwork(SavePolicy.DO_NOT_SAVE);
+
+		// Create a networkView
+		CyNetworkView view = networkViewFactory.createNetworkView(net);
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_WIDTH, 100.0);
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_HEIGHT, 100.0);
+
+		// Add the template to our view
+		useTemplate(template, view);
+
+		// Get the image
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	private Image getViewImage(CyNetworkView view) {
+		int width = 100;
+		int height = 100;
+
+		final Image image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D g = (Graphics2D) image.getGraphics();
+
+		SwingUtilities.invokeLater(new Runnable() {
+      //@Override
+      public void run() {
+        try {
+          final Dimension size = new Dimension(width, height);
+
+          JPanel panel = new JPanel();
+          panel.setPreferredSize(size);
+          panel.setSize(size);
+          panel.setMinimumSize(size);
+          panel.setMaximumSize(size);
+          panel.setBackground(Color.WHITE);
+
+          JWindow window = new JWindow();
+          window.getContentPane().add(panel, BorderLayout.CENTER);
+
+          RenderingEngine<CyNetwork> re = renderingEngineFactory.createRenderingEngine(panel, view);
+
+          view.fitContent();
+          view.updateView();
+          window.pack();
+          window.repaint();
+
+          re.createImage(width, height);
+          re.printCanvas(g);
+          g.dispose();
+
+        } catch (Exception ex) {
+          throw new RuntimeException(ex);
+        }
+      }
+    });
+
+		return image;
 	}
 }

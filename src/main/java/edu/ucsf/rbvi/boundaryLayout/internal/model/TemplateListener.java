@@ -72,7 +72,7 @@ public class TemplateListener implements CyShutdownListener {
 				for(String annotationInformation : templateMap.get(templateName))
 					annotationsArray.add(annotationInformation);
 				templateObject.put("name", templateName);
-				templateObject.put("thumbnail", null);
+				templateObject.put("thumbnail", templateManager.getThumbnail(templateName));
 				templateObject.put("annotations", annotationsArray);
 				templatesInformation.add(templateObject);
 			}

@@ -51,7 +51,7 @@ public class CyActivator extends AbstractCyActivator {
 		UndoSupport undoSupport = getService(bc, UndoSupport.class);
 		registerService(bc, templateListener, CyShutdownListener.class, new Properties());
 		
-		NetworkViewTaskFactory templateThumbnailFactory = new CreateTemplateThumbnailTaskFactory(registrar); 
+		TaskFactory templateThumbnailFactory = new CreateTemplateThumbnailTaskFactory(registrar, templateManager); 
 		Properties templateThumbnailProperties = new Properties();
 		templateThumbnailProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App.Visualizations");
 		templateThumbnailProperties.setProperty(TITLE, "Create Thumbnail of Templates");

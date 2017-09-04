@@ -12,16 +12,17 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 
+import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
 
 public class CreateTemplateThumbnailTask extends AbstractTask {
-	private CyNetworkView networkView;
 	public CytoPanelComponent thumbnail;
 	private final CyServiceRegistrar registrar;
+	private final TemplateManager manager;
 
-	public CreateTemplateThumbnailTask(CyServiceRegistrar registrar, CyNetworkView networkView) {
+	public CreateTemplateThumbnailTask(CyServiceRegistrar registrar, TemplateManager manager) {
 		super();
-		this.networkView = networkView;
+		this.manager = manager;
 		this.registrar = registrar;
 	}
 
@@ -29,7 +30,7 @@ public class CreateTemplateThumbnailTask extends AbstractTask {
 	public void run(TaskMonitor taskMonitor) throws Exception {
 		CySwingApplication swingApplication = registrar.getService(CySwingApplication.class);
 		CytoPanel cytoPanel = swingApplication.getCytoPanel(CytoPanelName.EAST);
-		thumbnail = new TemplateThumbnailPanel(registrar, networkView);
+		thumbnail = new TemplateThumbnailPanel(registrar, manager);
 		registrar.registerService(thumbnail, CytoPanelComponent.class, new Properties());
 		if (cytoPanel.getState() == CytoPanelState.HIDE)
 			cytoPanel.setState(CytoPanelState.DOCK);

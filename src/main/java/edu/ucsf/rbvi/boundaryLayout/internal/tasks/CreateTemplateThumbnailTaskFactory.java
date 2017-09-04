@@ -1,21 +1,23 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.tasks;
 
 import org.cytoscape.service.util.CyServiceRegistrar;
-import org.cytoscape.task.AbstractNetworkViewTaskFactory;
-import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.work.AbstractTaskFactory;
 import org.cytoscape.work.TaskIterator;
 
-public class CreateTemplateThumbnailTaskFactory extends AbstractNetworkViewTaskFactory {
+import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
+
+public class CreateTemplateThumbnailTaskFactory extends AbstractTaskFactory {
 	private CyServiceRegistrar registrar;
+	private TemplateManager manager;
 	
-	public CreateTemplateThumbnailTaskFactory(CyServiceRegistrar registrar) {
+	public CreateTemplateThumbnailTaskFactory(CyServiceRegistrar registrar, TemplateManager manager) {
 		super();
 		this.registrar = registrar;
+		this.manager = manager;
 	}
 	
 	@Override
-	public TaskIterator createTaskIterator(CyNetworkView networkView) {
-		return new TaskIterator(new CreateTemplateThumbnailTask(
-				registrar, networkView));
+	public TaskIterator createTaskIterator() {
+		return new TaskIterator(new CreateTemplateThumbnailTask(registrar, manager));
 	}
 }
