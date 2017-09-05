@@ -150,7 +150,6 @@ public class AutoMode {
 
 		for(Object thisDimensionObject : dimensions.keySet()) {
 			Point2D.Double thisDimension = dimensions.get(thisDimensionObject);
-			System.out.println(thisDimension + " for object " + thisDimensionObject);
 			if(thisDimension.getX() > maxWidth) {
 				maxWidth = thisDimension.getX();
 				maxWidthQuantity = categoryLists.get(thisDimensionObject).size();

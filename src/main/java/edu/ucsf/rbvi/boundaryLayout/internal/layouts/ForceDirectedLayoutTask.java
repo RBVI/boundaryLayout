@@ -296,7 +296,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				xPos = initRectangle.getX() + initRectangle.getWidth() / 2;
 				yPos = initRectangle.getY() + initRectangle.getHeight() / 2;
 				initNodes.add(new Point2D.Double(xPos, yPos));
-				System.out.println(initRectangle.getWidth() * initRectangle.getHeight());
+				// System.out.println(initRectangle.getWidth() * initRectangle.getHeight());
 			}
 		}
 		initializingNodeLocations.put(shapeAnnotation, initNodes);

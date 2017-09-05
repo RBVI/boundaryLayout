@@ -6,12 +6,14 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.awt.Graphics2D;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -111,8 +113,7 @@ public class TemplateManager {
 		return true;
 	}
 
-	public boolean useTemplate(String templateName, 
-			CyNetworkView networkView) {
+	public boolean useTemplate(String templateName, CyNetworkView networkView) {
 		if(!templates.containsKey(templateName))
 			return false;
 		List<String> templateInformation = templates.get(templateName);
@@ -126,8 +127,7 @@ public class TemplateManager {
 				String[] keyValuePair = arg.split("=");
 				argMap.put(keyValuePair[0], keyValuePair[1]);
 			}
-			Annotation addedAnnotation = getCreatedAnnotation(registrar,
-					networkView, argMap);
+			Annotation addedAnnotation = getCreatedAnnotation(registrar, networkView, argMap);
 			addedAnnotation.setName(argMap.get("name"));
 			annotationManager.addAnnotation(addedAnnotation);
 			addedAnnotation.update();
@@ -286,33 +286,27 @@ public class TemplateManager {
 		if(annotationType.contains("ShapeAnnotation")) {
 			AnnotationFactory<ShapeAnnotation> annotationFactory = registrar.getService(
 					AnnotationFactory.class, "(type=ShapeAnnotation.class)");
-			addedShape = annotationFactory.createAnnotation(
-					ShapeAnnotation.class, networkView, argMap);
+			addedShape = annotationFactory.createAnnotation(ShapeAnnotation.class, networkView, argMap);
 		} else if(annotationType.contains("TextAnnotation")) {
 			AnnotationFactory<TextAnnotation> annotationFactory = registrar.getService(
 					AnnotationFactory.class, "(type=TextAnnotation.class)");
-			addedShape = annotationFactory.createAnnotation(
-					TextAnnotation.class, networkView, argMap);
+			addedShape = annotationFactory.createAnnotation(TextAnnotation.class, networkView, argMap);
 		} else if(annotationType.contains("ImageAnnotation")) {
 			AnnotationFactory<ImageAnnotation> annotationFactory = registrar.getService(
 					AnnotationFactory.class, "(type=ImageAnnotation.class)");
-			addedShape = annotationFactory.createAnnotation(
-					ImageAnnotation.class, networkView, argMap);
+			addedShape = annotationFactory.createAnnotation(ImageAnnotation.class, networkView, argMap);
 		} else if(annotationType.contains("GroupAnnotation")) {
 			AnnotationFactory<GroupAnnotation> annotationFactory = registrar.getService(
 					AnnotationFactory.class, "(type=GroupAnnotation.class)");
-			addedShape = annotationFactory.createAnnotation(
-					GroupAnnotation.class, networkView, argMap);
+			addedShape = annotationFactory.createAnnotation(GroupAnnotation.class, networkView, argMap);
 		} else if(annotationType.contains("ArrowAnnotation")) {
 			AnnotationFactory<ArrowAnnotation> annotationFactory = registrar.getService(
 					AnnotationFactory.class, "(type=ArrowAnnotation.class)");
-			addedShape = annotationFactory.createAnnotation(
-					ArrowAnnotation.class, networkView, argMap);
+			addedShape = annotationFactory.createAnnotation(ArrowAnnotation.class, networkView, argMap);
 		} else if(annotationType.contains("BoundedTextAnnotation")) {
 			AnnotationFactory<BoundedTextAnnotation> annotationFactory = registrar.getService(
 					AnnotationFactory.class, "(type=BoundedTextAnnotation.class)");
-			addedShape = annotationFactory.createAnnotation(
-					BoundedTextAnnotation.class, networkView, argMap);
+			addedShape = annotationFactory.createAnnotation(BoundedTextAnnotation.class, networkView, argMap);
 		}
 		return addedShape;
 	}
@@ -332,9 +326,16 @@ public class TemplateManager {
 		Image th = getThumbnail(template);
 		if (th == null) return null;
 
-		WritableRaster raster = ((BufferedImage)th).getRaster();
-		DataBufferByte data = (DataBufferByte) raster.getDataBuffer();
-		return new String(Base64.getEncoder().encode(data.getData()));
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try {
+			ImageIO.write((BufferedImage) th, "png", baos);
+			baos.flush();
+			byte[] imageBytes = Base64.getEncoder().encode(baos.toByteArray());
+			baos.close();
+			return new String(imageBytes);
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	public Image getThumbnail(String template) {
@@ -381,56 +382,70 @@ public class TemplateManager {
 
 		// Create a networkView
 		CyNetworkView view = networkViewFactory.createNetworkView(net);
-		view.setVisualProperty(BasicVisualLexicon.NETWORK_WIDTH, 100.0);
-		view.setVisualProperty(BasicVisualLexicon.NETWORK_HEIGHT, 100.0);
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_WIDTH, 1000.0);
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_HEIGHT, 1000.0);
 
 		// Add the template to our view
-		useTemplate(template, view);
+		// useTemplate(template, view);
 
 		// Get the image
-		return getViewImage(view);
+		Image img = getViewImage(template, view);
+		return img;
 	}
 
-	private Image getViewImage(CyNetworkView view) {
-		int width = 100;
-		int height = 100;
+	private Image getViewImage(final String template, final CyNetworkView view) {
+		int width = 1000;
+		int height = 1000;
 
-		final Image image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		final Graphics2D g = (Graphics2D) image.getGraphics();
+		final BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
-		SwingUtilities.invokeLater(new Runnable() {
-			//@Override
-			public void run() {
-				try {
-					final Dimension size = new Dimension(width, height);
-
-					JPanel panel = new JPanel();
-					panel.setPreferredSize(size);
-					panel.setSize(size);
-					panel.setMinimumSize(size);
-					panel.setMaximumSize(size);
-					panel.setBackground(Color.WHITE);
-
-					JWindow window = new JWindow();
-					window.getContentPane().add(panel, BorderLayout.CENTER);
-
-					RenderingEngine<CyNetwork> re = renderingEngineFactory.createRenderingEngine(panel, view);
-
-					view.fitContent();
-					view.updateView();
-					window.pack();
-					window.repaint();
-
-					re.createImage(width, height);
-					re.printCanvas(g);
-					g.dispose();
-
-				} catch (Exception ex) {
-					throw new RuntimeException(ex);
+		if (SwingUtilities.isEventDispatchThread()) {
+			renderTemplate(template, view, image, width, height);
+		} else {
+			try {
+			SwingUtilities.invokeAndWait(new Runnable() {
+				//@Override
+				public void run() {
+					renderTemplate(template, view, image, width, height);
 				}
-			}
-		});
+			});
+			} catch (Exception e) {e.printStackTrace();}
+		}
 
-		return image;
+		// Now scale the image to something more reasonable
+		return image.getScaledInstance(100,100,Image.SCALE_SMOOTH);
+	}
+
+	public void renderTemplate(String template, CyNetworkView view, BufferedImage img, int width, int height) {
+		final Graphics2D g = (Graphics2D) img.getGraphics();
+
+		try {
+			final Dimension size = new Dimension(width, height);
+
+			JPanel panel = new JPanel();
+			panel.setPreferredSize(size);
+			panel.setSize(size);
+			panel.setMinimumSize(size);
+			panel.setMaximumSize(size);
+			panel.setBackground(Color.WHITE);
+
+			JWindow window = new JWindow();
+			window.getContentPane().add(panel, BorderLayout.CENTER);
+
+			RenderingEngine<CyNetwork> re = renderingEngineFactory.createRenderingEngine(panel, view);
+
+			useTemplate(template, view);
+
+			window.pack();
+			window.repaint();
+
+			re.createImage(width, height);
+			re.printCanvas(g);
+			g.dispose();
+			// ImageIO.write((RenderedImage)img, "png", new File("/tmp/image.png"));
+
+		} catch (Exception ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 }

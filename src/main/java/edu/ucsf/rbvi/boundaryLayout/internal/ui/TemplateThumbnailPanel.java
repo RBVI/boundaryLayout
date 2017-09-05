@@ -22,16 +22,19 @@ import javax.swing.SwingUtilities;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.service.util.CyServiceRegistrar;
+import org.cytoscape.application.CyApplicationManager;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
 public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent, ActionListener {
 	private static final long serialVersionUID = 1L;
 	private CyServiceRegistrar registrar;
+	private CyApplicationManager cyApplicationManager;
 	private TemplateManager manager;
 	private ImageIcon templateIcon;
-	private JScrollPane scrollPane;
+	private JPanel buttonPanel;
 	
 	public TemplateThumbnailPanel() {
 		this(null, null);
@@ -41,11 +44,14 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		super();
 		this.registrar = registrar;
 		this.manager = manager;
+		this.cyApplicationManager = registrar.getService(CyApplicationManager.class);
 
 		// Consider adding a button bar to import/export/add templates
 
 		// This will contain all of our template buttons
-		scrollPane = new JScrollPane();
+		buttonPanel = new JPanel();
+
+		JScrollPane scrollPane = new JScrollPane(buttonPanel);
 		scrollPane.setLayout(new ScrollPaneLayout());
 		this.add(scrollPane);
 
@@ -54,13 +60,14 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	}
 
 	public void updatePanel() {
+		buttonPanel.removeAll();
 		for (String template : manager.getTemplateNames()) {
 			Image thumbnail = manager.getThumbnail(template);
 			JButton templateButton = new JButton(template, new ImageIcon(thumbnail));
 			templateButton.setActionCommand(template);
 			templateButton.addActionListener(this);
-			scrollPane.add(Box.createRigidArea(new Dimension(0,5)));
-			scrollPane.add(templateButton);
+			buttonPanel.add(Box.createRigidArea(new Dimension(0,5)));
+			buttonPanel.add(templateButton);
 		}
 	}
 
@@ -81,12 +88,15 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 
 	@Override
 	public String getTitle() {
-		return "Boundary Layout Templates";
+		return "Boundaries";
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		String template = e.getActionCommand();
-		// Replace (add) template
+		// Get the current network
+		CyNetworkView view = cyApplicationManager.getCurrentNetworkView();
+		// Add the template
+		manager.useTemplate(template, view);
 	}
 }

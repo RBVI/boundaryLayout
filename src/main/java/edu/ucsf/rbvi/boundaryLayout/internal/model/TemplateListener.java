@@ -36,7 +36,7 @@ public class TemplateListener implements CyShutdownListener {
 		boundaryLayoutTemplatesPath = configurationDirectory.getAbsolutePath() + 
 				File.separator + "boundaryLayoutTemplates.json";
 		templateFile = new File(boundaryLayoutTemplatesPath);
-		System.out.print("template listener constructor");
+		// System.out.println("template listener constructor");
 
 		//load our templates
 		if(templateFile.exists()) {
@@ -66,18 +66,16 @@ public class TemplateListener implements CyShutdownListener {
 			Map<String, List<String>> templateMap = 
 					templateManager.getTemplateMap();
 			for(String templateName : templateMap.keySet()) {
-				System.out.println(templateName);
 				JSONObject templateObject = new JSONObject();
 				JSONArray annotationsArray = new JSONArray();
 				for(String annotationInformation : templateMap.get(templateName))
 					annotationsArray.add(annotationInformation);
 				templateObject.put("name", templateName);
-				templateObject.put("thumbnail", templateManager.getThumbnail(templateName));
+				templateObject.put("thumbnail", templateManager.getEncodedThumbnail(templateName));
 				templateObject.put("annotations", annotationsArray);
 				templatesInformation.add(templateObject);
 			}
 			printJSON(templateWriter, templatesInformation);
-			System.out.println(templatesInformation.toJSONString());
 			templateWriter.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -104,5 +102,6 @@ public class TemplateListener implements CyShutdownListener {
 			annotationList.add((String) ann);
 		}
 		templateManager.addTemplateStrings(templateName, annotationList);
+		templateManager.addThumbnail(templateName, thumbnail);
 	}
 }
