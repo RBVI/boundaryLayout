@@ -6,14 +6,18 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.Image;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultListModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JWindow;
@@ -35,7 +39,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	private TemplateManager manager;
 	private ImageIcon templateIcon;
 	private JPanel buttonPanel;
-	
+
 	public TemplateThumbnailPanel() {
 		this(null, null);
 	}
@@ -69,6 +73,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 			buttonPanel.add(Box.createRigidArea(new Dimension(0,5)));
 			buttonPanel.add(templateButton);
 		}
+		scrollPane.setViewportView(buttonsPanel);
 	}
 
 	@Override
