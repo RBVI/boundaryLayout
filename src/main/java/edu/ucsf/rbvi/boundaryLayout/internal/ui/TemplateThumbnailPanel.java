@@ -39,6 +39,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	private TemplateManager manager;
 	private ImageIcon templateIcon;
 	private JPanel buttonPanel;
+	private JScrollPane scrollPane;
 
 	public TemplateThumbnailPanel() {
 		this(null, null);
@@ -55,7 +56,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		// This will contain all of our template buttons
 		buttonPanel = new JPanel();
 
-		JScrollPane scrollPane = new JScrollPane(buttonPanel);
+		scrollPane = new JScrollPane(buttonPanel);
 		scrollPane.setLayout(new ScrollPaneLayout());
 		this.add(scrollPane);
 
@@ -73,7 +74,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 			buttonPanel.add(Box.createRigidArea(new Dimension(0,5)));
 			buttonPanel.add(templateButton);
 		}
-		scrollPane.setViewportView(buttonsPanel);
+		scrollPane.setViewportView(buttonPanel);
 	}
 
 	@Override

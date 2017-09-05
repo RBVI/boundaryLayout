@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.RenderedImage;
@@ -117,7 +118,7 @@ public class TemplateManager {
 		if(!templates.containsKey(templateName))
 			return false;
 		List<String> templateInformation = templates.get(templateName);
-
+		
 		for(String annotationInformation : templateInformation) {
 			String[] argsArray = annotationInformation.substring(
 					annotationInformation.indexOf(')') + 3, 
@@ -384,18 +385,55 @@ public class TemplateManager {
 		CyNetworkView view = networkViewFactory.createNetworkView(net);
 		view.setVisualProperty(BasicVisualLexicon.NETWORK_WIDTH, 1000.0);
 		view.setVisualProperty(BasicVisualLexicon.NETWORK_HEIGHT, 1000.0);
-
+			
 		// Add the template to our view
-		// useTemplate(template, view);
+		useTemplate(template, view);
+		Rectangle2D.Double unionRectangle = getUnionofAnnotations(view); 
 
 		// Get the image
-		Image img = getViewImage(template, view);
+		Image img = getViewImage(template, view, unionRectangle);
 		return img;
 	}
-
-	private Image getViewImage(final String template, final CyNetworkView view) {
-		int width = 1000;
-		int height = 1000;
+	
+	private Rectangle2D.Double getUnionofAnnotations(CyNetworkView networkView) { 
+		Rectangle2D.Double unionOfAnnotations = new Rectangle2D.Double();
+		List<Annotation> annotations = 
+				registrar.getService(AnnotationManager.class).getAnnotations(networkView);
+		System.out.println("union of annotations");
+		System.out.println(annotations);
+		List<ShapeAnnotation> shapeAnnotations = new ArrayList<>();
+		if(annotations != null) 
+			for(Annotation annotation : annotations) {
+				System.out.println("annotation!");
+				if(annotation instanceof ShapeAnnotation) {
+					System.out.println("	shape annotation!");
+					shapeAnnotations.add((ShapeAnnotation) annotation);
+				}
+			}
+		
+		for(ShapeAnnotation shapeAnnotation : shapeAnnotations) {
+			Map<String, String> argMap = shapeAnnotation.getArgMap();
+			double xCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.X));
+			double yCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
+			double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH)) / shapeAnnotation.getZoom();
+			double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT)) / shapeAnnotation.getZoom();
+			if(unionOfAnnotations.isEmpty())
+				unionOfAnnotations = new Rectangle2D.Double(xCoordinate, yCoordinate, width, height);
+			else
+				Rectangle2D.Double.union(new Rectangle2D.Double(xCoordinate, yCoordinate, width, height), 
+						unionOfAnnotations, unionOfAnnotations);
+			System.out.println(unionOfAnnotations);
+		}
+		return unionOfAnnotations;
+	}
+	
+	private Image getViewImage(final String template, final CyNetworkView view, Rectangle2D.Double bounds) {
+		double aspectRatio = Math.abs(bounds.getHeight() / bounds.getWidth());
+		final int width = (int) Math.abs(bounds.getWidth());
+		final int height = (int) Math.abs(bounds.getHeight());
+		System.out.println(width + "," + height);
+		int max = (width > height ? width : height);
+		double adjustmentRatio = max / 100;
 
 		final BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
@@ -412,8 +450,10 @@ public class TemplateManager {
 			} catch (Exception e) {e.printStackTrace();}
 		}
 
+		int newWidth = (int) (width / adjustmentRatio);
+		int newHeight = (int) (height / adjustmentRatio);
 		// Now scale the image to something more reasonable
-		return image.getScaledInstance(100,100,Image.SCALE_SMOOTH);
+		return image.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
 	}
 
 	public void renderTemplate(String template, CyNetworkView view, BufferedImage img, int width, int height) {

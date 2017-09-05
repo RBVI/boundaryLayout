@@ -28,6 +28,7 @@ public class TemplateListener implements CyShutdownListener {
 	private static final String THUMBNAIL = "thumbnail";
 	private static final String ANNOTATIONS = "annotations";
 
+	@SuppressWarnings("resource")
 	public TemplateListener(TemplateManager templateManager, CyServiceRegistrar registrar) {
 		this.templateManager = templateManager;
 		this.registrar = registrar;
@@ -50,6 +51,7 @@ public class TemplateListener implements CyShutdownListener {
 					else if(jsonTemplateObj instanceof JSONArray) 
 						throw new RuntimeException("Not supposed to be an array!");
 				}
+				templateReader.close();
 			} catch (Exception e) {}
 		}
 	}
