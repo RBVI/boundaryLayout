@@ -397,8 +397,9 @@ public class TemplateManager {
 	
 	private Rectangle2D.Double getUnionofAnnotations(CyNetworkView networkView) { 
 		Rectangle2D.Double unionOfAnnotations = new Rectangle2D.Double();
-		List<Annotation> annotations = 
-				registrar.getService(AnnotationManager.class).getAnnotations(networkView);
+		/* Annotation Manager does not get the annotations for some reason -- null?
+		 * */
+		List<Annotation> annotations = annotationManager.getAnnotations(networkView);
 		System.out.println("union of annotations");
 		System.out.println(annotations);
 		List<ShapeAnnotation> shapeAnnotations = new ArrayList<>();

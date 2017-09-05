@@ -53,8 +53,8 @@ public class CyActivator extends AbstractCyActivator {
 		
 		TaskFactory templateThumbnailFactory = new CreateTemplateThumbnailTaskFactory(registrar, templateManager); 
 		Properties templateThumbnailProperties = new Properties();
-		templateThumbnailProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App.Visualizations");
-		templateThumbnailProperties.setProperty(TITLE, "Create Thumbnail of Templates");
+		templateThumbnailProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
+		templateThumbnailProperties.setProperty(TITLE, "Show Templates in Control Panel");
 		templateThumbnailProperties.setProperty(IN_MENU_BAR, "true");
 		templateThumbnailProperties.setProperty(MENU_GRAVITY, "10.0");
 		registerService(bc, templateThumbnailFactory, TaskFactory.class, templateThumbnailProperties);
