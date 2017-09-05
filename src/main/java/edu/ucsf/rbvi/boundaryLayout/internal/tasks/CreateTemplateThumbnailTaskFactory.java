@@ -1,5 +1,7 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.tasks;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.cytoscape.application.swing.CySwingApplication;
@@ -17,11 +19,12 @@ public class CreateTemplateThumbnailTaskFactory extends AbstractTaskFactory {
 	public CytoPanelComponent thumbnail;
 	private CytoPanel thumbnailPanel;
 	
-	public CreateTemplateThumbnailTaskFactory(CyServiceRegistrar registrar, TemplateManager manager) {
+	public CreateTemplateThumbnailTaskFactory(CyServiceRegistrar registrar, 
+			TemplateManager manager, Map<String, Object> tasks) {
 		super();
 		CySwingApplication swingApplication = registrar.getService(CySwingApplication.class);
 		thumbnailPanel = swingApplication.getCytoPanel(CytoPanelName.WEST);
-		thumbnail = new TemplateThumbnailPanel(registrar, manager);
+		thumbnail = new TemplateThumbnailPanel(registrar, manager, tasks);
 		registrar.registerService(thumbnail, CytoPanelComponent.class, new Properties());
 	}
 	

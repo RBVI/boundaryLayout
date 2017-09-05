@@ -10,6 +10,7 @@ import java.awt.GridLayout;
 import java.awt.Image;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -27,7 +28,9 @@ import javax.swing.SwingUtilities;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.work.TaskFactory;
 import org.cytoscape.service.util.CyServiceRegistrar;
+import org.cytoscape.task.NetworkViewTaskFactory;
 import org.cytoscape.application.CyApplicationManager;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
@@ -40,20 +43,25 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	private ImageIcon templateIcon;
 	private JPanel buttonPanel;
 	private JScrollPane scrollPane;
-
+	private List<JButton> buttonTasks;
+	private Map<String, Object> tasksMap;
+	
 	public TemplateThumbnailPanel() {
-		this(null, null);
+		this(null, null, null);
 	}
 
-	public TemplateThumbnailPanel(CyServiceRegistrar registrar, TemplateManager manager) {
+	public TemplateThumbnailPanel(CyServiceRegistrar registrar, 
+			TemplateManager manager, Map<String, Object> tasks) {
 		super();
 		this.registrar = registrar;
 		this.manager = manager;
+		this.tasksMap = tasks;
 		this.cyApplicationManager = registrar.getService(CyApplicationManager.class);
 
 		// Consider adding a button bar to import/export/add templates
 
 		// This will contain all of our template buttons
+		//initButtonTasks(); //gets a list of buttons for each task
 		buttonPanel = new JPanel();
 
 		scrollPane = new JScrollPane(buttonPanel);
@@ -75,6 +83,33 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 			buttonPanel.add(templateButton);
 		}
 		scrollPane.setViewportView(buttonPanel);
+	}
+	
+	public void initButtonTasks() {
+		for(String taskName : tasksMap.keySet()) {
+			JButton taskButton = new JButton(taskName);
+			taskButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					processTask(e);
+				}
+			});
+			buttonTasks.add(taskButton);
+		}
+	}
+
+	protected void processTask(ActionEvent e) {
+		String taskName = e.getActionCommand();
+		Object taskObject = tasksMap.get(taskName);
+		if(taskObject instanceof TaskFactory) {
+			TaskFactory task = (TaskFactory) taskObject;
+			task.createTaskIterator();
+		}
+		else if(taskObject instanceof NetworkViewTaskFactory) {
+			NetworkViewTaskFactory netViewTask = (NetworkViewTaskFactory) taskObject;
+			netViewTask.createTaskIterator(registrar.getService(
+					CyApplicationManager.class).getCurrentNetworkView());
+		}
 	}
 
 	@Override
