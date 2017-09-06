@@ -401,9 +401,8 @@ public class TemplateManager {
 		Rectangle2D.Double unionOfAnnotations = new Rectangle2D.Double();
 		/* Annotation Manager does not get the annotations for some reason -- null?
 		 * */
-		List<Annotation> annotations = registrar.getService(AnnotationManager.class).getAnnotations(networkView);
-		System.out.println("union of annotations");
-		System.out.println(annotations);
+		List<Annotation> annotations = registrar.getService(
+				AnnotationManager.class).getAnnotations(networkView);
 		List<ShapeAnnotation> shapeAnnotations = new ArrayList<>();
 		if(annotations != null) 
 			for(Annotation annotation : annotations) {
@@ -434,9 +433,8 @@ public class TemplateManager {
 		double aspectRatio = Math.abs(bounds.getHeight() / bounds.getWidth());
 		final int width = (int) Math.abs(bounds.getWidth());
 		final int height = (int) Math.abs(bounds.getHeight());
-		System.out.println(width + "," + height);
-		int max = (width > height ? width : height);
-		double adjustmentRatio = max / 100;
+		int min = (width < height ? width : height);
+		double adjustmentRatio = min / 100;
 
 		final BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 

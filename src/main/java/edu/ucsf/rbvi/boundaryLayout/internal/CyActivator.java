@@ -127,13 +127,8 @@ public class CyActivator extends AbstractCyActivator {
 		registerService(bc, templateNetworkRemoveFactory, NetworkViewTaskFactory.class, templateNetworkRemoveProperties);*/
 		taskFactories.put(REMOVE_TEMPLATE_FROM_VIEW, templateNetworkRemoveFactory);
 		
-		TaskFactory templateThumbnailFactory = new CreateTemplateThumbnailTaskFactory(registrar, templateManager, taskFactories); 
-		Properties templateThumbnailProperties = new Properties();
-		templateThumbnailProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
-		templateThumbnailProperties.setProperty(TITLE, "Show Templates in Control Panel");
-		templateThumbnailProperties.setProperty(IN_MENU_BAR, "true");
-		templateThumbnailProperties.setProperty(MENU_GRAVITY, "10.0");
-		registerService(bc, templateThumbnailFactory, TaskFactory.class, templateThumbnailProperties);
+		TaskFactory templateThumbnailFactory = new CreateTemplateThumbnailTaskFactory(registrar, 
+				templateManager, taskFactories); 
 		
 		CyLayoutAlgorithm forceDirectedLayoutAlgorithm = new ForceDirectedLayout(registrar, undoSupport);
 		Properties forceDirectedLayoutAlgorithmProperties = new Properties();
