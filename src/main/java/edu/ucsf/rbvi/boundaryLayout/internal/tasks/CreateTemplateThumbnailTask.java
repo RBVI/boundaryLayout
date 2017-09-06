@@ -1,23 +1,33 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.tasks;
 
-import org.cytoscape.application.swing.CytoPanel;
-import org.cytoscape.application.swing.CytoPanelState;
+import java.util.Properties;
+
+import org.cytoscape.application.swing.CytoPanelComponent;
+import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 
 
 public class CreateTemplateThumbnailTask extends AbstractTask {
-	public CytoPanel thumbnailPanel;
+	public CytoPanelComponent thumbnailPanel;
+	private CyServiceRegistrar registrar;
 
-	public CreateTemplateThumbnailTask(CytoPanel thumbnailPanel) {
+	public CreateTemplateThumbnailTask(CyServiceRegistrar registrar, 
+			CytoPanelComponent thumbnailPanel) {
 		super();
+		this.registrar = registrar;
+		this.thumbnailPanel = thumbnailPanel;
 	}
 
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {
-		if(thumbnailPanel.getState() == CytoPanelState.HIDE)
-			thumbnailPanel.setState(CytoPanelState.DOCK);
-		else if(thumbnailPanel.getState() == CytoPanelState.DOCK)
-			thumbnailPanel.setState(CytoPanelState.HIDE);
+		if(thumbnailPanel.getComponent().isVisible())
+			thumbnailPanel.getComponent().setVisible(false);
+		else 
+			thumbnailPanel.getComponent().setVisible(true);
+		if(thumbnailPanel.getComponent().isVisible())
+			registrar.registerService(thumbnailPanel, CytoPanelComponent.class, new Properties());
+		else
+			registrar.unregisterService(thumbnailPanel, CytoPanelComponent.class);
 	}
 }

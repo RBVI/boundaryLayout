@@ -141,6 +141,7 @@ public class TemplateManager {
 
 	public boolean importTemplate(String templateName,
 			File templateFile) throws IOException {
+		System.out.println("import called!");
 		if(!templateFile.exists())
 			return false;
 		BufferedReader templateReader = new BufferedReader(
@@ -389,7 +390,9 @@ public class TemplateManager {
 		// Add the template to our view
 		useTemplate(template, view);
 		Rectangle2D.Double unionRectangle = getUnionofAnnotations(view); 
-
+		if(unionRectangle.getWidth() * unionRectangle.getHeight() < 10)
+			unionRectangle.setRect(unionRectangle.getX(), unionRectangle.getY(), 1000, 1000);
+		
 		// Get the image
 		Image img = getViewImage(template, view, unionRectangle);
 		return img;

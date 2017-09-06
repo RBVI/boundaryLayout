@@ -1,13 +1,8 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.tasks;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
-import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
-import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.work.AbstractTaskFactory;
 import org.cytoscape.work.TaskIterator;
@@ -16,20 +11,20 @@ import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
 
 public class CreateTemplateThumbnailTaskFactory extends AbstractTaskFactory {
-	public CytoPanelComponent thumbnail;
-	private CytoPanel thumbnailPanel;
+	public CytoPanelComponent thumbnailPanel;
+	private CyServiceRegistrar registrar;
 	
 	public CreateTemplateThumbnailTaskFactory(CyServiceRegistrar registrar, 
 			TemplateManager manager, Map<String, Object> tasks) {
 		super();
-		CySwingApplication swingApplication = registrar.getService(CySwingApplication.class);
-		thumbnailPanel = swingApplication.getCytoPanel(CytoPanelName.WEST);
-		thumbnail = new TemplateThumbnailPanel(registrar, manager, tasks);
-		registrar.registerService(thumbnail, CytoPanelComponent.class, new Properties());
+		this.registrar = registrar;
+		thumbnailPanel = new TemplateThumbnailPanel(registrar, manager, tasks);
+		thumbnailPanel.getComponent().setVisible(false);
 	}
 	
 	@Override
 	public TaskIterator createTaskIterator() {
-		return new TaskIterator(new CreateTemplateThumbnailTask(thumbnailPanel));
+		return new TaskIterator(new CreateTemplateThumbnailTask(
+				registrar, thumbnailPanel));
 	}
 }

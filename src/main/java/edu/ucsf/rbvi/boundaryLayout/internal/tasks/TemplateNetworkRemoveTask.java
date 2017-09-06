@@ -16,10 +16,10 @@ import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 public class TemplateNetworkRemoveTask extends AbstractTask {
 	private final CyNetworkView networkView;
 	private TemplateManager templateManager;
-	
+
 	@Tunable(description = "Choose templates to remove from view: ")
 	public ListMultipleSelection<String> templateNames = null;
-	
+
 	@SuppressWarnings("unchecked")
 	public TemplateNetworkRemoveTask(CyNetworkView networkView, 
 			TemplateManager templateManager) {
@@ -30,12 +30,14 @@ public class TemplateNetworkRemoveTask extends AbstractTask {
 		CyRow networkRow = networkTable.getRow(networkView.getSUID());
 		List<String> activeTemplates = (List<String>) 
 				networkRow.getRaw(TemplateManager.NETWORK_TEMPLATES);
-		templateNames = new ListMultipleSelection<>(activeTemplates);
+		if(activeTemplates != null)
+			templateNames = new ListMultipleSelection<>(activeTemplates);
 	}
-	
+
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {
-		templateManager.networkRemoveTemplates(networkView, 
-				templateNames.getSelectedValues());
+		if(templateNames != null)
+			templateManager.networkRemoveTemplates(networkView, 
+					templateNames.getSelectedValues());
 	}
 }
