@@ -31,6 +31,7 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.work.TaskFactory;
 import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.TunableHandler;
 import org.cytoscape.work.TunableHandlerFactory;
@@ -45,6 +46,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	private CyServiceRegistrar registrar;
 	private CyApplicationManager cyApplicationManager;
 	private TemplateManager manager;
+	private TaskManager taskManager;
 	private ImageIcon templateIcon;
 	private JPanel templatePanel;
 	private JPanel buttonTasksPanel;
@@ -56,6 +58,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		this(null, null, null);
 	}
 
+	@SuppressWarnings("rawtypes")
 	public TemplateThumbnailPanel(CyServiceRegistrar registrar, 
 			TemplateManager manager, Map<String, Object> tasks) {
 		super();
@@ -63,6 +66,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		this.manager = manager;
 		this.tasksMap = tasks;
 		this.cyApplicationManager = registrar.getService(CyApplicationManager.class);
+		this.taskManager = (TaskManager) registrar.getService(TaskManager.class);
 
 		// Consider adding a button bar to import/export/add templates
 
@@ -137,11 +141,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 			taskIterator = netViewTask.createTaskIterator(registrar.getService(
 					CyApplicationManager.class).getCurrentNetworkView());
 		}
-		TunableHandlerFactory handler = registrar.getService(TunableHandlerFactory.class);
-		
-		if(taskIterator != null)
-			while(taskIterator.hasNext()) 
-				taskIterator.next().run(null);
+		taskManager.execute(taskIterator);
 	}
 
 	@Override
