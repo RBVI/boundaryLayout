@@ -91,15 +91,6 @@ public class CyActivator extends AbstractCyActivator {
 		registerService(bc, templateSaveFactory, NetworkViewTaskFactory.class, templateSaveProperties);*/
 		taskFactories.put(SAVE_TEMPLATE, templateSaveFactory);	
 		
-		NetworkViewTaskFactory templateOverwriteFactory = new TemplateOverwrite(registrar, templateManager);
-		/*Properties templateOverwriteProperties = new Properties();
-		templateOverwriteProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
-		templateOverwriteProperties.setProperty(TITLE, "Overwrite Template");
-		templateOverwriteProperties.setProperty(IN_MENU_BAR, "false");
-		templateOverwriteProperties.setProperty(MENU_GRAVITY, "0.95");
-		registerService(bc, templateOverwriteFactory, NetworkViewTaskFactory.class, templateOverwriteProperties);*/
-		taskFactories.put(OVERWRITE_TEMPLATE, templateOverwriteFactory);
-		
 		NetworkViewTaskFactory templateUseFactory = new TemplateUse(templateManager);
 		/*Properties templateUseProperties = new Properties();
 		templateUseProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");

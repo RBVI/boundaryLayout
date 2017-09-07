@@ -17,25 +17,22 @@ public class TemplateOverwriteTask extends AbstractTask {
 	private final CyServiceRegistrar registrar;
 	private final CyNetworkView networkView;
 	private TemplateManager templateManager;
+	private String templateOverwriteName;
 	
-	@Tunable(description = "Select template to overwrite: ")
-	public ListSingleSelection<String> templateNames = null;
-	
-	public TemplateOverwriteTask(CyServiceRegistrar registrar, 
-			CyNetworkView networkView, TemplateManager templateManager) {
+	public TemplateOverwriteTask(CyServiceRegistrar registrar, CyNetworkView networkView, 
+			TemplateManager templateManager, String templateOverwriteName) {
 		super();
 		this.registrar = registrar;
 		this.networkView = networkView;
 		this.templateManager = templateManager;
-		templateNames = new ListSingleSelection<>(
-				templateManager.getTemplateNames());
+		this.templateOverwriteName = templateOverwriteName;
 	}
 	
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {		
 		List<Annotation> annotations = registrar.getService(
 				AnnotationManager.class).getAnnotations(networkView);
-		templateManager.overwriteTemplate(templateNames.getSelectedValue(), 
+		templateManager.overwriteTemplate(templateOverwriteName, 
 				annotations);
 	}
 }
