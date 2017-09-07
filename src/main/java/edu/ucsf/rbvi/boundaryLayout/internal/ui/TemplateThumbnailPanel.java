@@ -56,11 +56,12 @@ import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateOverwriteTask;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSave;
 
 public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent {
-
-	private static final String ADD_TEMPLATE = "Add";
-	private static final String IMPORT_TEMPLATE = "Import";
-	private static final String EXPORT_TEMPLATE = "Export";
-	private static final String DELETE_TEMPLATE = "Delete";	
+	public static final String USE_TEMPLATE = "Apply";
+	public static final String REMOVE_TEMPLATE_FROM_VIEW = "Remove Template from View";
+	public static final String ADD_TEMPLATE = "Add";
+	public static final String IMPORT_TEMPLATE = "Import";
+	public static final String EXPORT_TEMPLATE = "Export";
+	public static final String DELETE_TEMPLATE = "Delete";	
 	private static final long serialVersionUID = 1L;
 
 	private CyServiceRegistrar registrar;

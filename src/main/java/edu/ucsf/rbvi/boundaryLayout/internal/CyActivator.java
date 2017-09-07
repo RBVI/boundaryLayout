@@ -1,13 +1,9 @@
 package edu.ucsf.rbvi.boundaryLayout.internal;
 
-import static org.cytoscape.work.ServiceProperties.IN_MENU_BAR;
 import static org.cytoscape.work.ServiceProperties.MENU_GRAVITY;
-import static org.cytoscape.work.ServiceProperties.PREFERRED_MENU;
 import static org.cytoscape.work.ServiceProperties.TITLE;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -25,23 +21,15 @@ import edu.ucsf.rbvi.boundaryLayout.internal.layouts.ForceDirectedLayout;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateListener;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateUse;
+import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.CreateTemplateThumbnailTaskFactory;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateDelete;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateExport;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateImport;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateNetworkRemove;
-import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateOverwrite;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSave;
 
 public class CyActivator extends AbstractCyActivator {
-	
-	public static final String IMPORT_TEMPLATE = "Import Template";
-	public static final String EXPORT_TEMPLATE = "Export Template";
-	public static final String USE_TEMPLATE = "Apply Template to View";
-	public static final String SAVE_TEMPLATE = "Save as Template";
-	public static final String OVERWRITE_TEMPLATE = "Overwrite Template";
-	public static final String DELETE_TEMPLATE = "Delete Template";
-	public static final String REMOVE_TEMPLATE_FROM_VIEW = "Remove Template from View";
 	
 	public CyActivator() {
 		super();
@@ -71,7 +59,7 @@ public class CyActivator extends AbstractCyActivator {
 		templateImportProperties.setProperty(IN_MENU_BAR, "false");
 		templateImportProperties.setProperty(MENU_GRAVITY, "1.0");
 		registerService(bc, templateImportFactory, TaskFactory.class, templateImportProperties);*/
-		taskFactories.put(IMPORT_TEMPLATE, templateImportFactory);
+		taskFactories.put(TemplateThumbnailPanel.IMPORT_TEMPLATE, templateImportFactory);
 		
 		TaskFactory templateExportFactory = new TemplateExport(templateManager);
 		/*Properties templateExportProperties = new Properties();
@@ -80,7 +68,7 @@ public class CyActivator extends AbstractCyActivator {
 		templateExportProperties.setProperty(IN_MENU_BAR, "false");
 		templateExportProperties.setProperty(MENU_GRAVITY, "1.1");
 		registerService(bc, templateExportFactory, TaskFactory.class, templateExportProperties);*/
-		taskFactories.put(EXPORT_TEMPLATE, templateExportFactory);
+		taskFactories.put(TemplateThumbnailPanel.EXPORT_TEMPLATE, templateExportFactory);
 		
 		NetworkViewTaskFactory templateSaveFactory = new TemplateSave(registrar, templateManager);
 		/*Properties templateSaveProperties = new Properties();
@@ -89,7 +77,7 @@ public class CyActivator extends AbstractCyActivator {
 		templateSaveProperties.setProperty(IN_MENU_BAR, "false");
 		templateSaveProperties.setProperty(MENU_GRAVITY, "0.9");
 		registerService(bc, templateSaveFactory, NetworkViewTaskFactory.class, templateSaveProperties);*/
-		taskFactories.put(SAVE_TEMPLATE, templateSaveFactory);	
+		taskFactories.put(TemplateThumbnailPanel.ADD_TEMPLATE, templateSaveFactory);	
 		
 		NetworkViewTaskFactory templateUseFactory = new TemplateUse(templateManager);
 		/*Properties templateUseProperties = new Properties();
@@ -98,7 +86,7 @@ public class CyActivator extends AbstractCyActivator {
 		templateUseProperties.setProperty(IN_MENU_BAR, "false");
 		templateUseProperties.setProperty(MENU_GRAVITY, "2.0");
 		registerService(bc, templateUseFactory, NetworkViewTaskFactory.class, templateUseProperties);*/
-		taskFactories.put(USE_TEMPLATE, templateUseFactory);
+		taskFactories.put(TemplateThumbnailPanel.USE_TEMPLATE, templateUseFactory);
 		
 		TaskFactory templateDeleteFactory = new TemplateDelete(templateManager);
 		/*Properties templateDeleteProperties = new Properties();
@@ -107,7 +95,7 @@ public class CyActivator extends AbstractCyActivator {
 		templateDeleteProperties.setProperty(IN_MENU_BAR, "false");
 		templateDeleteProperties.setProperty(MENU_GRAVITY, "3.0");
 		registerService(bc, templateDeleteFactory, TaskFactory.class, templateDeleteProperties);*/
-		taskFactories.put(DELETE_TEMPLATE, templateDeleteFactory);
+		taskFactories.put(TemplateThumbnailPanel.DELETE_TEMPLATE, templateDeleteFactory);
 		
 		NetworkViewTaskFactory templateNetworkRemoveFactory = new TemplateNetworkRemove(templateManager);
 		/*Properties templateNetworkRemoveProperties = new Properties();
@@ -116,7 +104,7 @@ public class CyActivator extends AbstractCyActivator {
 		templateNetworkRemoveProperties.setProperty(IN_MENU_BAR, "false");
 		templateNetworkRemoveProperties.setProperty(MENU_GRAVITY, "2.9");
 		registerService(bc, templateNetworkRemoveFactory, NetworkViewTaskFactory.class, templateNetworkRemoveProperties);*/
-		taskFactories.put(REMOVE_TEMPLATE_FROM_VIEW, templateNetworkRemoveFactory);
+		taskFactories.put(TemplateThumbnailPanel.REMOVE_TEMPLATE_FROM_VIEW, templateNetworkRemoveFactory);
 		
 		TaskFactory templateThumbnailFactory = new CreateTemplateThumbnailTaskFactory(registrar, 
 				templateManager, taskFactories); 
