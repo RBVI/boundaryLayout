@@ -9,7 +9,6 @@ import org.cytoscape.view.presentation.annotations.AnnotationManager;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.Tunable;
-import org.cytoscape.work.util.ListSingleSelection;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
@@ -18,6 +17,9 @@ public class TemplateOverwriteTask extends AbstractTask {
 	private final CyNetworkView networkView;
 	private TemplateManager templateManager;
 	private String templateOverwriteName;
+	
+	@Tunable (description = ("Are you sure you want to overwrite the current template?"))
+	public boolean overwrite = false;
 	
 	public TemplateOverwriteTask(CyServiceRegistrar registrar, CyNetworkView networkView, 
 			TemplateManager templateManager, String templateOverwriteName) {
@@ -28,11 +30,15 @@ public class TemplateOverwriteTask extends AbstractTask {
 		this.templateOverwriteName = templateOverwriteName;
 	}
 	
+	public void setTemplateOverwrite(String templateName) {
+		this.templateOverwriteName = templateName;
+	}
+	
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {		
 		List<Annotation> annotations = registrar.getService(
 				AnnotationManager.class).getAnnotations(networkView);
-		templateManager.overwriteTemplate(templateOverwriteName, 
-				annotations);
+		if(overwrite)
+			templateManager.overwriteTemplate(templateOverwriteName, annotations);
 	}
 }

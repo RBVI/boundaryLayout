@@ -17,7 +17,6 @@ import org.cytoscape.service.util.CyServiceRegistrar;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 public class TemplateListener implements CyShutdownListener {
 	public static String boundaryLayoutTemplatesPath;

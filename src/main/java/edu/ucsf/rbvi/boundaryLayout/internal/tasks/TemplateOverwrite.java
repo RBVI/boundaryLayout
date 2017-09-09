@@ -20,10 +20,6 @@ public class TemplateOverwrite extends AbstractNetworkViewTaskFactory {
 		this.templateOverwriteName = templateOverwriteName;
 	}
 	
-	public void setTemplateOverwrite(String templateName) {
-		this.templateOverwriteName = templateName;
-	}
-	
 	@Override
 	public TaskIterator createTaskIterator(CyNetworkView networkView) {
 		return new TaskIterator(new TemplateOverwriteTask(

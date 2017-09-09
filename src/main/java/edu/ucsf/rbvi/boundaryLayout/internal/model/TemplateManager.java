@@ -118,7 +118,7 @@ public class TemplateManager {
 		if(!templates.containsKey(templateName))
 			return false;
 		List<String> templateInformation = templates.get(templateName);
-		
+
 		for(String annotationInformation : templateInformation) {
 			String[] argsArray = annotationInformation.substring(
 					annotationInformation.indexOf(')') + 3, 
@@ -189,28 +189,36 @@ public class TemplateManager {
 		return true;
 	}
 
+	@SuppressWarnings("unchecked")
+	public void clearNetworkofTemplates(CyNetworkView networkView) { 
+		CyRow networkRow = getNetworkRow(networkView);
+		networkRemoveTemplates(networkView, (List<String>) 
+				networkRow.getRaw(NETWORK_TEMPLATES));
+	}
+
 	public void networkRemoveTemplates(CyNetworkView networkView, 
 			List<String> templateRemoveNames) {
 		List<Annotation> annotations = annotationManager.
 				getAnnotations(networkView);
 		List<String> uuidsToRemove = new ArrayList<>();
-		for(String templateRemoveName : templateRemoveNames) {
-			if(templates.containsKey(templateRemoveName)) {
-				List<String> templateInformation =
-						templates.get(templateRemoveName);
-				for(String annotationInformation : templateInformation) {
-					String[] argsArray = annotationInformation.substring(
-							annotationInformation.indexOf(')') + 3, 
-							annotationInformation.length() - 1).split(", ");
-					Map<String, String> argMap = new HashMap<>();
-					for(String arg : argsArray) {
-						String[] keyValuePair = arg.split("=");
-						argMap.put(keyValuePair[0], keyValuePair[1]);
+		if(templateRemoveNames != null && !templateRemoveNames.isEmpty())
+			for(String templateRemoveName : templateRemoveNames) {
+				if(templates.containsKey(templateRemoveName)) {
+					List<String> templateInformation =
+							templates.get(templateRemoveName);
+					for(String annotationInformation : templateInformation) {
+						String[] argsArray = annotationInformation.substring(
+								annotationInformation.indexOf(')') + 3, 
+								annotationInformation.length() - 1).split(", ");
+						Map<String, String> argMap = new HashMap<>();
+						for(String arg : argsArray) {
+							String[] keyValuePair = arg.split("=");
+							argMap.put(keyValuePair[0], keyValuePair[1]);
+						}
+						uuidsToRemove.add(argMap.get("uuid"));
 					}
-					uuidsToRemove.add(argMap.get("uuid"));
 				}
 			}
-		}
 
 		//make sure that the annotation is only deleted in the specific network view and 
 		//not all views
@@ -241,10 +249,7 @@ public class TemplateManager {
 	@SuppressWarnings("unchecked")
 	private void appendTemplatesActive(CyNetworkView networkView, 
 			String templateName) {
-		CyTable networkTable = networkView.getModel().getDefaultNetworkTable();
-		if(!columnAlreadyExists(networkTable, NETWORK_TEMPLATES))
-			networkTable.createListColumn(NETWORK_TEMPLATES, String.class, false);
-		CyRow networkRow = networkTable.getRow(networkView.getSUID());
+		CyRow networkRow = getNetworkRow(networkView);
 		List<String> activeTemplates = (List<String>) 
 				networkRow.getRaw(NETWORK_TEMPLATES);
 		if(activeTemplates == null)
@@ -256,19 +261,31 @@ public class TemplateManager {
 	@SuppressWarnings("unchecked")
 	private void removeTemplatesActive(CyNetworkView networkView, 
 			List<String> templateRemoveNames) {
+		CyRow networkRow = getNetworkRow(networkView);
+		List<String> activeTemplates = (List<String>) 
+				networkRow.getRaw(NETWORK_TEMPLATES);
+		List<String> templatesToRemove = new ArrayList<>();
+		if(templateRemoveNames != null && !templateRemoveNames.isEmpty()) {
+			for(String templateRemoveName : templateRemoveNames)
+				if(activeTemplates.contains(templateRemoveName))
+					templatesToRemove.add(templateRemoveName);
+			activeTemplates.removeAll(templatesToRemove);
+			networkRow.set(NETWORK_TEMPLATES, activeTemplates);		
+		}
+	}
+
+	public CyRow getNetworkRow(CyNetworkView networkView) {
 		CyTable networkTable = networkView.getModel().getDefaultNetworkTable();
 		if(!columnAlreadyExists(networkTable, NETWORK_TEMPLATES))
 			networkTable.createListColumn(NETWORK_TEMPLATES, String.class, false);
-		CyRow networkRow = networkTable.getRow(networkView.getSUID());
-		List<String> activeTemplates = (List<String>) 
-				networkRow.getRaw(NETWORK_TEMPLATES);
-		for(String templateRemoveName : templateRemoveNames)
-			if(activeTemplates.contains(templateRemoveName))
-				activeTemplates.remove(templateRemoveName);
-		networkRow.set(NETWORK_TEMPLATES, activeTemplates);		
+		List<String> templatesActive = networkTable.getRow(networkView.getSUID()).
+				getList(NETWORK_TEMPLATES, String.class);
+		if(templatesActive == null)
+			templatesActive = new ArrayList<>();
+		return networkTable.getRow(networkView.getSUID());
 	}
 
-	private boolean columnAlreadyExists(CyTable networkTable, String columnName) {
+	public static boolean columnAlreadyExists(CyTable networkTable, String columnName) {
 		for(CyColumn networkColumn : networkTable.getColumns())
 			if(networkColumn.getName().equals(columnName))
 				return true;
@@ -385,18 +402,18 @@ public class TemplateManager {
 		CyNetworkView view = networkViewFactory.createNetworkView(net);
 		view.setVisualProperty(BasicVisualLexicon.NETWORK_WIDTH, 1000.0);
 		view.setVisualProperty(BasicVisualLexicon.NETWORK_HEIGHT, 1000.0);
-			
+
 		// Add the template to our view
 		useTemplate(template, view);
 		Rectangle2D.Double unionRectangle = getUnionofAnnotations(view); 
 		if(unionRectangle.getWidth() * unionRectangle.getHeight() < 10)
 			unionRectangle.setRect(unionRectangle.getX(), unionRectangle.getY(), 1000, 1000);
-		
+
 		// Get the image
 		Image img = getViewImage(template, view, unionRectangle);
 		return img;
 	}
-	
+
 	private Rectangle2D.Double getUnionofAnnotations(CyNetworkView networkView) { 
 		Rectangle2D.Double unionOfAnnotations = new Rectangle2D.Double();
 		/* Annotation Manager does not get the annotations for some reason -- null?
@@ -412,7 +429,7 @@ public class TemplateManager {
 					shapeAnnotations.add((ShapeAnnotation) annotation);
 				}
 			}
-		
+
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations) {
 			Map<String, String> argMap = shapeAnnotation.getArgMap();
 			double xCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.X));
@@ -428,7 +445,7 @@ public class TemplateManager {
 		}
 		return unionOfAnnotations;
 	}
-	
+
 	private Image getViewImage(final String template, final CyNetworkView view, Rectangle2D.Double bounds) {
 		double aspectRatio = Math.abs(bounds.getHeight() / bounds.getWidth());
 		final int width = (int) Math.abs(bounds.getWidth());
@@ -442,12 +459,12 @@ public class TemplateManager {
 			renderTemplate(template, view, image, width, height);
 		} else {
 			try {
-			SwingUtilities.invokeAndWait(new Runnable() {
-				//@Override
-				public void run() {
-					renderTemplate(template, view, image, width, height);
-				}
-			});
+				SwingUtilities.invokeAndWait(new Runnable() {
+					//@Override
+					public void run() {
+						renderTemplate(template, view, image, width, height);
+					}
+				});
 			} catch (Exception e) {e.printStackTrace();}
 		}
 
