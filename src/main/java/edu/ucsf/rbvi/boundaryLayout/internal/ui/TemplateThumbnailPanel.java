@@ -62,12 +62,13 @@ import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSave;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSaveTask;
 
 public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent {
-	public static final String USE_TEMPLATE = "Apply";
-	public static final String REMOVE_TEMPLATE_FROM_VIEW = "Remove Template from View";
-	public static final String ADD_TEMPLATE = "Add";
-	public static final String IMPORT_TEMPLATE = "Import";
-	public static final String EXPORT_TEMPLATE = "Export";
-	public static final String DELETE_TEMPLATE = "Delete";	
+	public static final String USE_TEMPLATE = "apply";
+	public static final String REMOVE_TEMPLATE_FROM_VIEW = "remove";
+	public static final String ADD_TEMPLATE = "add";
+	public static final String IMPORT_TEMPLATE = "import";
+	public static final String EXPORT_TEMPLATE = "export";
+	public static final String DELETE_TEMPLATE = "delete";	
+	private final List<String> toolList;
 	private static final long serialVersionUID = 1L;
 
 	private CyServiceRegistrar registrar;
@@ -99,6 +100,11 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		this.templatePanel = new JPanel();
 		this.templatesBox = Box.createVerticalBox();
 		this.currentTemplateName = null;
+		this.toolList = new ArrayList<>();
+		toolList.add(IMPORT_TEMPLATE);
+		toolList.add(EXPORT_TEMPLATE);
+		toolList.add(ADD_TEMPLATE);
+		
 		CurrentNetworkViewTemplateListener networkViewTemplateListener = 
 				new CurrentNetworkViewTemplateListener(this);
 		registrar.registerService(networkViewTemplateListener, SetCurrentNetworkViewListener.class, new Properties());
@@ -139,7 +145,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	public void setCurrentTemplateName(String templateName) {
 		this.currentTemplateName = templateName;
 	}
-	
+
 	public void updatePanel() {
 		templatePanel.removeAll();
 		for (String template : manager.getTemplateNames())
@@ -155,21 +161,26 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		buttonPanel.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
 		lowerPanel.add(buttonPanel, BorderLayout.CENTER);
 
-		JButton importButton = new JButton(IMPORT_TEMPLATE, new ImageIcon());//ADD IMPORT ICON
-		JButton exportButton = new JButton(EXPORT_TEMPLATE, new ImageIcon());//ADD EXPORT ICON
-		JButton addButton = new JButton(ADD_TEMPLATE, new ImageIcon());//ADD "ADD" ICON
-		importButton.setActionCommand(IMPORT_TEMPLATE);
-		exportButton.setActionCommand(EXPORT_TEMPLATE);
-		addButton.setActionCommand(ADD_TEMPLATE);
-		importButton.addActionListener(new TemplateButtonListener());
-		exportButton.addActionListener(new TemplateButtonListener());
-		addButton.addActionListener(new TemplateButtonListener());	
+		System.out.println(toolList);
+		if(toolList != null && !toolList.isEmpty()) 
+			for(String toolName : toolList) 
+				initNewButton(buttonPanel, toolName);
 		
-		buttonPanel.add(importButton);
-		buttonPanel.add(exportButton);
-		buttonPanel.add(addButton);
 		this.add(lowerPanel, BorderLayout.SOUTH);
 		lowerPanel.repaint();
+	}
+
+	private void initNewButton(JPanel buttonPanel, String buttonName) {
+		System.out.println(getClass().getResource("/icons/" + buttonName + ".png"));
+		if(getClass().getResource("/icons/" + buttonName + ".png") != null) {
+			System.out.println(buttonName + " is good!");
+			ImageIcon newIcon = new ImageIcon(getClass().getResource("/icons/" + buttonName + ".png"));
+			newIcon.setImage(newIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH));
+			JButton newToolButton = new JButton(newIcon);
+			newToolButton.setActionCommand(buttonName);
+			newToolButton.addActionListener(new TemplateButtonListener());
+			buttonPanel.add(newToolButton);
+		}
 	}
 
 	private void addToTemplatesBox(String templateName) {
@@ -288,7 +299,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		public void mouseClicked(MouseEvent e) {
 			checkPopup(e);
 		}
-		
+
 		@Override
 		public void mouseReleased(MouseEvent e) {
 			checkPopup(e);
@@ -303,7 +314,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 
 	private class TemplateMenuItemListener implements ActionListener {
 		private JLabel templateLabel;
-		
+
 		public TemplateMenuItemListener(JLabel templateLabel) {
 			super();
 			this.templateLabel = templateLabel;
