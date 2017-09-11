@@ -342,7 +342,7 @@ public class TemplateManager {
 		if(networkView != null) {
 			CyRow networkRow = getNetworkRow(networkView);
 			List<String> templatesActive = (List<String>) networkRow.getRaw(NETWORK_TEMPLATES);
-			if(templatesActive.contains(oldName)) {
+			if(templatesActive != null && templatesActive.contains(oldName)) {
 				templatesActive.add(newName);
 				templatesActive.remove(oldName);
 				networkRow.set(NETWORK_TEMPLATES, templatesActive);		

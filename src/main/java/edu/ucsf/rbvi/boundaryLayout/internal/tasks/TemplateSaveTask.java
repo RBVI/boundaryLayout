@@ -17,7 +17,7 @@ public class TemplateSaveTask extends AbstractTask {
 	private final CyNetworkView networkView;
 	private TemplateManager templateManager;
 	
-	@Tunable(description = "Name of template: ")
+	@Tunable(description = "Name of new template: ")
 	public String templateName = "";
 	
 	public TemplateSaveTask(CyServiceRegistrar registrar, 

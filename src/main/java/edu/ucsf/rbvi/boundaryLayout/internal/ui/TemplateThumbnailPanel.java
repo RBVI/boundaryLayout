@@ -61,7 +61,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	private TemplateManager manager;
 	private TaskManager taskManager;
 	private ImageIcon templateIcon;
-	private JPanel templatePanel;
+	private JPanel templatesPanel;
 	private Box templatesBox;
 	private Map<String, JPanel> templatesMap;
 	private JScrollPane scrollPane;
@@ -82,7 +82,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		this.cyApplicationManager = registrar.getService(CyApplicationManager.class);
 		this.taskManager = (TaskManager) registrar.getService(TaskManager.class);
 		this.templatesMap = new HashMap<>();
-		this.templatePanel = new JPanel();
+		this.templatesPanel = new JPanel();
 		this.templatesBox = Box.createVerticalBox();
 		this.currentTemplateName = null;
 		this.toolList = new ArrayList<>();
@@ -96,7 +96,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 
 		this.setLayout(new BorderLayout());
 
-		scrollPane = new JScrollPane(templatePanel);
+		scrollPane = new JScrollPane(templatesPanel);
 		scrollPane.setLayout(new ScrollPaneLayout());
 		this.add(scrollPane, BorderLayout.CENTER);
 
@@ -142,7 +142,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		}
 		templatesMap.put(newName, templatesMap.get(oldName));
 		templatesMap.remove(oldName);
-		if(currentTemplateName.equals(oldName))
+		if(currentTemplateName == null || currentTemplateName.equals(oldName))
 			currentTemplateName = newName;
 		if(templatesMap.containsKey(newName) && !templatesMap.containsKey(oldName))
 			return true;
@@ -150,11 +150,11 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	}
 
 	public void updatePanel() {
-		templatePanel.removeAll();
+		templatesPanel.removeAll();
 		for (String template : manager.getTemplateNames())
 			addToTemplatesBox(template);
-		templatePanel.add(templatesBox);
-		scrollPane.setViewportView(templatePanel);
+		templatesPanel.add(templatesBox);
+		scrollPane.setViewportView(templatesPanel);
 		initLowerPanel();
 	}
 
