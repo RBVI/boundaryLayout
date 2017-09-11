@@ -14,6 +14,6 @@ public class TemplateDelete extends AbstractTaskFactory {
 	
 	@Override
 	public TaskIterator createTaskIterator() {
-		return new TaskIterator(new TemplateDeleteTask(templateManager));
+		return new TaskIterator(new TemplateDeleteTask(templateManager, null, null));
 	}
 }

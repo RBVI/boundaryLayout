@@ -32,6 +32,7 @@ import javax.swing.JPanel;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
+import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
@@ -115,8 +116,10 @@ public class TemplateManager {
 	}
 
 	public boolean useTemplate(String templateName, CyNetworkView networkView) {
-		if(!templates.containsKey(templateName))
+		if(!templates.containsKey(templateName)) {
+			System.out.println("Does not exist!!");
 			return false;
+		}
 		List<String> templateInformation = templates.get(templateName);
 
 		for(String annotationInformation : templateInformation) {
@@ -198,6 +201,7 @@ public class TemplateManager {
 
 	public void networkRemoveTemplates(CyNetworkView networkView, 
 			List<String> templateRemoveNames) {
+		System.out.println(templateRemoveNames + " are the templates to remove!");
 		List<Annotation> annotations = annotationManager.
 				getAnnotations(networkView);
 		List<String> uuidsToRemove = new ArrayList<>();
@@ -329,6 +333,31 @@ public class TemplateManager {
 		return addedShape;
 	}
 
+	@SuppressWarnings("unchecked")
+	public boolean renameTemplate(String oldName, String newName, CyNetworkView networkView) {
+		if(!templates.containsKey(oldName))
+			return false;
+		templates.put(newName, templates.get(oldName));
+		templates.remove(oldName);
+		if(networkView != null) {
+			CyRow networkRow = getNetworkRow(networkView);
+			List<String> templatesActive = (List<String>) networkRow.getRaw(NETWORK_TEMPLATES);
+			if(templatesActive.contains(oldName)) {
+				templatesActive.add(newName);
+				templatesActive.remove(oldName);
+				networkRow.set(NETWORK_TEMPLATES, templatesActive);		
+			}
+		}
+		if(templates.containsKey(newName) && !templates.containsKey(oldName))
+			return true;
+		return false;
+	}
+
+	public boolean renameTemplate(String oldName, String newName) {
+		return renameTemplate(oldName, newName, registrar.getService(
+				CyApplicationManager.class).getCurrentNetworkView());
+	}
+
 	public Map<String, List<String>> getTemplateMap() {
 		return templates;
 	}
@@ -422,13 +451,9 @@ public class TemplateManager {
 				AnnotationManager.class).getAnnotations(networkView);
 		List<ShapeAnnotation> shapeAnnotations = new ArrayList<>();
 		if(annotations != null) 
-			for(Annotation annotation : annotations) {
-				System.out.println("annotation!");
-				if(annotation instanceof ShapeAnnotation) {
-					System.out.println("	shape annotation!");
+			for(Annotation annotation : annotations) 
+				if(annotation instanceof ShapeAnnotation) 
 					shapeAnnotations.add((ShapeAnnotation) annotation);
-				}
-			}
 
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations) {
 			Map<String, String> argMap = shapeAnnotation.getArgMap();
@@ -441,7 +466,6 @@ public class TemplateManager {
 			else
 				Rectangle2D.Double.union(new Rectangle2D.Double(xCoordinate, yCoordinate, width, height), 
 						unionOfAnnotations, unionOfAnnotations);
-			System.out.println(unionOfAnnotations);
 		}
 		return unionOfAnnotations;
 	}

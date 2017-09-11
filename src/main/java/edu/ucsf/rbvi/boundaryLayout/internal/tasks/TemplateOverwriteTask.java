@@ -17,10 +17,10 @@ public class TemplateOverwriteTask extends AbstractTask {
 	private final CyNetworkView networkView;
 	private TemplateManager templateManager;
 	private String templateOverwriteName;
-	
+
 	@Tunable (description = ("Are you sure you want to overwrite the current template?"))
 	public boolean overwrite = false;
-	
+
 	public TemplateOverwriteTask(CyServiceRegistrar registrar, CyNetworkView networkView, 
 			TemplateManager templateManager, String templateOverwriteName) {
 		super();
@@ -29,16 +29,17 @@ public class TemplateOverwriteTask extends AbstractTask {
 		this.templateManager = templateManager;
 		this.templateOverwriteName = templateOverwriteName;
 	}
-	
+
 	public void setTemplateOverwrite(String templateName) {
 		this.templateOverwriteName = templateName;
 	}
-	
+
 	@Override
-	public void run(TaskMonitor taskMonitor) throws Exception {		
-		List<Annotation> annotations = registrar.getService(
-				AnnotationManager.class).getAnnotations(networkView);
-		if(overwrite)
+	public void run(TaskMonitor taskMonitor) throws Exception {	
+		if(overwrite) {
+			List<Annotation> annotations = registrar.getService(
+					AnnotationManager.class).getAnnotations(networkView);
 			templateManager.overwriteTemplate(templateOverwriteName, annotations);
+		}
 	}
 }

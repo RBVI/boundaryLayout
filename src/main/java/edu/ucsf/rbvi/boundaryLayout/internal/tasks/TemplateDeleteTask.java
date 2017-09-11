@@ -3,24 +3,31 @@ package edu.ucsf.rbvi.boundaryLayout.internal.tasks;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.Tunable;
-import org.cytoscape.work.util.ListSingleSelection;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
+import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
 
 public class TemplateDeleteTask extends AbstractTask {
 	private TemplateManager templateManager;
+	private String templateToDelete = null;
+	private TemplateThumbnailPanel templatePanel;
 	
-	@Tunable (description= "Choose template to delete: ")
-	public ListSingleSelection<String> templateNames = null;
+	@Tunable (description= "Are you sure you want to delete this template?: ")
+	public boolean deleteTemplate = false;
 	
-	public TemplateDeleteTask(TemplateManager templateManager) {
+	public TemplateDeleteTask(TemplateManager templateManager, 
+			TemplateThumbnailPanel templatePanel, String templateToDelete) {
+		super();
 		this.templateManager = templateManager;
-		templateNames = new ListSingleSelection<>(
-				templateManager.getTemplateNames());
+		this.templatePanel = templatePanel;
+		this.templateToDelete = templateToDelete;
 	}
 	
 	@Override
-	public void run(TaskMonitor taskMonitor) {		
-		templateManager.deleteTemplate(templateNames.getSelectedValue());
+	public void run(TaskMonitor taskMonitor) {	
+		System.out.println(deleteTemplate + " for " + templateToDelete);
+		if(deleteTemplate && templateToDelete != null) 
+			templateManager.deleteTemplate(templateToDelete);
+		templatePanel.updateTemplatesPanel();
 	}
 }

@@ -2,15 +2,12 @@ package edu.ucsf.rbvi.boundaryLayout.internal.ui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.awt.Image;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,44 +16,32 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.DefaultListModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JList;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JWindow;
-import javax.swing.ScrollPaneConstants;
 import javax.swing.ScrollPaneLayout;
 import javax.swing.SwingUtilities;
-import javax.swing.JToolBar;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskFactory;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
-import org.cytoscape.work.TaskMonitor;
-import org.cytoscape.work.TunableHandler;
-import org.cytoscape.work.TunableHandlerFactory;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.task.NetworkViewTaskFactory;
 import org.cytoscape.application.CyApplicationManager;
-import org.cytoscape.application.events.CyShutdownListener;
 import org.cytoscape.application.events.SetCurrentNetworkViewListener;
 
-import edu.ucsf.rbvi.boundaryLayout.internal.CyActivator;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.CurrentNetworkViewTemplateListener;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
-import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateDelete;
+import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateDeleteTask;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateLabelChangeTask;
-import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateOverwrite;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateOverwriteTask;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSave;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSaveTask;
@@ -67,7 +52,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	public static final String ADD_TEMPLATE = "add";
 	public static final String IMPORT_TEMPLATE = "import";
 	public static final String EXPORT_TEMPLATE = "export";
-	public static final String DELETE_TEMPLATE = "delete";	
+	public static final String DELETE_TEMPLATE = "Remove Template";	
 	private final List<String> toolList;
 	private static final long serialVersionUID = 1L;
 
@@ -78,7 +63,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	private ImageIcon templateIcon;
 	private JPanel templatePanel;
 	private Box templatesBox;
-	private Map<String, JButton> templatesMap;
+	private Map<String, JPanel> templatesMap;
 	private JScrollPane scrollPane;
 	private Map<String, Object> tasksMap;
 	private String currentTemplateName;
@@ -104,7 +89,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		toolList.add(IMPORT_TEMPLATE);
 		toolList.add(EXPORT_TEMPLATE);
 		toolList.add(ADD_TEMPLATE);
-		
+
 		CurrentNetworkViewTemplateListener networkViewTemplateListener = 
 				new CurrentNetworkViewTemplateListener(this);
 		registrar.registerService(networkViewTemplateListener, SetCurrentNetworkViewListener.class, new Properties());
@@ -145,6 +130,24 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	public void setCurrentTemplateName(String templateName) {
 		this.currentTemplateName = templateName;
 	}
+	
+	public boolean renameTemplate(String oldName, String newName) {
+		if(!templatesMap.containsKey(oldName))
+			return false;
+		for(Component component : templatesMap.get(oldName).getComponents()) {
+			if(component instanceof JButton) {
+				JButton templateButton = (JButton) component;
+				templateButton.setActionCommand(newName);
+			}
+		}
+		templatesMap.put(newName, templatesMap.get(oldName));
+		templatesMap.remove(oldName);
+		if(currentTemplateName.equals(oldName))
+			currentTemplateName = newName;
+		if(templatesMap.containsKey(newName) && !templatesMap.containsKey(oldName))
+			return true;
+		return false;
+	}
 
 	public void updatePanel() {
 		templatePanel.removeAll();
@@ -161,19 +164,16 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		buttonPanel.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
 		lowerPanel.add(buttonPanel, BorderLayout.CENTER);
 
-		System.out.println(toolList);
 		if(toolList != null && !toolList.isEmpty()) 
 			for(String toolName : toolList) 
 				initNewButton(buttonPanel, toolName);
-		
+
 		this.add(lowerPanel, BorderLayout.SOUTH);
 		lowerPanel.repaint();
 	}
 
 	private void initNewButton(JPanel buttonPanel, String buttonName) {
-		System.out.println(getClass().getResource("/icons/" + buttonName + ".png"));
 		if(getClass().getResource("/icons/" + buttonName + ".png") != null) {
-			System.out.println(buttonName + " is good!");
 			ImageIcon newIcon = new ImageIcon(getClass().getResource("/icons/" + buttonName + ".png"));
 			newIcon.setImage(newIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH));
 			JButton newToolButton = new JButton(newIcon);
@@ -185,16 +185,36 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 
 	private void addToTemplatesBox(String templateName) {
 		Image thumbnail = manager.getThumbnail(templateName);
+		JPanel templatePanel = new JPanel(new BorderLayout());
 		JButton templateButton = new JButton(new ImageIcon(thumbnail));
 		templateButton.setActionCommand(templateName);
-		templateButton.addActionListener(new TemplateSelectedListener(templateName));
-		templatesBox.add(templateButton);
-		templatesMap.put(templateName, templateButton);
+		templateButton.addActionListener(new TemplateSelectedListener());
+		addPopupMenuItem(templatePanel, templateButton);
+		templatesBox.add(templatePanel);
+		templatesMap.put(templateName, templatePanel);
 	}
 
-	private void removeFromTemplatesBox(String template) {
-		templatesBox.remove(templatesMap.get(template));
-		templatesMap.remove(template);
+	private void addPopupMenuItem(JPanel templatePanel, JButton templateButton) {
+		JLabel templateNameLabel = new JLabel(templateButton.getActionCommand());
+		JPopupMenu templatePopup = new JPopupMenu();
+		JMenuItem removeTemplate = new JMenuItem("Remove Template");
+		removeTemplate.addActionListener(new TemplateMenuItemListener(templateNameLabel));
+		templatePopup.add(removeTemplate);
+		JMenuItem renameTemplate = new JMenuItem("Rename Template");
+		renameTemplate.addActionListener(new TemplateMenuItemListener(templateNameLabel));
+		templatePopup.add(renameTemplate);
+		templatePanel.addMouseListener(new TemplatePopupListener(templatePopup));
+		templateButton.addMouseListener(new TemplatePopupListener(templatePopup));
+		templatePanel.add(templateNameLabel, BorderLayout.SOUTH);
+		templatePanel.add(templateButton, BorderLayout.CENTER);
+	}
+
+	private void removeFromTemplatesBox(List<String> removeTemplates) {
+		if(!removeTemplates.isEmpty())
+			for(String template : removeTemplates) {
+				templatesBox.remove(templatesMap.get(template));
+				templatesMap.remove(template);
+			}
 	}
 
 	public void updateTemplateButtonsAdd() {
@@ -207,16 +227,25 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 
 	public void updateTemplateButtonsRemove() {
 		Map<String, List<String>> templatesInManager = manager.getTemplateMap();
+		List<String> templatesToRemove = new ArrayList<>();
 		for(String template : templatesMap.keySet()) {
 			if(!templatesInManager.containsKey(template)) {
-				removeFromTemplatesBox(template);
+				templatesToRemove.add(template);
 			}
 		}
+		removeFromTemplatesBox(templatesToRemove);
 	}
 
-	public void updateTemplateButtonsOverwrite(String templateName) {
-		removeFromTemplatesBox(templateName);
-		addToTemplatesBox(templateName);
+	public void updateTemplatesPanel() {
+		if(templatesMap.keySet().size() > manager.getTemplateMap().size()) {
+			System.out.println("remove a template!");
+			updateTemplateButtonsRemove();
+		}
+		else if(templatesMap.keySet().size() < manager.getTemplateMap().size()) {
+			System.out.println("add a template!");
+			updateTemplateButtonsAdd();
+		}
+		this.repaint();
 	}
 
 	/*Button, Mouse, and Action Listeners for Swing features*/
@@ -227,9 +256,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 
 			executeTask(taskObject);//first handle underlying code
 
-			if(taskName.equals(ADD_TEMPLATE) || //then worry about UI
-					taskName.equals(IMPORT_TEMPLATE))
-				updateTemplateButtonsAdd();
+			updateTemplatesPanel();
 			repaintPanel();
 		}
 	}
@@ -237,6 +264,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	private boolean executeTask(Object taskObject) {
 		TaskIterator taskIterator = null;
 		if(taskObject instanceof TaskFactory) {
+			System.out.println("instance of task factory!");
 			TaskFactory task = (TaskFactory) taskObject;
 			taskIterator = task.createTaskIterator();
 			taskManager.execute(taskIterator);
@@ -260,29 +288,24 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 				taskManager.execute(taskIterator);
 			}
 		}
+		updateTemplatesPanel();
 		if(taskObject != null) 
 			return true;
 		return false;
 	}
 
 	private class TemplateSelectedListener implements ActionListener {
-		private String templateName;
-
-		public TemplateSelectedListener(String templateName) {
-			super();
-			this.templateName = templateName;
-		}
-
 		public void actionPerformed(ActionEvent templateChosen) {
+			System.out.println(templateChosen.getActionCommand() + " is the template name!");
 			CyNetworkView view = cyApplicationManager.getCurrentNetworkView();
 			manager.clearNetworkofTemplates(view);
-			boolean isTemplateApplied = manager.useTemplate(templateName, view);
+			boolean isTemplateApplied = manager.useTemplate(templateChosen.getActionCommand(), view);
 			if(isTemplateApplied) 
-				setCurrentTemplateName(templateName);
+				setCurrentTemplateName(templateChosen.getActionCommand());
 		}
 	}
 
-	private class TemplatePopupListener extends MouseAdapter {
+	private class TemplatePopupListener implements MouseListener {
 		private JPopupMenu popupMenu;
 
 		public TemplatePopupListener(JPopupMenu popupMenu) {
@@ -304,11 +327,16 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		public void mouseReleased(MouseEvent e) {
 			checkPopup(e);
 		}
+		
+		@Override
+		public void mouseEntered(MouseEvent e) {}
+
+		@Override
+		public void mouseExited(MouseEvent e) {}
 
 		private void checkPopup(MouseEvent e) {
-			if (e.isPopupTrigger()) {
+			if (e.isPopupTrigger() || SwingUtilities.isRightMouseButton(e)) 
 				popupMenu.show(TemplateThumbnailPanel.this, e.getX(), e.getY());
-			}
 		}
 	}
 
@@ -321,12 +349,18 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		}
 
 		public void actionPerformed(ActionEvent menuItemEvent) {            
-			String taskName = menuItemEvent.getActionCommand();
-			Object taskObject = tasksMap.get(taskName);
-			boolean taskExecuted = executeTask(taskObject);
-			if(!taskExecuted)
-				taskManager.execute(new TaskIterator(new 
-						TemplateLabelChangeTask(templateLabel)));
+			System.out.println(menuItemEvent.getActionCommand());
+			TaskIterator iterator = null;
+			if(menuItemEvent.getActionCommand().equals(DELETE_TEMPLATE))
+				iterator = new TaskIterator(new TemplateDeleteTask(manager, 
+						TemplateThumbnailPanel.this, templateLabel.getText()));
+			else {
+				iterator = new TaskIterator(new TemplateLabelChangeTask(manager, 
+						TemplateThumbnailPanel.this, templateLabel));
+			}
+			if(iterator != null)
+				taskManager.execute(iterator);
+			updateTemplatesPanel();
 		}    
 	}   
 }
