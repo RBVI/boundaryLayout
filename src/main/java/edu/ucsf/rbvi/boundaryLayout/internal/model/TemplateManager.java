@@ -84,11 +84,15 @@ public class TemplateManager {
 	}
 
 	public boolean addTemplateStrings(String templateName, List<String> annotations) {
-		if(templates.containsKey(templateName))
+		if(templates.containsKey(templateName)) {
+			System.out.println("overwrite template! because same name!");
 			return overwriteTemplateStrings(templateName, annotations);
+		}
 		templates.put(templateName, annotations);
-		if(templates.containsKey(templateName)) 
+		if(templates.containsKey(templateName)) {
+			System.out.println("template has been added!");
 			return true;
+		}
 		return false;
 	}
 
@@ -429,14 +433,19 @@ public class TemplateManager {
 
 		// Create a networkView
 		CyNetworkView view = networkViewFactory.createNetworkView(net);
-		view.setVisualProperty(BasicVisualLexicon.NETWORK_WIDTH, 1000.0);
-		view.setVisualProperty(BasicVisualLexicon.NETWORK_HEIGHT, 1000.0);
 
 		// Add the template to our view
 		useTemplate(template, view);
 		Rectangle2D.Double unionRectangle = getUnionofAnnotations(view); 
+		System.out.println(unionRectangle.getWidth() * unionRectangle.getHeight() + " is the union rectangle!");
 		if(unionRectangle.getWidth() * unionRectangle.getHeight() < 10)
 			unionRectangle.setRect(unionRectangle.getX(), unionRectangle.getY(), 1000, 1000);
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, 
+				unionRectangle.getX() + (unionRectangle.getWidth() / 2));
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, 
+				unionRectangle.getY() + (unionRectangle.getHeight() / 2));
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_WIDTH, unionRectangle.getWidth());
+		view.setVisualProperty(BasicVisualLexicon.NETWORK_HEIGHT, unionRectangle.getHeight());
 
 		// Get the image
 		Image img = getViewImage(template, view, unionRectangle);
