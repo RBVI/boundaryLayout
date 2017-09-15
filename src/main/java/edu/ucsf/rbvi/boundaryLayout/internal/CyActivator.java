@@ -53,57 +53,21 @@ public class CyActivator extends AbstractCyActivator {
 		
 		/* Tasks */
 		TaskFactory templateImportFactory = new TemplateImport(templateManager);
-		/*Properties templateImportProperties = new Properties();
-		templateImportProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
-		templateImportProperties.setProperty(TITLE, "Import Template");
-		templateImportProperties.setProperty(IN_MENU_BAR, "false");
-		templateImportProperties.setProperty(MENU_GRAVITY, "1.0");
-		registerService(bc, templateImportFactory, TaskFactory.class, templateImportProperties);*/
 		taskFactories.put(TemplateThumbnailPanel.IMPORT_TEMPLATE, templateImportFactory);
 		
 		TaskFactory templateExportFactory = new TemplateExport(templateManager);
-		/*Properties templateExportProperties = new Properties();
-		templateExportProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
-		templateExportProperties.setProperty(TITLE, "Export Template");
-		templateExportProperties.setProperty(IN_MENU_BAR, "false");
-		templateExportProperties.setProperty(MENU_GRAVITY, "1.1");
-		registerService(bc, templateExportFactory, TaskFactory.class, templateExportProperties);*/
 		taskFactories.put(TemplateThumbnailPanel.EXPORT_TEMPLATE, templateExportFactory);
 		
 		NetworkViewTaskFactory templateSaveFactory = new TemplateSave(registrar, templateManager);
-		/*Properties templateSaveProperties = new Properties();
-		templateSaveProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
-		templateSaveProperties.setProperty(TITLE, "Save Annotations Template");
-		templateSaveProperties.setProperty(IN_MENU_BAR, "false");
-		templateSaveProperties.setProperty(MENU_GRAVITY, "0.9");
-		registerService(bc, templateSaveFactory, NetworkViewTaskFactory.class, templateSaveProperties);*/
 		taskFactories.put(TemplateThumbnailPanel.ADD_TEMPLATE, templateSaveFactory);	
 		
 		NetworkViewTaskFactory templateUseFactory = new TemplateUse(templateManager);
-		/*Properties templateUseProperties = new Properties();
-		templateUseProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
-		templateUseProperties.setProperty(TITLE, "Use Template");
-		templateUseProperties.setProperty(IN_MENU_BAR, "false");
-		templateUseProperties.setProperty(MENU_GRAVITY, "2.0");
-		registerService(bc, templateUseFactory, NetworkViewTaskFactory.class, templateUseProperties);*/
 		taskFactories.put(TemplateThumbnailPanel.USE_TEMPLATE, templateUseFactory);
 		
 		TaskFactory templateDeleteFactory = new TemplateDelete(templateManager);
-		/*Properties templateDeleteProperties = new Properties();
-		templateDeleteProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
-		templateDeleteProperties.setProperty(TITLE, "Delete Template");
-		templateDeleteProperties.setProperty(IN_MENU_BAR, "false");
-		templateDeleteProperties.setProperty(MENU_GRAVITY, "3.0");
-		registerService(bc, templateDeleteFactory, TaskFactory.class, templateDeleteProperties);*/
 		taskFactories.put(TemplateThumbnailPanel.DELETE_TEMPLATE, templateDeleteFactory);
 		
 		NetworkViewTaskFactory templateNetworkRemoveFactory = new TemplateNetworkRemove(templateManager);
-		/*Properties templateNetworkRemoveProperties = new Properties();
-		templateNetworkRemoveProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Constraint App");
-		templateNetworkRemoveProperties.setProperty(TITLE, "Remove Template from View");
-		templateNetworkRemoveProperties.setProperty(IN_MENU_BAR, "false");
-		templateNetworkRemoveProperties.setProperty(MENU_GRAVITY, "2.9");
-		registerService(bc, templateNetworkRemoveFactory, NetworkViewTaskFactory.class, templateNetworkRemoveProperties);*/
 		taskFactories.put(TemplateThumbnailPanel.REMOVE_TEMPLATE_FROM_VIEW, templateNetworkRemoveFactory);
 		
 		TaskFactory templateThumbnailFactory = new CreateTemplateThumbnailTaskFactory(registrar, 

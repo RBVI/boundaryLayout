@@ -36,7 +36,6 @@ public class TemplateListener implements CyShutdownListener {
 		boundaryLayoutTemplatesPath = configurationDirectory.getAbsolutePath() + 
 				File.separator + "boundaryLayoutTemplates.json";
 		templateFile = new File(boundaryLayoutTemplatesPath);
-		// System.out.println("template listener constructor");
 
 		//load our templates
 		if(templateFile.exists()) {

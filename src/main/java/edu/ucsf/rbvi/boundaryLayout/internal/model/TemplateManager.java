@@ -388,6 +388,20 @@ public class TemplateManager {
 			return null;
 		}
 	}
+	
+	public Image getNewThumbnail(String template) {
+		if (templates.containsKey(template)) {
+			Image thumbnail = createThumbnail(template);
+			if(templateThumbnails.containsKey(template))
+				templateThumbnails.replace(template, thumbnail);
+			else {
+				System.out.println("not already a thumbnail!??");
+				templateThumbnails.put(template, thumbnail);
+			}
+			return thumbnail;
+		}
+		return null;
+	}
 
 	public Image getThumbnail(String template) {
 		if (templateThumbnails.containsKey(template))
