@@ -48,6 +48,7 @@ import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateDeleteTask;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateLabelChangeTask;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateOverwriteTask;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSave;
+import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSaveShutdownTask;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSaveTask;
 
 public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent {
@@ -370,27 +371,31 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 			updateTemplatesPanel();
 		}    
 	}   
-	
+
 	private class TemplateShutdownListener implements CyShutdownListener {
 		public TemplateShutdownListener() {
 			super();
 		}
-		
+
 		@Override
 		public void handleEvent(CyShutdownEvent shutdownEvent) {
 			CyNetworkView networkView = registrar.getService(CyApplicationManager.class).getCurrentNetworkView();
-			TemplateOverwriteTask overwriteTask = null;
-			if(currentTemplateName != null) {
-				overwriteTask = new TemplateOverwriteTask(registrar, networkView, 
-						manager, currentTemplateName);
-				taskManager.execute(new TaskIterator(overwriteTask));
-				if(overwriteTask.overwrite) 
-					replaceThumbnailTemplate(currentTemplateName);
-			}
-			if(overwriteTask == null || !overwriteTask.overwrite) {
-				TemplateSaveTask saveTask = new TemplateSaveTask(registrar, networkView, manager);
-				taskManager.execute(new TaskIterator(saveTask));
-				setCurrentTemplateName(saveTask.templateName);
+			TemplateSaveShutdownTask saveBeforeShutdown = new TemplateSaveShutdownTask();
+			taskManager.execute(new TaskIterator(saveBeforeShutdown));
+			if(saveBeforeShutdown.saveTemplate) {
+				TemplateOverwriteTask overwriteTask = null;
+				if(currentTemplateName != null) {
+					overwriteTask = new TemplateOverwriteTask(registrar, networkView, 
+							manager, currentTemplateName);
+					taskManager.execute(new TaskIterator(overwriteTask));
+					if(overwriteTask.overwrite) 
+						replaceThumbnailTemplate(currentTemplateName);
+				}
+				if(overwriteTask == null || !overwriteTask.overwrite) {
+					TemplateSaveTask saveTask = new TemplateSaveTask(registrar, networkView, manager);
+					taskManager.execute(new TaskIterator(saveTask));
+					setCurrentTemplateName(saveTask.templateName);
+				}
 			}
 		}
 	}
