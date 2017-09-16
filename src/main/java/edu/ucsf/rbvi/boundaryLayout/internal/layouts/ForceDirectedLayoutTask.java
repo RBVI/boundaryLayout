@@ -83,6 +83,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if (shapeAnnotations == null) 
 			shapeAnnotations = AutoMode.createAnnotations(netView, 
 					nodeViewList, layoutAttribute, registrar);
+		if(context.wallGravitationalConstant < 0)
+			context.wallGravitationalConstant *= -1;
 		//if(context.avoidOverlap == false)
 		//context.wallGravitationalConstant = -12f;
 	}
@@ -92,6 +94,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		this.taskMonitor = taskMonitor;
 		initializeAnnotationCoordinates();
 		ForceSimulator m_fsim = new ForceSimulator();
+		m_fsim.speedLimit = context.speedLimit;
 
 		m_fsim.setIntegrator(integrator.getNewIntegrator());
 		m_fsim.clear();
