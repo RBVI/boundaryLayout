@@ -21,6 +21,7 @@ public class CurrentNetworkViewTemplateListener implements SetCurrentNetworkView
 	@Override
 	public void handleEvent(SetCurrentNetworkViewEvent newNetworkView) {		
 		CyNetworkView networkView = newNetworkView.getNetworkView();
+		if (networkView == null) return;
 		CyTable networkTable = networkView.getModel().getDefaultNetworkTable();
 		if(!TemplateManager.columnAlreadyExists(networkTable, TemplateManager.NETWORK_TEMPLATES))
 			networkTable.createListColumn(TemplateManager.NETWORK_TEMPLATES, String.class, false);

@@ -11,8 +11,7 @@ public class TemplateSave extends AbstractNetworkViewTaskFactory {
 	private TemplateManager templateManager;
 	private final CyServiceRegistrar registrar;
 	
-	public TemplateSave(CyServiceRegistrar registrar, 
-			TemplateManager templateManager) {
+	public TemplateSave(CyServiceRegistrar registrar, TemplateManager templateManager) {
 		super();
 		this.registrar = registrar;
 		this.templateManager = templateManager;
@@ -20,7 +19,6 @@ public class TemplateSave extends AbstractNetworkViewTaskFactory {
 	
 	@Override
 	public TaskIterator createTaskIterator(CyNetworkView networkView) {
-		return new TaskIterator(new TemplateSaveTask(
-				registrar, networkView, templateManager));
+		return new TaskIterator(new TemplateSaveTask(registrar, networkView, templateManager));
 	}
 }

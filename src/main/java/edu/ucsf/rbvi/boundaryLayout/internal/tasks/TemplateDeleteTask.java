@@ -15,8 +15,7 @@ public class TemplateDeleteTask extends AbstractTask {
 	@Tunable (description= "Are you sure you want to delete this template?: ")
 	public boolean deleteTemplate = false;
 	
-	public TemplateDeleteTask(TemplateManager templateManager, 
-			TemplateThumbnailPanel templatePanel, String templateToDelete) {
+	public TemplateDeleteTask(TemplateManager templateManager, TemplateThumbnailPanel templatePanel, String templateToDelete) {
 		super();
 		this.templateManager = templateManager;
 		this.templatePanel = templatePanel;

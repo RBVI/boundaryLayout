@@ -7,12 +7,13 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.annotations.Annotation;
 import org.cytoscape.view.presentation.annotations.AnnotationManager;
 import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.Tunable;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
-public class TemplateSaveTask extends AbstractTask {
+public class TemplateSaveTask extends AbstractTask implements ObservableTask {
 	private final CyServiceRegistrar registrar;
 	private final CyNetworkView networkView;
 	private TemplateManager templateManager;
@@ -30,8 +31,12 @@ public class TemplateSaveTask extends AbstractTask {
 	
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {		
-		List<Annotation> annotations = registrar.getService(
-				AnnotationManager.class).getAnnotations(networkView);
+		List<Annotation> annotations = registrar.getService(AnnotationManager.class).getAnnotations(networkView);
 		templateManager.addTemplate(templateName, annotations);
+	}
+
+	@Override
+	public <R> R getResults(Class<? extends R> type) {
+		return null;
 	}
 }

@@ -64,6 +64,7 @@ public class TemplateManager {
 	private final CyNetworkViewFactory networkViewFactory;
 	private final RenderingEngineFactory<CyNetwork> renderingEngineFactory;
 	public static final String NETWORK_TEMPLATES = "Templates Applied";
+	static double PADDING = 10.0; // Make sure we have some room around our annotations
 
 	@SuppressWarnings("unchecked")
 	public TemplateManager(CyServiceRegistrar registrar) {
@@ -85,12 +86,12 @@ public class TemplateManager {
 
 	public boolean addTemplateStrings(String templateName, List<String> annotations) {
 		if(templates.containsKey(templateName)) {
-			System.out.println("overwrite template! because same name!");
+			// System.out.println("overwrite template! because same name!");
 			return overwriteTemplateStrings(templateName, annotations);
 		}
 		templates.put(templateName, annotations);
 		if(templates.containsKey(templateName)) {
-			System.out.println("template has been added!");
+			// System.out.println("template has been added!");
 			return true;
 		}
 		return false;
@@ -121,7 +122,7 @@ public class TemplateManager {
 
 	public boolean useTemplate(String templateName, CyNetworkView networkView) {
 		if(!templates.containsKey(templateName)) {
-			System.out.println("Does not exist!!");
+			// System.out.println("Does not exist!!");
 			return false;
 		}
 		List<String> templateInformation = templates.get(templateName);
@@ -205,7 +206,7 @@ public class TemplateManager {
 
 	public void networkRemoveTemplates(CyNetworkView networkView, 
 			List<String> templateRemoveNames) {
-		System.out.println(templateRemoveNames + " are the templates to remove!");
+		// System.out.println(templateRemoveNames + " are the templates to remove!");
 		List<Annotation> annotations = annotationManager.
 				getAnnotations(networkView);
 		List<String> uuidsToRemove = new ArrayList<>();
@@ -395,7 +396,7 @@ public class TemplateManager {
 			if(templateThumbnails.containsKey(template))
 				templateThumbnails.replace(template, thumbnail);
 			else {
-				System.out.println("not already a thumbnail!??");
+				// System.out.println("not already a thumbnail!??");
 				templateThumbnails.put(template, thumbnail);
 			}
 			return thumbnail;
@@ -451,7 +452,7 @@ public class TemplateManager {
 		// Add the template to our view
 		useTemplate(template, view);
 		Rectangle2D.Double unionRectangle = getUnionofAnnotations(view); 
-		System.out.println(unionRectangle.getWidth() * unionRectangle.getHeight() + " is the union rectangle!");
+		// System.out.println(unionRectangle.getWidth() * unionRectangle.getHeight() + " is the union rectangle!");
 		if(unionRectangle.getWidth() * unionRectangle.getHeight() < 10)
 			unionRectangle.setRect(unionRectangle.getX(), unionRectangle.getY(), 1000, 1000);
 		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, 
@@ -470,8 +471,7 @@ public class TemplateManager {
 		Rectangle2D.Double unionOfAnnotations = new Rectangle2D.Double();
 		/* Annotation Manager does not get the annotations for some reason -- null?
 		 * */
-		List<Annotation> annotations = registrar.getService(
-				AnnotationManager.class).getAnnotations(networkView);
+		List<Annotation> annotations = registrar.getService(AnnotationManager.class).getAnnotations(networkView);
 		List<ShapeAnnotation> shapeAnnotations = new ArrayList<>();
 		if(annotations != null) 
 			for(Annotation annotation : annotations) 
@@ -490,6 +490,9 @@ public class TemplateManager {
 				Rectangle2D.Double.union(new Rectangle2D.Double(xCoordinate, yCoordinate, width, height), 
 						unionOfAnnotations, unionOfAnnotations);
 		}
+
+		unionOfAnnotations = new Rectangle2D.Double(unionOfAnnotations.getX()-PADDING, unionOfAnnotations.getY()-PADDING, 
+		                                            unionOfAnnotations.getWidth()+PADDING, unionOfAnnotations.getHeight()+PADDING);
 		return unionOfAnnotations;
 	}
 
@@ -544,7 +547,7 @@ public class TemplateManager {
 			window.pack();
 			window.repaint();
 
-			re.createImage(width, height);
+			re.createImage(width-(int)PADDING, height-(int)PADDING);
 			re.printCanvas(g);
 			g.dispose();
 			// ImageIO.write((RenderedImage)img, "png", new File("/tmp/image.png"));
