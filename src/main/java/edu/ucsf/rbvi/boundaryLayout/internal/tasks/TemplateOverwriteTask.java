@@ -14,12 +14,16 @@ import org.cytoscape.work.Tunable;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
 public class TemplateOverwriteTask extends AbstractTask implements ObservableTask {
+	public static final int CANCEL_STATE = -1;
+	public static final int OVERWRITE_STATE = 0;
+	public static final int SAVE_NEW_STATE = 1;
 	private final CyServiceRegistrar registrar;
 	private final CyNetworkView networkView;
 	private TemplateManager templateManager;
 	private String templateOverwriteName;
-
-	@Tunable (description = ("Are you sure you want to overwrite the current template?"))
+	private int stateOfButton = CANCEL_STATE;
+	
+	@Tunable (description = ("Click OK to add as new template. Check box to overwrite current template."))
 	public boolean overwrite = false;
 
 	public TemplateOverwriteTask(CyServiceRegistrar registrar, CyNetworkView networkView, 
@@ -37,15 +41,24 @@ public class TemplateOverwriteTask extends AbstractTask implements ObservableTas
 
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {	
+		System.out.println("run overwrite task!");
 		if(overwrite) {
 			List<Annotation> annotations = registrar.getService(
 					AnnotationManager.class).getAnnotations(networkView);
 			templateManager.overwriteTemplate(templateOverwriteName, annotations);
+			stateOfButton = OVERWRITE_STATE;
+		} else {
+			System.out.println("set as equall to save new state!!");
+			stateOfButton = SAVE_NEW_STATE;
 		}
 	}
 
 	@Override
 	public <R> R getResults(Class<? extends R> type) {
 		return null;
+	}
+	
+	public int getButtonState() {
+		return stateOfButton;
 	}
 }

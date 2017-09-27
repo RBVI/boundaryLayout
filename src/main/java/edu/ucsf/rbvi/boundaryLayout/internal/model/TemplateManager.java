@@ -6,9 +6,6 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
-import java.awt.image.RenderedImage;
-import java.awt.image.WritableRaster;
 import java.awt.Graphics2D;
 
 import java.io.BufferedReader;
@@ -85,15 +82,11 @@ public class TemplateManager {
 	}
 
 	public boolean addTemplateStrings(String templateName, List<String> annotations) {
-		if(templates.containsKey(templateName)) {
-			// System.out.println("overwrite template! because same name!");
+		if(templates.containsKey(templateName)) 
 			return overwriteTemplateStrings(templateName, annotations);
-		}
 		templates.put(templateName, annotations);
-		if(templates.containsKey(templateName)) {
-			// System.out.println("template has been added!");
+		if(templates.containsKey(templateName)) 
 			return true;
-		}
 		return false;
 	}
 
@@ -197,6 +190,13 @@ public class TemplateManager {
 		return true;
 	}
 
+	public CyNetworkView clearCurrentNetworkOfTemplates() {
+		CyNetworkView netView = registrar.getService(
+				CyApplicationManager.class).getCurrentNetworkView();
+		this.clearNetworkofTemplates(netView);
+		return netView;
+	}
+
 	@SuppressWarnings("unchecked")
 	public void clearNetworkofTemplates(CyNetworkView networkView) { 
 		CyRow networkRow = getNetworkRow(networkView);
@@ -206,7 +206,7 @@ public class TemplateManager {
 
 	public void networkRemoveTemplates(CyNetworkView networkView, 
 			List<String> templateRemoveNames) {
-		// System.out.println(templateRemoveNames + " are the templates to remove!");
+		System.out.println(templateRemoveNames + " are the templates to remove!");
 		List<Annotation> annotations = annotationManager.
 				getAnnotations(networkView);
 		List<String> uuidsToRemove = new ArrayList<>();
@@ -389,16 +389,14 @@ public class TemplateManager {
 			return null;
 		}
 	}
-	
+
 	public Image getNewThumbnail(String template) {
 		if (templates.containsKey(template)) {
 			Image thumbnail = createThumbnail(template);
 			if(templateThumbnails.containsKey(template))
 				templateThumbnails.replace(template, thumbnail);
-			else {
-				// System.out.println("not already a thumbnail!??");
+			else
 				templateThumbnails.put(template, thumbnail);
-			}
 			return thumbnail;
 		}
 		return null;
@@ -415,7 +413,7 @@ public class TemplateManager {
 		}
 		return null;
 	}
-
+	
 	public void addThumbnail(String template, Image thumbnail) {
 		if (!templates.containsKey(template))
 			return;
@@ -436,7 +434,6 @@ public class TemplateManager {
 		} catch(IOException e) {
 			return;
 		}
-
 	}
 
 	private Image createThumbnail(String template) {
@@ -452,9 +449,8 @@ public class TemplateManager {
 		// Add the template to our view
 		useTemplate(template, view);
 		Rectangle2D.Double unionRectangle = getUnionofAnnotations(view); 
-		// System.out.println(unionRectangle.getWidth() * unionRectangle.getHeight() + " is the union rectangle!");
-		if(unionRectangle.getWidth() * unionRectangle.getHeight() < 10)
-			unionRectangle.setRect(unionRectangle.getX(), unionRectangle.getY(), 1000, 1000);
+		if(unionRectangle.getWidth() * unionRectangle.getHeight() < 101)
+			unionRectangle.setRect(0., 0., 1000., 1000.);
 		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, 
 				unionRectangle.getX() + (unionRectangle.getWidth() / 2));
 		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, 
@@ -469,8 +465,6 @@ public class TemplateManager {
 
 	private Rectangle2D.Double getUnionofAnnotations(CyNetworkView networkView) { 
 		Rectangle2D.Double unionOfAnnotations = new Rectangle2D.Double();
-		/* Annotation Manager does not get the annotations for some reason -- null?
-		 * */
 		List<Annotation> annotations = registrar.getService(AnnotationManager.class).getAnnotations(networkView);
 		List<ShapeAnnotation> shapeAnnotations = new ArrayList<>();
 		if(annotations != null) 
@@ -492,16 +486,13 @@ public class TemplateManager {
 		}
 
 		unionOfAnnotations = new Rectangle2D.Double(unionOfAnnotations.getX()-PADDING, unionOfAnnotations.getY()-PADDING, 
-		                                            unionOfAnnotations.getWidth()+PADDING, unionOfAnnotations.getHeight()+PADDING);
+				unionOfAnnotations.getWidth()+PADDING, unionOfAnnotations.getHeight()+PADDING);
 		return unionOfAnnotations;
 	}
 
 	private Image getViewImage(final String template, final CyNetworkView view, Rectangle2D.Double bounds) {
-		double aspectRatio = Math.abs(bounds.getHeight() / bounds.getWidth());
 		final int width = (int) Math.abs(bounds.getWidth());
 		final int height = (int) Math.abs(bounds.getHeight());
-		int min = (width < height ? width : height);
-		double adjustmentRatio = min / 100;
 
 		final BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
@@ -518,10 +509,30 @@ public class TemplateManager {
 			} catch (Exception e) {e.printStackTrace();}
 		}
 
-		int newWidth = (int) (width / adjustmentRatio);
-		int newHeight = (int) (height / adjustmentRatio);
+		Rectangle2D.Double newBounds = getAdjustedDimensions(bounds);
 		// Now scale the image to something more reasonable
-		return image.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
+		return image.getScaledInstance((int) newBounds.getWidth(), (int) newBounds.getHeight(), Image.SCALE_SMOOTH);
+	}
+
+	private static Rectangle2D.Double getAdjustedDimensions(Rectangle2D.Double bounds) { 
+		final int width = (int) Math.abs(bounds.getWidth());
+		final int height = (int) Math.abs(bounds.getHeight());
+		int min = (width < height ? width : height);
+		int max = (width < height ? height : width);
+		int newWidth = 0;
+		int newHeight = 0;
+
+		if(((double) max) / ((double) min) > 5.) {
+			double adjustmentRatio = max / 500.;
+			newWidth = (int) (width / adjustmentRatio);
+			newHeight = (int) (height / adjustmentRatio);
+		} else {
+			double adjustmentRatio = min / 100.;
+			newWidth = (int) (width / adjustmentRatio);
+			newHeight = (int) (height / adjustmentRatio);
+		}
+
+		return new Rectangle2D.Double(bounds.getX(), bounds.getY(), newWidth, newHeight);
 	}
 
 	public void renderTemplate(String template, CyNetworkView view, BufferedImage img, int width, int height) {
