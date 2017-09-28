@@ -24,7 +24,7 @@ public class TemplateDeleteTask extends AbstractTask {
 	
 	@Override
 	public void run(TaskMonitor taskMonitor) {	
-		System.out.println(deleteTemplate + " for " + templateToDelete);
+		// System.out.println(deleteTemplate + " for " + templateToDelete);
 		if(deleteTemplate && templateToDelete != null) 
 			templateManager.deleteTemplate(templateToDelete);
 		templatePanel.updateTemplatesPanel();

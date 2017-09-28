@@ -147,14 +147,14 @@ public class BoundaryTree {
 		if(bNode == null) 
 			return;
 		if(!bNode.hasChildren()) {
-			System.out.println("For leaf: " + (bNode.entry.getWidth() * bNode.entry.getHeight()));
+			// System.out.println("For leaf: " + (bNode.entry.getWidth() * bNode.entry.getHeight()));
 			if(areas.size() > 2)
 				changeMinimum(areas, bNode.entry);
 			else 
 				areas.add(bNode.entry);
 		} else {
-			System.out.println("For non-leaf: " + 
-					(bNode.entry.getWidth() * bNode.entry.getHeight()));
+			// System.out.println("For non-leaf: " + 
+			// 		(bNode.entry.getWidth() * bNode.entry.getHeight()));
 			for(BoundaryTreeNode childNode : bNode.children.values())
 				preorder(areas, childNode);
 		}

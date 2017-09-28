@@ -20,12 +20,11 @@ public class TemplateImportTask extends AbstractTask {
 	public TemplateImportTask(TemplateManager templateManager) {
 		super();
 		this.templateManager = templateManager;
-		System.out.println("should call for tunables?");
+		// System.out.println("should call for tunables?");
 	}
 
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {	
-		templateManager.importTemplate(
-				templateName, templateFile);
+		templateManager.importTemplate(templateName, templateFile);
 	}
 }

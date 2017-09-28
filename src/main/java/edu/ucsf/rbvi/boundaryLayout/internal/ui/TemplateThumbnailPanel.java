@@ -108,7 +108,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		
 		CurrentNetworkViewTemplateListener networkViewTemplateListener = new CurrentNetworkViewTemplateListener(this);
 		registrar.registerService(networkViewTemplateListener, SetCurrentNetworkViewListener.class, new Properties());
-		registrar.registerService(new TemplateShutdownListener(), CyShutdownListener.class, new Properties());
+		// registrar.registerService(new TemplateShutdownListener(), CyShutdownListener.class, new Properties());
 
 		this.setLayout(new BorderLayout());
 
@@ -209,10 +209,10 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	public void replaceThumbnailTemplate(String templateName) {
 		if(templateName == null || !thumbnailsMap.containsKey(templateName) 
 				|| !templatesMap.containsKey(templateName)) return;
-		System.out.println("change icon!");
+		// System.out.println("change icon!");
 		thumbnailsMap.get(templateName).setIcon(new ImageIcon(
 				manager.getNewThumbnail(templateName)));
-		System.out.println("icon has changed!");
+		// System.out.println("icon has changed!");
 		thumbnailsMap.get(templateName).repaint();
 		templatesMap.get(templateName).repaint();
 	}
@@ -287,14 +287,18 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 				if(currentTemplateName != null) {
 					overwriteTask = new TemplateOverwriteTask(registrar, networkView, manager, currentTemplateName);
 					taskManager.execute(new TaskIterator(overwriteTask), this);
+					/*  This needs to be in the taskFinished code since we'll try to execute this before
+					 *  the task completes
 					if(overwriteTask.getButtonState() == TemplateOverwriteTask.OVERWRITE_STATE) 
 						replaceThumbnailTemplate(currentTemplateName);
-				}
-				System.out.println("now look at save task!");
-				if(overwriteTask == null || overwriteTask.getButtonState() == TemplateOverwriteTask.SAVE_NEW_STATE) {
+					*/
+				} else {
 					TemplateSaveTask saveTask = new TemplateSaveTask(registrar, networkView, manager);
-					taskManager.execute(new TaskIterator(saveTask));
+					taskManager.execute(new TaskIterator(saveTask), this);
+					/*  This needs to be in the taskFinished code since we'll try to execute this before
+					 *  the task completes
 					currentTemplateName = saveTask.templateName;
+					*/
 				}
 			}
 		}
@@ -313,7 +317,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	public void taskFinished(ObservableTask task) {
 		if (task instanceof TemplateOverwriteTask) {
 			TemplateOverwriteTask overwriteTask = (TemplateOverwriteTask) task;
-			if(overwriteTask.overwrite) 
+			if(overwriteTask.getButtonState() == TemplateOverwriteTask.OVERWRITE_STATE) 
 				replaceThumbnailTemplate(currentTemplateName);
 		} else if (task instanceof TemplateSaveTask) {
 			TemplateSaveTask saveTask = (TemplateSaveTask) task;
@@ -399,6 +403,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		}    
 	}   
 
+	/*
 	private class TemplateShutdownListener implements CyShutdownListener {
 		public TemplateShutdownListener() {
 			super();
@@ -412,4 +417,5 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 			taskManager.execute(new TaskIterator(saveBeforeShutdown));
 		}
 	}
+	*/
 }
