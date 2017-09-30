@@ -171,7 +171,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 
 		final int checkCenter = (context.numIterations / 10) + 1;
-		
+
 		// perform layout
 		long timestep = 1000L;
 		for ( int i = 0; i < context.numIterations && !cancelled; i++ ) {
@@ -192,23 +192,27 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double)fitem.location[1]);
 		}
 	}
-	
+
 	private void checkCenter(ForceSimulator m_fsim) {
-		Iterator itemsIterator = m_fsim.getItems();
-		while(itemsIterator.hasNext()) {
-			ForceItem nextItem = (ForceItem) itemsIterator.next();
-			ShapeAnnotation nextShape = shapeAnnotations.get(nextItem.category);
-			if(!annotationBoundingBox.get(nextShape).contains(new 
-					Point2D.Double((double) nextItem.location[0], 
-							(double) nextItem.location[1]))) {
-				List<Point2D.Double> reInitializations = 
-						initializingNodeLocations.get(nextShape);
-				Point2D.Double reInitialize = 
-						reInitializations.get(RANDOM.nextInt(reInitializations.size()));
-				nextItem.location[0] = (float) reInitialize.getX();
-				nextItem.location[1] = (float) reInitialize.getY();
-				nextItem.plocation[0] = nextItem.location[0];
-				nextItem.plocation[1] = nextItem.location[1];
+		if(annotationBoundingBox.size() != 0) {
+			Iterator itemsIterator = m_fsim.getItems();
+			while(itemsIterator.hasNext()) {
+				ForceItem nextItem = (ForceItem) itemsIterator.next();
+				ShapeAnnotation nextShape = shapeAnnotations.get(nextItem.category);
+				if(annotationBoundingBox.containsKey(nextShape)) {
+					if(!annotationBoundingBox.get(nextShape).contains(new 
+							Point2D.Double((double) nextItem.location[0], 
+									(double) nextItem.location[1]))) {
+						List<Point2D.Double> reInitializations = 
+								initializingNodeLocations.get(nextShape);
+						Point2D.Double reInitialize = 
+								reInitializations.get(RANDOM.nextInt(reInitializations.size()));
+						nextItem.location[0] = (float) reInitialize.getX();
+						nextItem.location[1] = (float) reInitialize.getY();
+						nextItem.plocation[0] = nextItem.location[0];
+						nextItem.plocation[1] = nextItem.location[1];
+					}
+				}
 			}
 		}
 	}
@@ -367,7 +371,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private Rectangle2D.Double getShapeBoundingBox(ShapeAnnotation shapeAnnotation) {
 		return annotationBoundingBox.get(shapeAnnotation);
 	}
-	
+
 	private Rectangle2D.Double getUnionofBoundaries() {
 		if(annotationBoundingBox.size() == 0)
 			return null;
