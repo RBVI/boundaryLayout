@@ -139,9 +139,13 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					fitem.location[0] = (float) initPosition.getX(); 
 					fitem.location[1] = (float) initPosition.getY(); 
 				}
-				else {
+				else if(unionofBoundaries != null){
 					fitem.location[0] = (float) (unionofBoundaries.getX() - (unionofBoundaries.getWidth() / 4));
 					fitem.location[1] = (float) (unionofBoundaries.getY() + (unionofBoundaries.getHeight() / 2));
+				}
+				else {
+					fitem.location[0] = 0f;
+					fitem.location[1] = 0f;
 				}
 			}
 
@@ -365,6 +369,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	}
 	
 	private Rectangle2D.Double getUnionofBoundaries() {
+		if(annotationBoundingBox.size() == 0)
+			return null;
 		Rectangle2D.Double unionofBoundaries = new Rectangle2D.Double();
 		for(Rectangle2D.Double newBoundary : this.annotationBoundingBox.values()) 
 			unionofBoundaries.setRect(unionofBoundaries.createUnion(newBoundary));
