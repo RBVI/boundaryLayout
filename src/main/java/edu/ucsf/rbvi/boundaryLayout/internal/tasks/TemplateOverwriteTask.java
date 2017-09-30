@@ -41,14 +41,12 @@ public class TemplateOverwriteTask extends AbstractTask implements ObservableTas
 
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {	
-		// System.out.println("run overwrite task!");
 		if(overwrite) {
 			List<Annotation> annotations = registrar.getService(
 					AnnotationManager.class).getAnnotations(networkView);
 			templateManager.overwriteTemplate(templateOverwriteName, annotations);
 			stateOfButton = OVERWRITE_STATE;
 		} else {
-			// System.out.println("run save task");
 			stateOfButton = SAVE_NEW_STATE;
 			TemplateSaveTask saveTask = new TemplateSaveTask(registrar, networkView, templateManager);
 			insertTasksAfterCurrentTask(saveTask);

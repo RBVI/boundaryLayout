@@ -28,7 +28,7 @@ public class CreateTemplateThumbnailTaskFactory extends AbstractTaskFactory {
 		this.registrar = registrar;
 		thumbnailPanel = new TemplateThumbnailPanel(registrar, manager, tasks);
 		panelProperties = new Properties();
-		panelProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Layout");
+		panelProperties.setProperty(PREFERRED_MENU, "Apps.Boundary Layout App");
 		panelProperties.setProperty(IN_MENU_BAR, "true");
 		panelProperties.setProperty(MENU_GRAVITY, "10.0");
 		showComponent = true;

@@ -114,10 +114,8 @@ public class TemplateManager {
 	}
 
 	public boolean useTemplate(String templateName, CyNetworkView networkView) {
-		if(!templates.containsKey(templateName)) {
-			// System.out.println("Does not exist!!");
+		if(!templates.containsKey(templateName)) 
 			return false;
-		}
 		List<String> templateInformation = templates.get(templateName);
 
 		for(String annotationInformation : templateInformation) {
@@ -206,7 +204,6 @@ public class TemplateManager {
 
 	public void networkRemoveTemplates(CyNetworkView networkView, 
 			List<String> templateRemoveNames) {
-		System.out.println(templateRemoveNames + " are the templates to remove!");
 		List<Annotation> annotations = annotationManager.
 				getAnnotations(networkView);
 		List<String> uuidsToRemove = new ArrayList<>();
@@ -285,8 +282,8 @@ public class TemplateManager {
 
 	public CyRow getNetworkRow(CyNetworkView networkView) {
 		CyTable networkTable = networkView.getModel().getDefaultNetworkTable();
-		if(!columnAlreadyExists(networkTable, NETWORK_TEMPLATES))
-			networkTable.createListColumn(NETWORK_TEMPLATES, String.class, false);
+		if(!columnAlreadyExists(networkTable, NETWORK_TEMPLATES)) 
+			networkTable.createListColumn(NETWORK_TEMPLATES, String.class, true);
 		List<String> templatesActive = networkTable.getRow(networkView.getSUID()).
 				getList(NETWORK_TEMPLATES, String.class);
 		if(templatesActive == null)
@@ -561,8 +558,6 @@ public class TemplateManager {
 			re.createImage(width-(int)PADDING, height-(int)PADDING);
 			re.printCanvas(g);
 			g.dispose();
-			// ImageIO.write((RenderedImage)img, "png", new File("/tmp/image.png"));
-
 		} catch (Exception ex) {
 			throw new RuntimeException(ex);
 		}

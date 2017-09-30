@@ -116,6 +116,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations.values())
 			initNodeLocations(shapeAnnotation);
+		Rectangle2D.Double unionofBoundaries = this.getUnionofBoundaries();
 
 		// initialize node locations and properties
 		for (View<CyNode> nodeView : nodeViewList) {
@@ -137,6 +138,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					Point2D.Double initPosition = getNodeLocation(shapeAnnotations.get(group));
 					fitem.location[0] = (float) initPosition.getX(); 
 					fitem.location[1] = (float) initPosition.getY(); 
+				}
+				else {
+					fitem.location[0] = (float) (unionofBoundaries.getX() - (unionofBoundaries.getWidth() / 4));
+					fitem.location[1] = (float) (unionofBoundaries.getY() + (unionofBoundaries.getHeight() / 2));
 				}
 			}
 
@@ -357,5 +362,12 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 * */
 	private Rectangle2D.Double getShapeBoundingBox(ShapeAnnotation shapeAnnotation) {
 		return annotationBoundingBox.get(shapeAnnotation);
+	}
+	
+	private Rectangle2D.Double getUnionofBoundaries() {
+		Rectangle2D.Double unionofBoundaries = new Rectangle2D.Double();
+		for(Rectangle2D.Double newBoundary : this.annotationBoundingBox.values()) 
+			unionofBoundaries.setRect(unionofBoundaries.createUnion(newBoundary));
+		return unionofBoundaries;
 	}
 }

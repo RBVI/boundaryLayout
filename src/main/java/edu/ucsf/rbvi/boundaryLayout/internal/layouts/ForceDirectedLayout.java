@@ -46,8 +46,8 @@ import prefuse.util.force.RungeKuttaIntegrator;
 
 public class ForceDirectedLayout extends AbstractLayoutAlgorithm {
 
-	private static final String ALGORITHM_ID = "boundary-constraint-layout";
-	static final String ALGORITHM_DISPLAY_NAME = "Boundary Constraint Layout";
+	private static final String ALGORITHM_ID = "boundary-layout";
+	static final String ALGORITHM_DISPLAY_NAME = "Boundary Layout";
 	final CyServiceRegistrar registrar;
 
 	private Integrators integrator = Integrators.RUNGEKUTTA;
