@@ -180,12 +180,7 @@ public class NBodyForce extends AbstractForce {
 	 */
 	public void insert(ForceItem item) {
 		// insert item into the quadtrees
-		try {
-			insert(item, root, xMin, yMin, xMax, yMax);
-		} catch ( StackOverflowError e ) {
-			// TODO: safe to remove?
-			e.printStackTrace();
-		}
+		insert(item, root, xMin, yMin, xMax, yMax);
 	}
 
 	private void insert(ForceItem p, QuadTreeNode n, 
@@ -263,12 +258,7 @@ public class NBodyForce extends AbstractForce {
 	 * @param item the ForceItem for which to compute the force
 	 */
 	public void getForce(ForceItem item) {
-		try {
-			forceHelper(item,root,xMin,yMin,xMax,yMax);
-		} catch ( StackOverflowError e ) {
-			// TODO: safe to remove?
-			e.printStackTrace();
-		}
+		forceHelper(item,root,xMin,yMin,xMax,yMax);
 	}
 
 	private void forceHelper(ForceItem item, QuadTreeNode n, 
@@ -315,8 +305,8 @@ public class NBodyForce extends AbstractForce {
 				item.force[0] += (dx < 0 ? overlapForce : -overlapForce);
 				item.force[1] += (dy < 0 ? overlapForce : -overlapForce);
 			} else if(!isOverlapping) {
-				item.force[0] += (dx < 0 ? -v*effectivedx: v*effectivedx);
-				item.force[1] += (dy < 0 ? -v*effectivedy: v*effectivedy);
+				item.force[0] += v*dx;
+				item.force[1] += v*dy;
 			}
 		} else if ( n.hasChildren ) {
 			// recurse for more accurate calculation
@@ -337,8 +327,8 @@ public class NBodyForce extends AbstractForce {
 					item.force[0] += (dx < 0 ? overlapForce : -overlapForce);
 					item.force[1] += (dy < 0 ? overlapForce : -overlapForce);
 				} else if(!isOverlapping) {
-					item.force[0] += (dx < 0 ? -v*effectivedx: v*effectivedx);
-					item.force[1] += (dy < 0 ? -v*effectivedy: v*effectivedy);
+					item.force[0] += v*dx;
+					item.force[1] += v*dy;
 				}
 			}
 		}

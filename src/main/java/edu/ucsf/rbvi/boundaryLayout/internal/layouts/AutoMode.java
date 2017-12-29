@@ -79,7 +79,7 @@ public class AutoMode {
 					categoryNames.get(categoryNamesIndex));
 			argMap.put(ShapeAnnotation.X, "" + x);
 			argMap.put(ShapeAnnotation.Y, "" + y);
-			argMap.put(ShapeAnnotation.Z, "");
+			// argMap.put(ShapeAnnotation.Z, "");
 			argMap.put(ShapeAnnotation.WIDTH, "" + shapeDimensions.getX());
 			argMap.put(ShapeAnnotation.HEIGHT, "" + shapeDimensions.getY());
 			argMap.put(ShapeAnnotation.SHAPETYPE, "Rounded Rectangle");

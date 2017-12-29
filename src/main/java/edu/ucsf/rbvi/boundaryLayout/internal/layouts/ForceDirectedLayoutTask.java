@@ -80,7 +80,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		shapeAnnotations = getShapeAnnotations();
 		forceItems = new HashMap<CyNode, ForceItem>();
 
-		if (shapeAnnotations == null) 
+		if (shapeAnnotations == null && layoutAttribute != null) 
 			shapeAnnotations = AutoMode.createAnnotations(netView, 
 					nodeViewList, layoutAttribute, registrar);
 		if(context.wallGravitationalConstant < 0)
@@ -97,7 +97,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		m_fsim.speedLimit = context.speedLimit;
 
 		m_fsim.setIntegrator(integrator.getNewIntegrator());
-		m_fsim.clear();
 
 		//initialize shape annotations and their forces
 		if(shapeAnnotations != null)
@@ -108,15 +107,16 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		m_fsim.addForce(new SpringForce());
 		m_fsim.addForce(new DragForce());
 
-		forceItems.clear();
-
 		if(context.isDeterministic){
 			//sort nodes views in some way ADD <---------------
 		}
 
-		for(ShapeAnnotation shapeAnnotation : shapeAnnotations.values())
-			initNodeLocations(shapeAnnotation);
-		Rectangle2D.Double unionofBoundaries = this.getUnionofBoundaries();
+		Rectangle2D.Double unionofBoundaries = null;
+		if (shapeAnnotations != null) {
+			for(ShapeAnnotation shapeAnnotation : shapeAnnotations.values())
+				initNodeLocations(shapeAnnotation);
+			unionofBoundaries = this.getUnionofBoundaries();
+		}
 
 		// initialize node locations and properties
 		for (View<CyNode> nodeView : nodeViewList) {
@@ -133,7 +133,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			if(chosenCategory != null)
 				group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
 
-			if(group != null) {
+			if(shapeAnnotations != null && group != null) {
 				if(shapeAnnotations.keySet().contains(group)) {
 					Point2D.Double initPosition = getNodeLocation(shapeAnnotations.get(group));
 					fitem.location[0] = (float) initPosition.getX(); 
@@ -142,10 +142,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				else if(unionofBoundaries != null){
 					fitem.location[0] = (float) (unionofBoundaries.getX() - (unionofBoundaries.getWidth() / 4));
 					fitem.location[1] = (float) (unionofBoundaries.getY() + (unionofBoundaries.getHeight() / 2));
-				}
-				else {
-					fitem.location[0] = 0f;
-					fitem.location[1] = 0f;
 				}
 			}
 
@@ -353,6 +349,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 * */
 	private void initializeAnnotationCoordinates() {
 		annotationBoundingBox = new HashMap<>();
+		if (shapeAnnotations == null) return;
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations.values()) {
 			Map<String, String> argMap = shapeAnnotation.getArgMap();
 			double xCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.X));
