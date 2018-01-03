@@ -53,6 +53,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private Random RANDOM = new Random();
 	private Map<Object, Double> annotationArea;
 	private Map<Object, List<View<CyNode>>> groupedNodes;
+	private double boundaryPadding;
 
 	public ForceDirectedLayoutTask( final String displayName,
 			final CyNetworkView netView,
@@ -88,6 +89,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					nodeViewList, layoutAttribute, registrar);
 		if(context.wallGravitationalConstant < 0)
 			context.wallGravitationalConstant *= -1;
+
+		boundaryPadding = context.padding;
 
 		annotationArea = new HashMap<>();
 
@@ -424,10 +427,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				yCoordinate = yCenter-height/2;
 			} else {
 				// Give a little padding
-				xCoordinate = xCoordinate+10;
-				yCoordinate = yCoordinate+10;
-				width = width-20;
-				height = height-20;
+				xCoordinate = xCoordinate+boundaryPadding;
+				yCoordinate = yCoordinate+boundaryPadding;
+				width = width-(boundaryPadding*2);
+				height = height-(boundaryPadding*2);
 			}
 
 			annotationBoundingBox.put(shapeAnnotation, 

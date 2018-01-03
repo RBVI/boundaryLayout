@@ -6,7 +6,7 @@ public class RectangularWallForce extends AbstractForce {
 	private static String[] pnames = new String[] { "GravitationalConstant" };
 
 	public static final int GRAVITATIONAL_CONST = 0;
-	static final float PADDING = 5f;
+	static final float PADDING = 0f;
 
 	private Point2D.Double center;
 	private Point2D.Double dimensions;
@@ -68,13 +68,13 @@ public class RectangularWallForce extends AbstractForce {
 		float width = (float) this.dimensions.getX();
 		float height = (float) this.dimensions.getY();
 		float drLeft = (width / 2f) - dx - (item.dimensions[0]+PADDING)/2.0f;
-		float drTop = (height / 2f) - dy - (item.dimensions[1]+PADDING)/2.0f;
+		float drTop = (height / 2f) - (dy + (item.dimensions[1]+PADDING)/2.0f);
 		float drRight = width - drLeft + (item.dimensions[0]+PADDING); 
-		float drBottom = height - drTop + (item.dimensions[1]+PADDING);
+		float drBottom = height - drTop - (item.dimensions[1]+PADDING);
 
-		//	System.out.println("Node position: "+n[0]+","+n[1]);
-		//	System.out.println("Annotation center: "+center.getX()+","+center.getY());
-		//	System.out.println("drLeft: "+drLeft+", drTop: "+drTop+", drRight: "+drRight+", drBottom: "+drBottom);
+		// System.out.println("Node position: "+n[0]+","+n[1]);
+		// System.out.println("Annotation center: "+center.getX()+","+center.getY());
+		// System.out.println("drLeft: "+drLeft+", drTop: "+drTop+", drRight: "+drRight+", drBottom: "+drBottom);
 
 		//initialize orientation of shape
 		int cX = (Math.abs(dx) > width / 2 ? -1 : 1);

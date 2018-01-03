@@ -30,7 +30,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	public EdgeWeighter edgeWeighter = new EdgeWeighter();
 	
 	@Tunable(description="Number of Iterations:", gravity=4.0, groups={"Layout Parameters"})
-	public int numIterations = 500;
+	public int numIterations = 200;
 
 	@Tunable(description="Default Spring Coefficient",
 			tooltip="The smaller this number is, the more the network "+
@@ -58,10 +58,13 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	public float overlapForce = 100f;
 	
 	@Tunable(description="Strength of boundaries", gravity=11.0)
-	public float wallGravitationalConstant = 12.0f;
+	public float wallGravitationalConstant = 20.0f;
 	
-	@Tunable(description="speed limit")
-	public float speedLimit = 0.0001f;
+	@Tunable(description="Boundary padding", gravity=12.0)
+	public float padding = 10.0f;
+	
+	@Tunable(description="speed limit", gravity=13.0)
+	public float speedLimit = 1.0f;
 
 	public ForceDirectedLayoutContext(CyServiceRegistrar registrar) {
 		super();
