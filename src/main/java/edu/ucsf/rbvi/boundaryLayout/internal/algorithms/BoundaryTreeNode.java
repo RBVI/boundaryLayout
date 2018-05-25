@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BoundaryTreeNode {
-	Rectangle2D.Double entry;
+	Rectangle2D entry;
 	BoundaryTreeNode parent;
 	Map<String, BoundaryTreeNode> children;
 	static final String LEFTCHILD = "LEFT";
@@ -17,7 +17,7 @@ public class BoundaryTreeNode {
 	 * Construct a BoundaryTreeNode with a specified entry: children and parent are null.
 	 * 
 	 */
-	BoundaryTreeNode(Rectangle2D.Double entry) {
+	BoundaryTreeNode(Rectangle2D entry) {
 		this(entry, null, null, null, null, null);
 	}
 
@@ -25,14 +25,14 @@ public class BoundaryTreeNode {
 	 *  Construct a BoundaryTreeNode with a specified entry and parent: children
 	 *  are null.
 	 */
-	BoundaryTreeNode(Rectangle2D.Double entry, BoundaryTreeNode parent) {
+	BoundaryTreeNode(Rectangle2D entry, BoundaryTreeNode parent) {
 		this(entry, parent, null, null, null, null);
 	}
 
 	/**
 	 *  Construct a BoundaryTreeNode, specifying entry, parent and children.
 	 **/
-	BoundaryTreeNode(Rectangle2D.Double entry, BoundaryTreeNode parent,
+	BoundaryTreeNode(Rectangle2D entry, BoundaryTreeNode parent,
 			BoundaryTreeNode leftChild, BoundaryTreeNode topChild, 
 			BoundaryTreeNode rightChild, BoundaryTreeNode bottomChild) {
 		children = new HashMap<>();

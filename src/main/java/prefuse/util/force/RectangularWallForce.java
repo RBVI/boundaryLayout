@@ -8,8 +8,8 @@ public class RectangularWallForce extends AbstractForce {
 	public static final int GRAVITATIONAL_CONST = 0;
 	static final float PADDING = 0f;
 
-	private Point2D.Double center;
-	private Point2D.Double dimensions;
+	private Point2D center;
+	private Point2D dimensions;
 
 	/**
 	 * Create a new CircularWallForce.
@@ -19,7 +19,7 @@ public class RectangularWallForce extends AbstractForce {
 	 * @param r the radius of the circle
 	 */
 	public RectangularWallForce(float gravConst, 
-			Point2D.Double center, Point2D.Double dimensions) {
+			Point2D center, Point2D dimensions) {
 		params = new float[] { gravConst };
 		this.center = center;
 		this.dimensions = dimensions;
@@ -32,8 +32,8 @@ public class RectangularWallForce extends AbstractForce {
 	 * @param y the center y-coordinate of the circle
 	 * @param r the radius of the circle
 	 */
-	public RectangularWallForce(Point2D.Double center, 
-			Point2D.Double dimensions, float wallGravitationalConstant) {
+	public RectangularWallForce(Point2D center, 
+			Point2D dimensions, float wallGravitationalConstant) {
 		this(wallGravitationalConstant, center, dimensions);
 	}
 

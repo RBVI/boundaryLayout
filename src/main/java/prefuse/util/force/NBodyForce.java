@@ -117,6 +117,8 @@ public class NBodyForce extends AbstractForce {
 		this.yMin = yMin;
 		this.xMax = xMax;
 		this.yMax = yMax;
+		// System.out.println("bounds = "+xMin+","+yMin+"x"+xMax+","+yMax);
+		// System.out.println("bounds = "+xMin+","+yMin+" "+(xMax-xMin)+"x"+(yMax-yMin));
 	}
 
 	/**
@@ -146,18 +148,30 @@ public class NBodyForce extends AbstractForce {
 
 		// compute and squarify bounds of quadtree
 		float x1 = Float.MAX_VALUE, y1 = Float.MAX_VALUE;
-		float x2 = Float.MIN_VALUE, y2 = Float.MIN_VALUE;
+		float x2 = -Float.MAX_VALUE, y2 = -Float.MAX_VALUE;
 		Iterator itemIter = fsim.getItems();
 		while ( itemIter.hasNext() ) {
 			ForceItem item = (ForceItem)itemIter.next();
 			float x = item.location[0];
 			float y = item.location[1];
+			// System.out.println("location="+x+","+y);
+			// System.out.println("x1="+x1+" x2="+x2+" y1="+y1+" y2="+y2);
+			/*
+			float width = item.dimensions[0]/2f;
+			float height = item.dimensions[1]/2f;
+			if ( (x-width) < x1 ) x1 = x-width;
+			if ( (y-height) < y1 ) y1 = y-height;
+			if ( (x+width) > x2 ) x2 = x+width;
+			if ( (y+height) > y2 ) y2 = y+height;
+			*/
 			if ( x < x1 ) x1 = x;
 			if ( y < y1 ) y1 = y;
 			if ( x > x2 ) x2 = x;
 			if ( y > y2 ) y2 = y;
 		}
+		// System.out.println("final x1="+x1+" x2="+x2+" y1="+y1+" y2="+y2);
 		float dx = x2-x1, dy = y2-y1;
+		// System.out.println("dx="+dx+", dy="+dy);
 		if ( dx > dy ) { y2 = y1 + dx; } else { x2 = x1 + dy; }
 		setBounds(x1,y1,x2,y2);
 
@@ -188,6 +202,11 @@ public class NBodyForce extends AbstractForce {
 	{
 		// try to insert particle p at node n in the quadtree
 		// by construction, each leaf will contain either 1 or 0 particles
+		// System.out.println("insert("+x1+","+y1+","+x2+","+y2+")");
+		if (Float.isInfinite(x1) || Float.isInfinite(x2) || Float.isInfinite(y1) || Float.isInfinite(y2)) {
+			throw new RuntimeException("Inifinite node position!");
+		}
+
 		if ( n.hasChildren ) {
 			// n contains more than 1 particle
 			insertHelper(p,n,x1,y1,x2,y2);
@@ -264,31 +283,48 @@ public class NBodyForce extends AbstractForce {
 	private void forceHelper(ForceItem item, QuadTreeNode n, 
 			float x1, float y1, float x2, float y2)
 	{
+		// System.out.println("forceHelper ("+x1+","+y1+","+x2+","+y2+")");
+		float effectivedx = 0f, effectivedy = 0f;
+		boolean isOverlapping = false;
 		float dx = n.com[0] - item.location[0];
 		float dy = n.com[1] - item.location[1];
-		float r  = (float)Math.sqrt(dx*dx+dy*dy);
+		// System.out.println("n = "+n.com[0]+","+n.com[1]+", item = "+item.location[0]+","+item.location[1]);
+		// System.out.println("dx = "+dx+", dy = "+dy);
+
 		boolean same = false;
+		float r  = (float)Math.sqrt(dx*dx+dy*dy);
 		if ( r == 0.0f ) {
-			// if items are in the exact same place, add some noise
+			// if items are in the exact same pl;
 			dx = (rand.nextFloat()-0.5f) / 50.0f;
 			dy = (rand.nextFloat()-0.5f) / 50.0f;
 			r  = (float)Math.sqrt(dx*dx+dy*dy);
 			same = true;
 		}
 
-		float effectivedx = Math.abs(dx);
-		float effectivedy = Math.abs(dy);
-		boolean isOverlapping = false;
-
-		if(disableOverlapping)
-			if(n.value != item && n.value != null && item != null) {
-				effectivedx = (float) (Math.abs(dx) - (item.dimensions[0] + n.value.dimensions[0]));
-				effectivedy = (float) (Math.abs(dy) - (item.dimensions[1] + n.value.dimensions[1]));
-				r = Math.abs(effectivedx * effectivedx + effectivedy * effectivedy);
-				isOverlapping = (effectivedx < 0 && effectivedy < 0);
+		if (disableOverlapping) {
+			double width, height;
+			if (n.value != null) {
+				width = item.dimensions[0] + n.value.dimensions[0];
+				height = item.dimensions[1] + n.value.dimensions[1];
+			} else {
+				width = item.dimensions[0]*2;
+				height = item.dimensions[1]*2;
 			}
 
-		boolean minDist = params[MIN_DISTANCE]>0f && r>params[MIN_DISTANCE] && !isOverlapping;
+			effectivedx = (float) (Math.abs(dx) - width);
+			effectivedy = (float) (Math.abs(dy) - height);
+			// System.out.println("effectivedx = "+effectivedx+", effectivedy = "+effectivedy);
+			isOverlapping = (effectivedx < 0 && effectivedy < 0);
+		}
+
+		// System.out.println("isOverlapping = "+isOverlapping);
+
+		boolean minDist = params[MIN_DISTANCE]>0f && r>params[MIN_DISTANCE];
+
+		// System.out.println("n.hasChildren = "+n.hasChildren);
+		// System.out.println("n.value == item?"+(n.value==item));
+		// System.out.println("same = "+same);
+		// System.out.println("BarnesHut = ("+x2+"-"+x1+")/"+r+"="+(((x2-x1)/r)));
 
 		// the Barnes-Hut approximation criteria is if the ratio of the
 		// size of the quadtree box to the distance between the point and
@@ -296,17 +332,24 @@ public class NBodyForce extends AbstractForce {
 		if ( (!n.hasChildren && n.value != item) || 
 				(!same && (x2-x1)/r < params[BARNES_HUT_THETA]) ) 
 		{
+			// System.out.println("minDist(1)="+minDist);
 			if ( minDist ) return;
 			// either only 1 particle or we meet criteria
 			// for Barnes-Hut approximation, so calc force
-			float v = params[GRAVITATIONAL_CONST]*item.mass*n.mass 
-					/ (r*r*r);
-			if(isOverlapping) {
-				item.force[0] += (dx < 0 ? overlapForce : -overlapForce);
-				item.force[1] += (dy < 0 ? overlapForce : -overlapForce);
-			} else if(!isOverlapping) {
+			// System.out.println("r = "+r);
+			if (isOverlapping) {
+				float force = overlapForce;
+				float v = force*item.mass*n.mass / (r*r*r);
+				item.force[0] += getRepulsiveForce(v,dx);
+				item.force[1] += getRepulsiveForce(v,dy);
+				// System.out.println("overlapForce(1) = "+overlapForce+", force = "+v+", fx = "+item.force[0]+", fy = "+item.force[1]);
+			} 
+			{
+				float force = params[GRAVITATIONAL_CONST];
+				float v = force*item.mass*n.mass / (r*r*r);
 				item.force[0] += v*dx;
 				item.force[1] += v*dy;
+				// System.out.println("gravityForce(1) = "+force+", force = "+v+", fx = "+item.force[0]+", fy = "+item.force[1]);
 			}
 		} else if ( n.hasChildren ) {
 			// recurse for more accurate calculation
@@ -319,19 +362,36 @@ public class NBodyForce extends AbstractForce {
 							(i==1||i==3?x2:splitx), (i>1?y2:splity));
 				}
 			}
+			// System.out.println("minDist(2)="+minDist);
 			if ( minDist ) return;
 			if ( n.value != null && n.value != item ) {
-				float v = params[GRAVITATIONAL_CONST]*item.mass*n.value.mass
-						/ (r*r*r);
-				if(isOverlapping) {
-					item.force[0] += (dx < 0 ? overlapForce : -overlapForce);
-					item.force[1] += (dy < 0 ? overlapForce : -overlapForce);
-				} else if(!isOverlapping) {
+				// System.out.println("r = "+r);
+				if (isOverlapping) {
+					float force = overlapForce;
+					float v = force*item.mass*n.mass / (r*r*r);
+					item.force[0] += getRepulsiveForce(v,dx);
+					item.force[1] += getRepulsiveForce(v,dy);
+					// System.out.println("overlapForce(2) = "+overlapForce+", force = "+v+", fx = "+item.force[0]+", fy = "+item.force[1]);
+				} 
+				{
+					float force = params[GRAVITATIONAL_CONST];
+					float v = force*item.mass*n.mass / (r*r*r);
 					item.force[0] += v*dx;
 					item.force[1] += v*dy;
+					// System.out.println("gravityForce(2) = "+force+", force = "+v+", fx = "+item.force[0]+", fy = "+item.force[1]);
 				}
 			}
 		}
+		// System.out.println("return");
+	}
+
+	private float getRepulsiveForce(float v, float d) {
+		if (d < 0.01f) return v/0.01f;
+		return v/d;
+		/*
+		if (d < 0) return -v;
+		return v;
+		*/
 	}
 
 	/**

@@ -26,12 +26,12 @@ public class BoundaryTree {
 	}	
 
 	/*
-	 * @param Rectangle2D.Double rectangle holds the rectangle
+	 * @param Rectangle2D rectangle holds the rectangle
 	 * that will partition our data
 	 * @return a list of leaves in the tree that intersect with
 	 * the parameter rectangle
 	 * */
-	public List<BoundaryTreeNode> find(Rectangle2D.Double partitioningRectangle) {
+	public List<BoundaryTreeNode> find(Rectangle2D partitioningRectangle) {
 		List<BoundaryTreeNode> intersectedNodes = new ArrayList<>();
 		Queue<BoundaryTreeNode> findQueue = new ArrayDeque<>();
 		findQueue.add(root);
@@ -66,16 +66,16 @@ public class BoundaryTree {
 	/*
 	 * @param List<BoundaryTreeNode> intersectedNodes is a list of leaf nodes
 	 * that intersect with the newly added partitioning rectangle.
-	 * @param Rectangle2D.Double partitioningRectangle is the newly added 
+	 * @param Rectangle2D partitioningRectangle is the newly added 
 	 * rectangle that partitions all of the intersecting leaves.
 	 * 
 	 * This method adds children to the tree corresponding to the newly added
 	 * rectangle.
 	 * */
 	public void do2DShapePartitioning(List<BoundaryTreeNode> intersectedNodes, 
-			Rectangle2D.Double partitioningRectangle) {
+			Rectangle2D partitioningRectangle) {
 		for(BoundaryTreeNode intersectedNode : intersectedNodes) {
-			Rectangle2D.Double intersectedNodeRectangle = intersectedNode.entry;
+			Rectangle2D intersectedNodeRectangle = intersectedNode.entry;
 			//index 0 represents the left side of the rectangle, rotating clockwise
 			BoundaryTreeNode[] partitionChildren = new BoundaryTreeNode[4];
 			for(BoundaryTreeNode boundaryNode : partitionChildren)
@@ -91,21 +91,21 @@ public class BoundaryTree {
 					(intersectedNodeRectangle.getY() + intersectedNodeRectangle.getHeight()) -
 					(partitioningRectangle.getY() + partitioningRectangle.getHeight());
 			if(distanceFromLeft > 0) {//left
-				Rectangle2D.Double leftRectangle = new Rectangle2D.Double(
+				Rectangle2D leftRectangle = new Rectangle2D.Double(
 						intersectedNodeRectangle.getX(), intersectedNodeRectangle.getY(), 
 						distanceFromLeft, intersectedNodeRectangle.getHeight());
 				partitionChildren[0] = new BoundaryTreeNode(leftRectangle, intersectedNode);
 				size++;
 			}
 			if(distanceFromTop > 0) {//top
-				Rectangle2D.Double topRectangle = new Rectangle2D.Double(
+				Rectangle2D topRectangle = new Rectangle2D.Double(
 						intersectedNodeRectangle.getX(), intersectedNodeRectangle.getY(), 
 						intersectedNodeRectangle.getWidth(), distanceFromTop);
 				partitionChildren[1] = new BoundaryTreeNode(topRectangle, intersectedNode);
 				size++;
 			}
 			if(distanceFromRight > 0) {//right
-				Rectangle2D.Double rightRectangle = new Rectangle2D.Double(
+				Rectangle2D rightRectangle = new Rectangle2D.Double(
 						partitioningRectangle.getX() + partitioningRectangle.getWidth(), 
 						intersectedNodeRectangle.getY(), distanceFromRight, 
 						intersectedNodeRectangle.getHeight());
@@ -113,7 +113,7 @@ public class BoundaryTree {
 				size++;
 			}
 			if(distanceFromBottom > 0) {//bottom
-				Rectangle2D.Double bottomRectangle = new Rectangle2D.Double(
+				Rectangle2D bottomRectangle = new Rectangle2D.Double(
 						intersectedNodeRectangle.getX(), partitioningRectangle.getY() + 
 						partitioningRectangle.getHeight(), intersectedNodeRectangle.getWidth(), 
 						distanceFromBottom);
@@ -130,20 +130,20 @@ public class BoundaryTree {
 	 * Method call to preorder which does a recursive preorder search and gets
 	 * a list of the largest areas which is put into bTree variable
 	 * */
-	public List<Rectangle2D.Double> getLargestAreas() {
-		List<Rectangle2D.Double> bTree = new ArrayList<>();
+	public List<Rectangle2D> getLargestAreas() {
+		List<Rectangle2D> bTree = new ArrayList<>();
 		preorder(bTree, root);
 		return bTree;
 	}
 
 	/*
-	 * @param List<Rectangle2D.Double> areas holds the largest area rectangle
+	 * @param List<Rectangle2D> areas holds the largest area rectangle
 	 * leaves in the tree
 	 * @param BoundaryTreeNode bNode is the node currently being traversed
 	 * 
 	 * preorder does a preorder search of the tree and only looks at the leaves
 	 * */
-	public void preorder(List<Rectangle2D.Double> areas, BoundaryTreeNode bNode) {
+	public void preorder(List<Rectangle2D> areas, BoundaryTreeNode bNode) {
 		if(bNode == null) 
 			return;
 		if(!bNode.hasChildren()) {
@@ -160,12 +160,12 @@ public class BoundaryTree {
 		}
 	}
 
-	private static void changeMinimum(List<Rectangle2D.Double> areas, 
-			Rectangle2D.Double leafAreaRectangle) {
+	private static void changeMinimum(List<Rectangle2D> areas, 
+			Rectangle2D leafAreaRectangle) {
 		int minAreaIndex = 0;
-		Rectangle2D.Double minAreaRectangle = areas.get(minAreaIndex);
+		Rectangle2D minAreaRectangle = areas.get(minAreaIndex);
 		for(int i = 1; i < areas.size(); i++) {
-			Rectangle2D.Double thisAreaRectangle = areas.get(i);
+			Rectangle2D thisAreaRectangle = areas.get(i);
 			if(minAreaRectangle.getHeight() * minAreaRectangle.getWidth() > 
 			thisAreaRectangle.getHeight() * thisAreaRectangle.getWidth()) {
 				minAreaIndex = i;
