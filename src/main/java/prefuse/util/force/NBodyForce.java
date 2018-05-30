@@ -117,8 +117,8 @@ public class NBodyForce extends AbstractForce {
 		this.yMin = yMin;
 		this.xMax = xMax;
 		this.yMax = yMax;
-		// System.out.println("bounds = "+xMin+","+yMin+"x"+xMax+","+yMax);
-		// System.out.println("bounds = "+xMin+","+yMin+" "+(xMax-xMin)+"x"+(yMax-yMin));
+		//System.out.println("bounds = "+xMin+","+yMin+"x"+xMax+","+yMax);
+		//System.out.println("bounds = "+xMin+","+yMin+" "+(xMax-xMin)+"x"+(yMax-yMin));
 	}
 
 	/**
@@ -154,6 +154,7 @@ public class NBodyForce extends AbstractForce {
 			ForceItem item = (ForceItem)itemIter.next();
 			float x = item.location[0];
 			float y = item.location[1];
+			System.out.println(x + " - " + y);
 			// System.out.println("location="+x+","+y);
 			// System.out.println("x1="+x1+" x2="+x2+" y1="+y1+" y2="+y2);
 			/*
@@ -204,9 +205,9 @@ public class NBodyForce extends AbstractForce {
 		// by construction, each leaf will contain either 1 or 0 particles
 		// System.out.println("insert("+x1+","+y1+","+x2+","+y2+")");
 		if (Float.isInfinite(x1) || Float.isInfinite(x2) || Float.isInfinite(y1) || Float.isInfinite(y2)) {
-			throw new RuntimeException("Inifinite node position!");
+			throw new RuntimeException("Infinite node position!");
 		}
-
+		
 		if ( n.hasChildren ) {
 			// n contains more than 1 particle
 			insertHelper(p,n,x1,y1,x2,y2);

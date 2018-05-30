@@ -51,8 +51,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private Map<ShapeAnnotation, List<Point2D>> initializingNodeLocations;
 	private TaskMonitor taskMonitor;
 	private Random RANDOM = new Random();
-	private Map<Object, Double> annotationArea;
-	private Map<Object, List<View<CyNode>>> groupedNodes;
+	//private Map<Object, Double> annotationArea;
+	//private Map<Object, List<View<CyNode>>> groupedNodes;
 	private double boundaryPadding;
 
 	public ForceDirectedLayoutTask( final String displayName,
@@ -87,28 +87,11 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if (shapeAnnotations == null && layoutAttribute != null) 
 			shapeAnnotations = AutoMode.createAnnotations(netView, 
 					nodeViewList, layoutAttribute, registrar);
+
 		if(context.wallGravitationalConstant < 0)
 			context.wallGravitationalConstant *= -1;
 
 		boundaryPadding = context.padding;
-
-		annotationArea = new HashMap<>();
-
-		// Get a map of group --> node views  This will allow us
-		// to go through each of the node groups iteratively
-		groupedNodes = new HashMap<>();
-		for (View<CyNode> nodeView: nodeViewList) {
-			Object group = null;
-			if(chosenCategory != null)
-				group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
-			if (group == null) {
-				group = "";
-			}
-
-			if (!groupedNodes.containsKey(group))
-				groupedNodes.put(group, new ArrayList<View<CyNode>>());
-			groupedNodes.get(group).add(nodeView);
-		}
 	}
 
 	// TODO: I think it would be better to layout each group in separate passes
@@ -116,27 +99,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	@Override
 	protected void doLayout(TaskMonitor taskMonitor) {
 		this.taskMonitor = taskMonitor;
-
 		initializeAnnotationCoordinates();
-
-		ForceSimulator m_fsim = new ForceSimulator();
-		m_fsim.speedLimit = context.speedLimit;
-
-		m_fsim.setIntegrator(integrator.getNewIntegrator());
-
-		m_fsim.addForce(new NBodyForce(context.avoidOverlap, context.overlapForce));
-		m_fsim.addForce(new SpringForce());
-		m_fsim.addForce(new DragForce());
-
-		if(context.isDeterministic){
-			//sort nodes views in some way ADD <---------------
-		}
-
-		if(shapeAnnotations != null) {
-			for(Object category : groupedNodes.keySet()) {
-				addAnnotationForce(m_fsim, shapeAnnotations.get(category));
-			}
-		}
 
 		Rectangle2D unionOfBoundaries = null;
 		if (shapeAnnotations != null) {
@@ -144,96 +107,89 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				initNodeLocations(shapeAnnotation);
 			unionOfBoundaries = this.getUnionofBoundaries();
 		}
+		
+		ForceSimulator m_fsim = new ForceSimulator();
+		m_fsim.speedLimit = context.speedLimit;
+		m_fsim.setIntegrator(integrator.getNewIntegrator());
+		m_fsim.clear();
+		m_fsim.addForce(new NBodyForce(context.avoidOverlap, context.overlapForce));
+		m_fsim.addForce(new SpringForce());
+		m_fsim.addForce(new DragForce());
+		forceItems.clear();
 
-		for (Object group: groupedNodes.keySet()) {
-			m_fsim.clear();
-			forceItems.clear();
+		if(context.isDeterministic){}
 
-			if (shapeAnnotations != null && group != null && !annotationArea.containsKey(group)) {
-				ShapeAnnotation sa = shapeAnnotations.get(group);
-				Rectangle2D bounds = annotationBoundingBox.get(sa);
-				annotationArea.put(group, bounds.getWidth()*bounds.getHeight());
+		if(shapeAnnotations != null) 
+			for(Object category : shapeAnnotations.keySet()) 
+				addAnnotationForce(m_fsim, shapeAnnotations.get(category));
+
+		// initialize node locations and properties
+		for (View<CyNode> nodeView : nodeViewList) {
+			ForceItem fitem = forceItems.get(nodeView.getModel()); 
+			if (fitem == null) {
+				fitem = new ForceItem();
+				forceItems.put(nodeView.getModel(), fitem);
 			}
 
-			// initialize node locations and properties
-			for (View<CyNode> nodeView : groupedNodes.get(group)) {
-				ForceItem fitem = forceItems.get(nodeView.getModel()); 
-				if ( fitem == null ) {
-					fitem = new ForceItem();
-					forceItems.put(nodeView.getModel(), fitem);
-				}
-	
-				fitem.mass = (float) context.defaultNodeMass;
-	
-				fitem.category = group;
-				double width = nodeView.getVisualProperty(BasicVisualLexicon.NODE_WIDTH) / 2;
-				double height = nodeView.getVisualProperty(BasicVisualLexicon.NODE_HEIGHT) / 2;
-				fitem.dimensions[0] = (float) width;
-				fitem.dimensions[1] = (float) height;
-	
-				if(shapeAnnotations != null && group != null) {
-					// Do we have an annotation for this group?
-					if(shapeAnnotations.keySet().contains(group)) {
-						Point2D initPosition = getNodeLocation(shapeAnnotations.get(group));
-						fitem.location[0] = (float) initPosition.getX(); 
-						fitem.location[1] = (float) initPosition.getY(); 
-	
-						// Check our sizes
-						Double remainingArea = annotationArea.get(group);
-						remainingArea -= width*1.25*height*1.25;
-						/*
-						if (remainingArea < 0.0) {
-							taskMonitor.showMessage(TaskMonitor.Level.ERROR, 
-							    "Annotation for "+group.toString()+" is not large enough for designated nodes");
-							return;
-						}
-						*/
-						annotationArea.put(group, remainingArea);
-					}
-					else if(unionOfBoundaries != null){
-						fitem.location[0] = (float) (unionOfBoundaries.getX() - (unionOfBoundaries.getWidth() / 4));
-						fitem.location[1] = (float) (unionOfBoundaries.getY() + (unionOfBoundaries.getHeight() / 2));
-					}
-				}
-				m_fsim.addItem(fitem);
-			}
+			fitem.mass = (float) context.defaultNodeMass;
 
-			// initialize edges
-			for (View<CyEdge> edgeView : edgeViewList) {
-				CyEdge edge = edgeView.getModel();
-				CyNode n1 = edge.getSource();
-				ForceItem f1 = forceItems.get(n1); 
-				CyNode n2 = edge.getTarget();
-				ForceItem f2 = forceItems.get(n2); 
-				if ( f1 == null || f2 == null )
-					continue;
-				m_fsim.addSpring(f1, f2, (float) context.defaultSpringCoefficient, 
-						(float) context.defaultSpringLength); 
-			}
+			Object group = null;
+			if(chosenCategory != null)
+				group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
 
-			final int checkCenter = (context.numIterations / 10) + 1;
-	
-			// perform layout
-			long timestep = 1000L;
-			for ( int i = 0; i < context.numIterations && !cancelled; i++ ) {
-				timestep *= (1.0 - i/(double)context.numIterations);
-				long step = timestep + 50;
-				m_fsim.runSimulator(step);
-				if(i % checkCenter == 0) 
-					checkCenter(m_fsim);
-				taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
+			if(shapeAnnotations != null && group != null) {
+				if(shapeAnnotations.keySet().contains(group)) {
+					Point2D initPosition = getNodeLocation(shapeAnnotations.get(group));
+					fitem.location[0] = (float) initPosition.getX(); 
+					fitem.location[1] = (float) initPosition.getY(); 
+				} else if(unionOfBoundaries != null) {
+					fitem.location[0] = (float) (unionOfBoundaries.getX() - (unionOfBoundaries.getWidth() / 4));
+					fitem.location[1] = (float) (unionOfBoundaries.getY() + (unionOfBoundaries.getHeight() / 2));
+				} 
 			}
-			checkCenter(m_fsim);
+			
+			double width = nodeView.getVisualProperty(BasicVisualLexicon.NODE_WIDTH);
+			double height = nodeView.getVisualProperty(BasicVisualLexicon.NODE_HEIGHT);
+			fitem.dimensions[0] = (float) width;
+			fitem.dimensions[1] = (float) height;
+			fitem.category = group;
+			m_fsim.addItem(fitem);
+		}
 
-			// update positions
-			for (CyNode node : forceItems.keySet()) {
-				ForceItem fitem = forceItems.get(node); 
-				View<CyNode> nodeView = netView.getNodeView(node);
-				double x = nodeView.getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION);
-				double y = nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
-				nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double)fitem.location[0]);
-				nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double)fitem.location[1]);
-			}
+
+		// initialize edges
+		for (View<CyEdge> edgeView : edgeViewList) {
+			CyEdge edge = edgeView.getModel();
+			CyNode n1 = edge.getSource();
+			ForceItem f1 = forceItems.get(n1); 
+			CyNode n2 = edge.getTarget();
+			ForceItem f2 = forceItems.get(n2); 
+			if ( f1 == null || f2 == null )
+				continue;
+			m_fsim.addSpring(f1, f2, (float) context.defaultSpringCoefficient, 
+					(float) context.defaultSpringLength); 
+		}
+
+		final int checkCenter = (context.numIterations / 10) + 1;
+
+		// perform layout
+		long timestep = 1000L;
+		for ( int i = 0; i < context.numIterations && !cancelled; i++ ) {
+			timestep *= (1.0 - i/(double)context.numIterations);
+			long step = timestep + 50;
+			m_fsim.runSimulator(step);
+			if(i % checkCenter == 0) 
+				checkCenter(m_fsim);
+			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
+		}
+		checkCenter(m_fsim);
+
+		// update positions
+		for (CyNode node : forceItems.keySet()) {
+			ForceItem fitem = forceItems.get(node); 
+			View<CyNode> nodeView = netView.getNodeView(node);
+			nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double)fitem.location[0]);
+			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double)fitem.location[1]);
 		}
 	}
 
@@ -245,20 +201,15 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				ShapeAnnotation nextShape = shapeAnnotations.get(nextItem.category);
 				if(annotationBoundingBox.containsKey(nextShape)) {
 					Point2D location = new Point2D.Double((double) nextItem.location[0],
-					                                      (double) nextItem.location[1]);
+							(double) nextItem.location[1]);
 					if(!annotationBoundingBox.get(nextShape).contains(location)) {
 						// We moved the node outside of the shape
 						// Find the closest point in the bounding box and move back
-						// to that
 						Rectangle2D bbox = new Rectangle2D.Double(location.getX(), location.getY(),
-						                                           nextItem.dimensions[0], nextItem.dimensions[1]);
-						Point2D nearestPoint = nearestPoint(annotationBoundingBox.get(nextShape), bbox);
-						/*
-						List<Point2D> reInitializations = 
-								initializingNodeLocations.get(nextShape);
-						Point2D reInitialize = 
-								reInitializations.get(RANDOM.nextInt(reInitializations.size()));
-						*/
+								nextItem.dimensions[0], nextItem.dimensions[1]);
+
+						Point2D nearestPoint = getNearestPoint(annotationBoundingBox.get(nextShape), bbox);
+
 						nextItem.location[0] = (float) nearestPoint.getX();
 						nextItem.location[1] = (float) nearestPoint.getY();
 						nextItem.plocation[0] = nextItem.location[0];
@@ -269,6 +220,31 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 	}
 
+	private Point2D getNearestPoint(Rectangle2D shape, Rectangle2D bbox) {
+		double[] diffVector = { bbox.getX() - shape.getCenterX(), bbox.getY() - shape.getCenterY()};
+		double scale = 1.;
+
+		//if top or bottom are sides are closer -> scale based on height, otherwise based on width
+		if(shape.getHeight() / shape.getWidth() <= Math.abs(diffVector[1] / diffVector[0])) 
+			scale = (shape.getHeight() / 2) / Math.abs(diffVector[1]);
+		else 
+			scale = (shape.getWidth() / 2) / Math.abs(diffVector[1]);	
+
+		diffVector[0] = diffVector[0] * scale; 
+		diffVector[1] = diffVector[1] * scale;
+		nodeScaleVector(shape, bbox, diffVector);
+
+		return new Point2D.Double(shape.getCenterX() + diffVector[0], shape.getCenterY() + diffVector[1]);
+	}
+
+	private void nodeScaleVector(Rectangle2D shape, Rectangle2D bbox, double[] diffVector) {
+		if(Math.abs(diffVector[0]) + bbox.getWidth() / 2 > shape.getWidth() / 2) 
+			diffVector[0] += bbox.getWidth() / 2 * (diffVector[0] > 0 ? -1 : 1);
+		if(Math.abs(diffVector[1]) + bbox.getHeight() / 2 > shape.getHeight() / 2) 
+			diffVector[1] += bbox.getHeight() / 2 * (diffVector[1] > 0 ? -1 : 1);
+	}
+	
+	/*
 	private Point2D nearestPoint(Rectangle2D shape, Rectangle2D bbox) {
 		// First, find the nearest side
 		double topPoint[] = new double[2];
@@ -276,10 +252,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		double bottomPoint[] = new double[2];
 		double leftPoint[] = new double[2];
 
-		double topLeft[] = { shape.getX(), shape.getY()+shape.getHeight() };
-		double topRight[] = { shape.getX()+shape.getWidth(), shape.getY()+shape.getHeight() };
-		double bottomLeft[] = { shape.getX(), shape.getY() };
-		double bottomRight[] = { shape.getX()+shape.getWidth(), shape.getY() };
+		double topLeft[] = { shape.getX(), shape.getY() };
+		double topRight[] = { shape.getX()+shape.getWidth(), shape.getY() };
+		double bottomLeft[] = { shape.getX(), shape.getY()+shape.getHeight() };
+		double bottomRight[] = { shape.getX()+shape.getWidth(), shape.getY()+shape.getHeight() };
 
 		double topDist = nearestPoint(topPoint, topLeft, topRight, bbox);
 		topPoint[1] = topPoint[1]-bbox.getHeight();
@@ -326,7 +302,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 	closest[1] = a[1]+a_to_b[1]*t;
 
 		return atb2;
-	}
+	}*/
 
 	/* @return the HashMap shapeAnnotations which consists of 
 	 * all of the Shape Annotations in the current network view and
@@ -379,7 +355,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					annotationDimensions, -1 * context.wallGravitationalConstant));
 			break;
 		}
-		*/
+		 */
 	}
 
 	/* @param shapeAnnotation stores an existing ShapeAnnotation.
@@ -388,6 +364,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 * point holds the height.
 	 * */
 	private Point2D getAnnotationDimensions(ShapeAnnotation shapeAnnotation) {
+		System.out.println(shapeAnnotation.getName() + "\n\n --");
 		Rectangle2D bb = annotationBoundingBox.get(shapeAnnotation);
 		return new Point2D.Double(bb.getWidth(), bb.getHeight());
 	}
@@ -418,16 +395,14 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if(!applySpecialInitialization.isEmpty()) {
 			// System.out.println("Special initialization");
 			initNodes.remove(0);
-			Rectangle2D thisBoundingBox = getShapeBoundingBox(shapeAnnotation);
-			/*
+			/*Rectangle2D thisBoundingBox = getShapeBoundingBox(shapeAnnotation);
 			if(shapeAnnotation.getShapeType().equals("Ellipse")) {
 				double width = Math.sqrt(2) * thisBoundingBox.getWidth()/2;
 				double height = Math.sqrt(2) * thisBoundingBox.getHeight()/2;
 				double x = thisBoundingBox.getX();
 				double y = thisBoundingBox.getY();
 				thisBoundingBox = new Rectangle2D.Double(x, y, width, height);
-			}
-			*/
+			}*/
 			List<Rectangle2D> initRectangles = BoundaryContainsAlgorithm.doAlgorithm(
 					annotationBoundingBox.get(shapeAnnotation), applySpecialInitialization);
 			for(Rectangle2D initRectangle : initRectangles) {
@@ -485,8 +460,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH)) / shapeAnnotation.getZoom();
 			double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT)) / shapeAnnotation.getZoom();
 			if(shapeAnnotation.getShapeType().equals("Ellipse")) {
-				// We actually only want the inner rectangle
-				// Get the center
+				//only want inner rectangle
 				double xCenter = xCoordinate+width/2;
 				double yCenter = yCoordinate+height/2;
 				width = width * Math.sqrt(2) / 2;
@@ -502,7 +476,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			}
 
 			annotationBoundingBox.put(shapeAnnotation, 
-											new Rectangle2D.Double(xCoordinate, yCoordinate, width, height));
+					new Rectangle2D.Double(xCoordinate, yCoordinate, width, height));
 		}
 	}
 
