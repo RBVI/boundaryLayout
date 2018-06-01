@@ -228,20 +228,20 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if(shape.getHeight() / shape.getWidth() <= Math.abs(diffVector[1] / diffVector[0])) 
 			scale = (shape.getHeight() / 2) / Math.abs(diffVector[1]);
 		else 
-			scale = (shape.getWidth() / 2) / Math.abs(diffVector[1]);	
+			scale = (shape.getWidth() / 2) / Math.abs(diffVector[0]);	
 
 		diffVector[0] = diffVector[0] * scale; 
 		diffVector[1] = diffVector[1] * scale;
 		nodeScaleVector(shape, bbox, diffVector);
-
+		
 		return new Point2D.Double(shape.getCenterX() + diffVector[0], shape.getCenterY() + diffVector[1]);
 	}
 
 	private void nodeScaleVector(Rectangle2D shape, Rectangle2D bbox, double[] diffVector) {
 		if(Math.abs(diffVector[0]) + bbox.getWidth() / 2 > shape.getWidth() / 2) 
-			diffVector[0] += bbox.getWidth() / 2 * (diffVector[0] > 0 ? -1 : 1);
+			diffVector[0] += shape.getWidth() / 2 * (diffVector[0] > 0 ? -1 : 1);
 		if(Math.abs(diffVector[1]) + bbox.getHeight() / 2 > shape.getHeight() / 2) 
-			diffVector[1] += bbox.getHeight() / 2 * (diffVector[1] > 0 ? -1 : 1);
+			diffVector[1] += shape.getHeight() / 2 * (diffVector[1] > 0 ? -1 : 1);
 	}
 	
 	/*
