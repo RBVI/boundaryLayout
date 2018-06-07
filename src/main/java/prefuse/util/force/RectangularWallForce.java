@@ -67,10 +67,14 @@ public class RectangularWallForce extends AbstractForce {
 		//initialize dimensions and displacements
 		float width = (float) this.dimensions.getX();
 		float height = (float) this.dimensions.getY();
-		float drLeft = (width / 2f) - dx - (item.dimensions[0]+PADDING)/2.0f;
-		float drTop = (height / 2f) - (dy + (item.dimensions[1]+PADDING)/2.0f);
-		float drRight = width - drLeft + (item.dimensions[0]+PADDING); 
-		float drBottom = height - drTop - (item.dimensions[1]+PADDING);
+		float drLeft = (width / 2f) - dx;
+		float drTop = (height / 2f) - dy;
+		float drRight = width - drLeft; 
+		float drBottom = height - drTop;
+		if(drLeft < 1) drLeft = 1;
+		if(drRight < 1) drRight = 1;
+		if(drTop < 1) drTop = 1;
+		if(drBottom < 1) drBottom = 1;
 
 		// System.out.println("Node position: "+n[0]+","+n[1]);
 		// System.out.println("Annotation center: "+center.getX()+","+center.getY());
@@ -83,10 +87,10 @@ public class RectangularWallForce extends AbstractForce {
 		if(cX + cY != 2)
 			return;
 		
-		float vLeft = -cX * params[GRAVITATIONAL_CONST] * item.mass / (drLeft * drLeft * drLeft);
-		float vTop = -cY * params[GRAVITATIONAL_CONST] * item.mass / (drTop * drTop * drTop);
-		float vRight = cX * params[GRAVITATIONAL_CONST] * item.mass / (drRight * drRight * drRight);
-		float vBottom = cY * params[GRAVITATIONAL_CONST] * item.mass / (drBottom * drBottom * drBottom);
+		float vLeft = -cX * params[GRAVITATIONAL_CONST] * item.mass / (drLeft * drLeft);
+		float vTop = -cY * params[GRAVITATIONAL_CONST] * item.mass / (drTop * drTop);
+		float vRight = cX * params[GRAVITATIONAL_CONST] * item.mass / (drRight * drRight);
+		float vBottom = cY * params[GRAVITATIONAL_CONST] * item.mass / (drBottom * drBottom);
 		
 		if(cX + cY == -2) {//case where the node is outside the corner of the shape
 			float xPlaneDimensions = (float) (dx > 0 ? -dimensions.getX() : dimensions.getX());

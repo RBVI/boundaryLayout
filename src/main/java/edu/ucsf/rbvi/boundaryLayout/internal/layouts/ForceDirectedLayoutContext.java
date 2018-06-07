@@ -61,7 +61,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	public float wallGravitationalConstant = 20.0f;
 	
 	@Tunable(description="Boundary padding", gravity=12.0)
-	public float padding = 10.0f;
+	public float padding = 0f;
 	
 	@Tunable(description="speed limit", gravity=13.0)
 	public float speedLimit = 1.0f;
