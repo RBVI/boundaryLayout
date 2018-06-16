@@ -203,21 +203,19 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	}
 
 	private void checkCenter(ForceSimulator m_fsim) {
-		if(annotationBoundingBox.size() != 0) {
+		if(shapeAnnotations.size() != 0) {
 			Iterator itemsIterator = m_fsim.getItems();
 			while(itemsIterator.hasNext()) {
 				ForceItem nextItem = (ForceItem) itemsIterator.next();
 				ShapeAnnotation nextShape = shapeAnnotations.get(nextItem.category);
-				if(annotationBoundingBox.containsKey(nextShape)) {
-					Point2D location = new Point2D.Double((double) nextItem.location[0],
-							(double) nextItem.location[1]);
-					Rectangle2D bbox = new Rectangle2D.Double(location.getX(), location.getY(),
+				if(shapeAnnotations.containsKey(nextShape)) {
+					Rectangle2D bbox = new Rectangle2D.Double((double) nextItem.location[0], (double) nextItem.location[1],
 							nextItem.dimensions[0], nextItem.dimensions[1]);
 					int moveDir = 1;
-					if(!annotationBoundingBox.get(nextShape).contains(bbox)) {
+					if(!contains(nextShape, bbox)) {
 						// We moved the node outside of the shape
 						// Find the closest point in the bounding box and move back
-						Point2D nearestPoint = getNearestPoint(annotationBoundingBox.get(nextShape), bbox, moveDir);
+						Point2D nearestPoint = getNearestPoint(nextShape, bbox, moveDir);
 						setItemLoc(nextItem, nearestPoint);
 					} 
 
@@ -225,11 +223,13 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					moveDir = -1;
 					if(shapeIntersections.containsKey(nextShape) && !shapeIntersections.get(nextShape).isEmpty()) {
 						for(ShapeAnnotation intersectingShape : shapeIntersections.get(nextShape)) {
-							if(annotationBoundingBox.get(intersectingShape).contains(bbox)) {
-								Point2D nearestPoint = getNearestPoint(annotationBoundingBox.get(intersectingShape), bbox, moveDir);
+							if(contains(intersectingShape, bbox)) {
+								Point2D nearestPoint = getNearestPoint(intersectingShape, bbox, moveDir);
 								setItemLoc(nextItem, nearestPoint);
 
-								if(!annotationBoundingBox.get(nextShape).contains(bbox)) {
+								bbox = new Rectangle2D.Double((double) nextItem.location[0], (double) nextItem.location[1],
+										nextItem.dimensions[0], nextItem.dimensions[1]);
+								if(!contains(nextShape, bbox)) {
 									List<Point2D> reinits = initializingNodeLocations.get(nextShape);
 									Point2D reinit = reinits.get(RANDOM.nextInt(reinits.size()));
 
@@ -243,6 +243,29 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 	}
 
+	private boolean contains(ShapeAnnotation shape, Rectangle2D nodebbox) {
+		boolean contained = true;
+		Rectangle2D shapeBox = annotationBoundingBox.get(shape);
+		double[] diffVector = { nodebbox.getX() - shapeBox.getCenterX(), nodebbox.getY() - shapeBox.getCenterY()};
+
+		switch(shape.getShapeType()) {
+		case "RoundedRectangle":
+		case "Rectangle": 
+			if(Math.abs(diffVector[0]) + nodebbox.getWidth() > shapeBox.getWidth() || 
+					Math.abs(diffVector[1]) + nodebbox.getHeight() > shapeBox.getHeight())
+				contained = false;
+			break;
+
+		case "Ellipse":
+			double xVec = (diffVector[0] * diffVector[0]) / (shapeBox.getWidth() * shapeBox.getWidth());
+			double yVec = (diffVector[1] * diffVector[1]) / (shapeBox.getHeight() * shapeBox.getHeight());
+			if(xVec + yVec >= 1)
+				contained = false;
+			break;
+		}
+		return contained;
+	}
+
 	private void setItemLoc(ForceItem item, Point2D loc) {
 		item.location[0] = (float) loc.getX();
 		item.location[1] = (float) loc.getY();
@@ -250,21 +273,45 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		item.plocation[1] = item.location[1];
 	}
 
-	private Point2D getNearestPoint(Rectangle2D shape, Rectangle2D bbox, int moveDir) {
-		double[] diffVector = { bbox.getX() - shape.getCenterX(), bbox.getY() - shape.getCenterY()};
+	private Point2D getNearestPoint(ShapeAnnotation shape, Rectangle2D bbox, int moveDir) {
+		Rectangle2D shapeBox = annotationBoundingBox.get(shape);
+		double[] diffVector = { bbox.getX() - shapeBox.getCenterX(), bbox.getY() - shapeBox.getCenterY()};
 		double scale = 1.;
+		boolean specialScale = false;
+		switch(shape.getShapeType()) {
+		case "RoundedRectangle":
+		case "Rectangle":
+			scale = getScaleRectangle(shapeBox, diffVector);
+			specialScale = true;
+			break;
+		case "Ellipse":
+			scale = getScaleEllipse(shapeBox, bbox, diffVector);
+			break;
+		}	
 
+		diffVector[0] = diffVector[0] * scale; 
+		diffVector[1] = diffVector[1] * scale;
+		if(specialScale) nodeScaleVector(shapeBox, bbox, diffVector, moveDir);
+
+		return new Point2D.Double(shapeBox.getCenterX() + diffVector[0], shapeBox.getCenterY() + diffVector[1]);
+	}
+
+	private double getScaleRectangle(Rectangle2D shape, double[] diffVector) {
+		double scale = 1.;
 		//if top or bottom are sides are closer -> scale based on height, otherwise based on width
 		if(shape.getHeight() / shape.getWidth() <= Math.abs(diffVector[1] / diffVector[0])) 
 			scale = (shape.getHeight() / 2) / Math.abs(diffVector[1]);
 		else 
-			scale = (shape.getWidth() / 2) / Math.abs(diffVector[0]);	
-
-		diffVector[0] = diffVector[0] * scale; 
-		diffVector[1] = diffVector[1] * scale;
-		nodeScaleVector(shape, bbox, diffVector, moveDir);
-
-		return new Point2D.Double(shape.getCenterX() + diffVector[0], shape.getCenterY() + diffVector[1]);
+			scale = (shape.getWidth() / 2) / Math.abs(diffVector[0]);
+		return scale;
+	}
+	
+	private double getScaleEllipse(Rectangle2D shape, Rectangle2D bbox, double[] diffVector) { 
+		double scale = 1.;
+		double xVec = Math.pow((Math.abs(diffVector[0]) + bbox.getWidth() / 2), 2) / (shape.getWidth() * shape.getWidth());
+		double yVec = Math.pow((Math.abs(diffVector[1]) + bbox.getHeight() / 2), 2) / (shape.getHeight() * shape.getHeight());
+		scale = 1 / Math.sqrt(xVec + yVec);
+		return scale;
 	}
 
 	private void nodeScaleVector(Rectangle2D shape, Rectangle2D bbox, double[] diffVector, int moveDir) {
