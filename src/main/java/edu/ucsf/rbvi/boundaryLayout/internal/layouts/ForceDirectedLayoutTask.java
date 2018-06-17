@@ -158,7 +158,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			m_fsim.addItem(fitem);
 		}
 
-
 		// initialize edges
 		for (View<CyEdge> edgeView : edgeViewList) {
 			CyEdge edge = edgeView.getModel();
@@ -208,7 +207,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			while(itemsIterator.hasNext()) {
 				ForceItem nextItem = (ForceItem) itemsIterator.next();
 				ShapeAnnotation nextShape = shapeAnnotations.get(nextItem.category);
-				if(shapeAnnotations.containsKey(nextShape)) {
+				if(shapeAnnotations.containsKey(nextShape.getName())) {
 					Rectangle2D bbox = new Rectangle2D.Double((double) nextItem.location[0], (double) nextItem.location[1],
 							nextItem.dimensions[0], nextItem.dimensions[1]);
 					int moveDir = 1;
@@ -247,18 +246,23 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		boolean contained = true;
 		Rectangle2D shapeBox = annotationBoundingBox.get(shape);
 		double[] diffVector = { nodebbox.getX() - shapeBox.getCenterX(), nodebbox.getY() - shapeBox.getCenterY()};
+		diffVector[0] += nodebbox.getWidth() / 2 * (diffVector[0] < 0 ? -1 : 1);
+		diffVector[1] += nodebbox.getHeight() / 2 * (diffVector[1] < 0 ? -1 : 1);
 
+		System.out.println("--" + shape.getShapeType() + "--");
 		switch(shape.getShapeType()) {
-		case "RoundedRectangle":
+		case "Rounded Rectangle":
 		case "Rectangle": 
-			if(Math.abs(diffVector[0]) + nodebbox.getWidth() > shapeBox.getWidth() || 
-					Math.abs(diffVector[1]) + nodebbox.getHeight() > shapeBox.getHeight())
+			System.out.println("rectangle!");
+			if(Math.abs(diffVector[0]) > shapeBox.getWidth() / 2 || Math.abs(diffVector[1]) > shapeBox.getHeight() / 2) {
+				System.out.println("is outside!");
 				contained = false;
+			}
 			break;
 
 		case "Ellipse":
-			double xVec = (diffVector[0] * diffVector[0]) / (shapeBox.getWidth() * shapeBox.getWidth());
-			double yVec = (diffVector[1] * diffVector[1]) / (shapeBox.getHeight() * shapeBox.getHeight());
+			double xVec = (diffVector[0] * diffVector[0]) / (shapeBox.getWidth() * shapeBox.getWidth() / 4);
+			double yVec = (diffVector[1] * diffVector[1]) / (shapeBox.getHeight() * shapeBox.getHeight() / 4);
 			if(xVec + yVec >= 1)
 				contained = false;
 			break;
@@ -279,7 +283,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		double scale = 1.;
 		boolean specialScale = false;
 		switch(shape.getShapeType()) {
-		case "RoundedRectangle":
+		case "Rounded Rectangle":
 		case "Rectangle":
 			scale = getScaleRectangle(shapeBox, diffVector);
 			specialScale = true;
