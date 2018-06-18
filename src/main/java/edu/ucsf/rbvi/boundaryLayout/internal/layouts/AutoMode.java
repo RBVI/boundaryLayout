@@ -25,7 +25,7 @@ import org.cytoscape.view.model.View;
  */
 public class AutoMode {
 	@SuppressWarnings("unchecked")
-	public static Map<Object, ShapeAnnotation> createAnnotations(CyNetworkView netView, 
+	public static Map<Object, BoundaryAnnotation> createAnnotations(CyNetworkView netView, 
 			List<View<CyNode>> nodesToLayout, String categoryColumn, CyServiceRegistrar registrar) {	
 		AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
 				AnnotationFactory.class, "(type=ShapeAnnotation.class)");
@@ -98,11 +98,11 @@ public class AutoMode {
 
 		netView.updateView();
 
-		Map<Object, ShapeAnnotation> shapeAnnotations = new HashMap<>();
+		Map<Object, BoundaryAnnotation> boundaries = new HashMap<>();
 
-		initShapeAnnotations(shapeAnnotations, annotationManager, netView);
+		initBoundaryAnnotations(boundaries, annotationManager, netView);
 
-		return shapeAnnotations;
+		return boundaries;
 	}
 
 	private static Point2D.Double getShapeDimensions(Point2D.Double maxWidth, 
@@ -122,7 +122,7 @@ public class AutoMode {
 	 * all of the Shape Annotations in the current network view and
 	 * maps them to their respective name. 
 	 * */
-	private static void initShapeAnnotations(Map<Object, ShapeAnnotation> shapeAnnotations, 
+	private static void initBoundaryAnnotations(Map<Object, BoundaryAnnotation> boundaries, 
 			AnnotationManager annotationManager, CyNetworkView netView) {
 		List<Annotation> annotations = annotationManager.getAnnotations(netView);
 		if(annotations != null) {
@@ -130,7 +130,8 @@ public class AutoMode {
 				if(annotation instanceof ShapeAnnotation) {
 					ShapeAnnotation shapeAnnotation = (ShapeAnnotation) annotation;
 					shapeAnnotation.setName(shapeAnnotation.getArgMap().get(ShapeAnnotation.NAME));
-					shapeAnnotations.put(shapeAnnotation.getName(), shapeAnnotation);
+					BoundaryAnnotation boundary = new BoundaryAnnotation(shapeAnnotation);
+					boundaries.put(shapeAnnotation.getName(), boundary);
 				}
 		}
 	}

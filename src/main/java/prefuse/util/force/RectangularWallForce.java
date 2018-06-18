@@ -7,6 +7,7 @@ public class RectangularWallForce extends AbstractForce {
 
 	public static final int GRAVITATIONAL_CONST = 0;
 	static final float PADDING = 0f;
+	private boolean variableStrength;
 
 	private Point2D center;
 	private Point2D dimensions;
@@ -23,6 +24,7 @@ public class RectangularWallForce extends AbstractForce {
 		params = new float[] { gravConst };
 		this.center = center;
 		this.dimensions = dimensions;
+		this.variableStrength = true;
 		// System.out.println("Rectangular wall force - center: "+center+", dimensions: "+dimensions);
 	}
 
@@ -50,6 +52,11 @@ public class RectangularWallForce extends AbstractForce {
 	 */
 	protected String[] getParameterNames() {
 		return pnames;
+	}
+	
+	protected void incrementStrength() {
+		if(this.variableStrength)
+			params[GRAVITATIONAL_CONST] *= 2;
 	}
 
 	/**
