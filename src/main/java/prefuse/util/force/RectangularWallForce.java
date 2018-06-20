@@ -8,6 +8,8 @@ public class RectangularWallForce extends AbstractForce {
 	public static final int GRAVITATIONAL_CONST = 0;
 	static final float PADDING = 0f;
 	private boolean variableStrength;
+	private static final double DEFAULT_SCALEFACTOR = 2.;
+	private double scaleFactor;
 
 	private Point2D center;
 	private Point2D dimensions;
@@ -20,12 +22,12 @@ public class RectangularWallForce extends AbstractForce {
 	 * @param r the radius of the circle
 	 */
 	public RectangularWallForce(float gravConst, 
-			Point2D center, Point2D dimensions) {
+			Point2D center, Point2D dimensions, double scaleFactor) {
 		params = new float[] { gravConst };
 		this.center = center;
 		this.dimensions = dimensions;
 		this.variableStrength = true;
-		// System.out.println("Rectangular wall force - center: "+center+", dimensions: "+dimensions);
+		this.scaleFactor = scaleFactor;
 	}
 
 	/**
@@ -36,7 +38,7 @@ public class RectangularWallForce extends AbstractForce {
 	 */
 	public RectangularWallForce(Point2D center, 
 			Point2D dimensions, float wallGravitationalConstant) {
-		this(wallGravitationalConstant, center, dimensions);
+		this(wallGravitationalConstant, center, dimensions, DEFAULT_SCALEFACTOR);
 	}
 
 	/**
@@ -54,9 +56,17 @@ public class RectangularWallForce extends AbstractForce {
 		return pnames;
 	}
 	
-	protected void incrementStrength() {
+	public boolean setScaleFactor(double scaleFactor) {
+		if(Math.abs(scaleFactor) >= 0.1 && Math.abs(scaleFactor) <= 10.) {
+			this.scaleFactor = scaleFactor;
+			return true;
+		}
+		return false;
+	}
+	
+	public void scaleStrength() {
 		if(this.variableStrength)
-			params[GRAVITATIONAL_CONST] *= 2;
+			params[GRAVITATIONAL_CONST] *= scaleFactor;
 	}
 
 	/**

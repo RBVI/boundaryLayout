@@ -9,22 +9,39 @@ import java.util.Random;
 
 import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
 
+import prefuse.util.force.RectangularWallForce;
+
 public class BoundaryAnnotation {
 	private ShapeAnnotation shape;
 	private Rectangle2D boundingBox;
+	
 	private List<Point2D> initLocations;
-	private List<BoundaryAnnotation> intersections;
 	private Random RANDOM = new Random();
+	
+	private List<BoundaryAnnotation> intersections;
+	
+	private RectangularWallForce wallForce;
+	private int projCounter;
+	private static final int DEFAULT_SCALEMOD = 10;
+	private int scaleMod;
 
-	public BoundaryAnnotation(ShapeAnnotation shape, List<Point2D> initLocations, List<BoundaryAnnotation> intersections) {
+	public BoundaryAnnotation(ShapeAnnotation shape, List<Point2D> initLocations, 
+			List<BoundaryAnnotation> intersections, RectangularWallForce wallForce, int scaleMod) {
 		this.shape = shape;
 		this.initBoundingBox();
 		this.initLocations = initLocations;
 		this.intersections = intersections;
+		this.wallForce = wallForce;
+		this.projCounter = 0;
+		this.scaleMod = scaleMod;
 	}
 
 	public BoundaryAnnotation(ShapeAnnotation shape) {
-		this(shape, null, null);
+		this(shape, null, null, null, DEFAULT_SCALEMOD);
+	}
+	
+	public BoundaryAnnotation(ShapeAnnotation shape, int scaleMod) {
+		this(shape, null, null, null, scaleMod);
 	}
 	
 	private void initBoundingBox() {
@@ -57,6 +74,7 @@ public class BoundaryAnnotation {
 		return this.boundingBox;
 	}
 	
+	/*Functions deal with intersecting boundary annotations*/
 	protected void setIntersections(List<BoundaryAnnotation> intersections) {
 		this.intersections = intersections;
 	}
@@ -88,6 +106,7 @@ public class BoundaryAnnotation {
 		return this.intersections;
 	}
 	
+	/*Functions deal with handling initializing node locations for this boundary*/
 	protected void setInitializations(List<Point2D> initLocations) {
 		this.initLocations = initLocations;
 	}
@@ -102,14 +121,40 @@ public class BoundaryAnnotation {
 		if(initLocations != null && initLocations.contains(initLocation))
 			initLocations.remove(initLocation);
 	}
-	
-	protected List<Point2D> getInitLocations() {
-		return this.initLocations;
-	}
-	
+
 	protected Point2D getRandomNodeInit() {
 		if(initLocations == null || initLocations.isEmpty())
 			return new Point2D.Double(0., 0.);
 		return initLocations.get(RANDOM.nextInt(initLocations.size()));
+	}
+	
+	/*WallForce-related methods dealing with force-based aspect of the boundary*/
+	protected void setWallForce(RectangularWallForce wallForce, double scaleFactor) {
+		this.wallForce = wallForce;
+		this.setScaleFactor(scaleFactor);
+	}
+	
+	protected void setWallForce(RectangularWallForce wallForce) {
+		this.wallForce = wallForce;
+	}
+	
+	protected void setScaleFactor(double scaleFactor) {
+		wallForce.setScaleFactor(scaleFactor);
+	}
+	
+	protected void setScaleMod(int scaleMod) {
+		if(scaleMod >= 1)
+			this.scaleMod = scaleMod;
+	}
+	
+	protected void newProjection() {
+		this.projCounter++;
+		if(projCounter % scaleMod == 0)
+			scaleWallForce();
+	}
+	
+	protected void scaleWallForce() {
+		if(this.wallForce != null)
+			wallForce.scaleStrength();
 	}
 }

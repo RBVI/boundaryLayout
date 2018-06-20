@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 
 import  java.awt.geom.Point2D;
@@ -74,6 +73,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		recenter = false; // This is provided by AbstractLayoutTask
 
 		getBoundaries();
+		
 		forceItems = new HashMap<CyNode, ForceItem>();
 
 		if (boundaries == null && layoutAttribute != null) 
@@ -166,15 +166,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			timestep *= (1.0 - i/(double)context.numIterations);
 			long step = timestep + 50;
 			m_fsim.runSimulator(step);
-			for (CyNode node : forceItems.keySet()) {
-				ForceItem fitem = forceItems.get(node); 
-				View<CyNode> nodeView = netView.getNodeView(node);
-				nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double)fitem.location[0]);
-				nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double)fitem.location[1]);
-			}
-			if(i % checkCenter == 0) {
+			if(i % checkCenter == 0) 
 				checkCenter(m_fsim);
-			}
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
 		}
 		checkCenter(m_fsim);
@@ -198,9 +191,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					Rectangle2D bbox = new Rectangle2D.Double((double) nextItem.location[0], (double) nextItem.location[1],
 							nextItem.dimensions[0], nextItem.dimensions[1]);
 					int moveDir = 1;
-					if(!contains(nextBoundary, bbox)) {
+					if(!contains(nextBoundary, bbox, moveDir)) {
 						// We moved the node outside of the shape
 						// Find the closest point in the bounding box and move back
+						nextBoundary.newProjection();
 						Point2D nearestPoint = getNearestPoint(nextBoundary, bbox, moveDir);
 						setItemLoc(nextItem, nearestPoint);
 					} 
@@ -209,13 +203,15 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					moveDir = -1;
 					if(nextBoundary.hasIntersections()) {
 						for(BoundaryAnnotation intersectingBoundary : nextBoundary.getIntersections()) {
-							if(contains(intersectingBoundary, bbox)) {
+							if(contains(intersectingBoundary, bbox, moveDir)) {
 								Point2D nearestPoint = getNearestPoint(intersectingBoundary, bbox, moveDir);
 								setItemLoc(nextItem, nearestPoint);
-
+								
+								intersectingBoundary.newProjection();
 								bbox = new Rectangle2D.Double((double) nextItem.location[0], (double) nextItem.location[1],
 										nextItem.dimensions[0], nextItem.dimensions[1]);
-								if(!contains(nextBoundary, bbox)) {
+								if(!contains(nextBoundary, bbox, moveDir)) {
+									nextBoundary.newProjection();
 									setItemLoc(nextItem, nextBoundary.getRandomNodeInit());
 								}
 							}
@@ -226,13 +222,13 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 	}
 
-	private boolean contains(BoundaryAnnotation boundary, Rectangle2D nodebbox) {
+	private boolean contains(BoundaryAnnotation boundary, Rectangle2D nodebbox, int moveDir) {
 		boolean contained = true;
 		ShapeAnnotation shape = boundary.getShapeAnnotation();
 		Rectangle2D shapeBox = boundary.getBoundingBox();
 		double[] diffVector = { nodebbox.getX() - shapeBox.getCenterX(), nodebbox.getY() - shapeBox.getCenterY()};
-		diffVector[0] += nodebbox.getWidth() / 2 * (diffVector[0] < 0 ? -1 : 1);
-		diffVector[1] += nodebbox.getHeight() / 2 * (diffVector[1] < 0 ? -1 : 1);
+		diffVector[0] += nodebbox.getWidth() / 2 * moveDir * (diffVector[0] < 0 ? -1 : 1);
+		diffVector[1] += nodebbox.getHeight() / 2 * moveDir * (diffVector[1] < 0 ? -1 : 1);
 
 		switch(shape.getShapeType()) {
 		case "Rounded Rectangle":
@@ -336,8 +332,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	protected void addAnnotationForce(ForceSimulator m_fsim, BoundaryAnnotation boundary) {
 		Point2D annotationDimensions = getAnnotationDimensions(boundary);
 		Point2D annotationCenter = getAnnotationCenter(boundary);
-		m_fsim.addForce(new RectangularWallForce(annotationCenter, 
-				annotationDimensions, -1 * context.wallGravitationalConstant));
+		RectangularWallForce wall = new RectangularWallForce(annotationCenter, 
+				annotationDimensions, -1 * context.wallGravitationalConstant);
+		boundary.setWallForce(wall);
+		m_fsim.addForce(wall);
 	}
 
 	/* @param shapeAnnotation stores an existing ShapeAnnotation.
