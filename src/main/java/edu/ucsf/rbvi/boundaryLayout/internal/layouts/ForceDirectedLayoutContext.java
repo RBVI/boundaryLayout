@@ -22,15 +22,9 @@ import org.cytoscape.work.TunableValidator;
 import org.cytoscape.work.util.ListSingleSelection;
 
 public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentNetworkListener {	
-
-	@Tunable(description="Edge weight column", groups={"Edge Weight Settings"}, gravity=1.0)
-	public ListSingleSelection<String> edgeWeight = null; 
-
-	@ContainsTunables
-	public EdgeWeighter edgeWeighter = new EdgeWeighter();
 	
 	@Tunable(description="Number of Iterations:", gravity=4.0, groups={"Layout Parameters"})
-	public int numIterations = 200;
+	public int numIterations = 250;
 
 	@Tunable(description="Default Spring Coefficient",
 			tooltip="The smaller this number is, the more the network "+
@@ -44,27 +38,29 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 			tooltip="The higher the node mass, the less nodes move around the network")
 	public double defaultNodeMass = 3.0;
 
-	@Tunable(description="Force deterministic layouts (slower):", 
-	         groups={"Layout Parameters"},gravity=8.0)
-	public boolean isDeterministic;
-
 	@Tunable(description="Avoid overlapping nodes (y/n)",
-	         groups={"Layout Parameters"},gravity=9.0,	
+	         groups={"Layout Parameters"},gravity=12.0,	
 			tooltip="Apply a force to minimize node overlap")
 	public boolean avoidOverlap = true;
 
 	@Tunable(description="Force to apply to avoid node overlap",
 	         groups={"Layout Parameters"},gravity=10.0)
 	public float overlapForce = 100f;
+		
+	@Tunable(description="speed limit", gravity=9.0, groups={"Layout Parameters"})
+	public float speedLimit = 0.1f;
 	
-	@Tunable(description="Strength of boundaries", gravity=11.0)
+	@Tunable(description="Strength of boundaries", gravity=13.0, groups = {"Boundary Parameters"})
 	public float wallGravitationalConstant = 20.0f;
 	
-	@Tunable(description="Boundary padding", gravity=12.0)
-	public float padding = 0f;
+	@Tunable(description="Variable wall forces", gravity = 14.0, groups = {"Boundary Parameters"})
+	public boolean variableWallForce = true;
 	
-	@Tunable(description="speed limit", gravity=13.0)
-	public float speedLimit = 1.0f;
+	@Tunable(description="Edge weight column", groups={"Edge Weight Settings"}, gravity=15.0)
+	public ListSingleSelection<String> edgeWeight = null; 
+
+	@ContainsTunables
+	public EdgeWeighter edgeWeighter = new EdgeWeighter();
 
 	public ForceDirectedLayoutContext(CyServiceRegistrar registrar) {
 		super();

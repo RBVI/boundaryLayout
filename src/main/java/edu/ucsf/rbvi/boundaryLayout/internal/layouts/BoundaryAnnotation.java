@@ -21,7 +21,8 @@ public class BoundaryAnnotation {
 	private List<BoundaryAnnotation> intersections;
 	
 	private RectangularWallForce wallForce;
-	private int projCounter;
+	private int inProjections;
+	private int outProjections;
 	private static final int DEFAULT_SCALEMOD = 10;
 	private int scaleMod;
 
@@ -32,7 +33,8 @@ public class BoundaryAnnotation {
 		this.initLocations = initLocations;
 		this.intersections = intersections;
 		this.wallForce = wallForce;
-		this.projCounter = 0;
+		this.inProjections = 0;
+		this.outProjections = 0;
 		this.scaleMod = scaleMod;
 	}
 
@@ -50,14 +52,6 @@ public class BoundaryAnnotation {
 		double yCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
 		double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH)) / shape.getZoom();
 		double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT)) / shape.getZoom();
-		if(shape.getShapeType().equals("Ellipse")) { //only want inner rectangle
-			double xCenter = xCoordinate + (width / 2);
-			double yCenter = yCoordinate + (height / 2);
-			width = width * Math.sqrt(2) / 2;
-			height = height * Math.sqrt(2) / 2;
-			xCoordinate = xCenter - (width / 2);
-			yCoordinate = yCenter - (height / 2);
-		} 
 
 		boundingBox = new Rectangle2D.Double(xCoordinate, yCoordinate, width, height);
 	}
@@ -147,14 +141,20 @@ public class BoundaryAnnotation {
 			this.scaleMod = scaleMod;
 	}
 	
-	protected void newProjection() {
-		this.projCounter++;
-		if(projCounter % scaleMod == 0)
-			scaleWallForce();
+	protected void newProjection(int dir) {
+		if(dir == 1) {
+			this.inProjections++;
+			if(inProjections % scaleMod == 0)
+				scaleWallForce(dir);
+		} else if(dir == -1) {
+			this.outProjections++;
+			if(outProjections % scaleMod == 0)
+				scaleWallForce(dir);
+		}
 	}
 	
-	protected void scaleWallForce() {
+	protected void scaleWallForce(int dir) {
 		if(this.wallForce != null)
-			wallForce.scaleStrength();
+			wallForce.scaleStrength(dir);
 	}
 }

@@ -109,8 +109,7 @@ public class AutoMode {
 			Point2D.Double maxHeight) {
 		int quantityInWidth = ((int) Math.sqrt(maxWidth.getY())) + 1;
 		int quantityInHeight = ((int) Math.sqrt(maxHeight.getX())) + 1;
-		return new Point2D.Double(quantityInWidth * maxWidth.getX(), 
-				quantityInHeight * maxHeight.getY());
+		return new Point2D.Double(quantityInWidth * maxWidth.getX(), quantityInHeight * maxHeight.getY());
 	}
 
 	/* @param Map<Object, ShapeAnnotation> shapeAnnotations is a 
