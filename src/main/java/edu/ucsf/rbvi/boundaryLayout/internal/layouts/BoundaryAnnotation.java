@@ -25,6 +25,9 @@ public class BoundaryAnnotation {
 	private int outProjections;
 	private static final int DEFAULT_SCALEMOD = 10;
 	private int scaleMod;
+	
+	private double scalableArea;
+	private double nodeArea;
 
 	public BoundaryAnnotation(ShapeAnnotation shape, List<Point2D> initLocations, 
 			List<BoundaryAnnotation> intersections, RectangularWallForce wallForce, int scaleMod) {
@@ -36,6 +39,8 @@ public class BoundaryAnnotation {
 		this.inProjections = 0;
 		this.outProjections = 0;
 		this.scaleMod = scaleMod;
+		this.scalableArea = 0.;
+		this.nodeArea = 0.;
 	}
 
 	public BoundaryAnnotation(ShapeAnnotation shape) {
@@ -142,11 +147,11 @@ public class BoundaryAnnotation {
 	}
 	
 	protected void newProjection(int dir) {
-		if(dir == 1) {
+		if(dir == RectangularWallForce.IN_PROJECTION) {
 			this.inProjections++;
 			if(inProjections % scaleMod == 0)
 				scaleWallForce(dir);
-		} else if(dir == -1) {
+		} else if(dir == RectangularWallForce.OUT_PROJECTION) {
 			this.outProjections++;
 			if(outProjections % scaleMod == 0)
 				scaleWallForce(dir);
@@ -156,5 +161,22 @@ public class BoundaryAnnotation {
 	protected void scaleWallForce(int dir) {
 		if(this.wallForce != null)
 			wallForce.scaleStrength(dir);
+	}
+	
+	/*Node-Boundary scaling methods*/
+	protected void setScalableArea(double scalableArea) {
+		this.scalableArea = scalableArea;
+		System.out.println(this.scalableArea + " is the scalable area for " + this.getName());
+	}
+	
+	protected void addNodeArea(double newArea) {
+		this.nodeArea += newArea;
+	}
+	
+	protected double getNodeScale() {
+		System.out.println("The node scale is " + scalableArea / nodeArea + " since the node area is " + nodeArea);
+		if(nodeArea != 0.)
+			return scalableArea / nodeArea;
+		else return 1.;
 	}
 }

@@ -3,6 +3,7 @@ package edu.ucsf.rbvi.boundaryLayout.internal.algorithms;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 
@@ -48,8 +49,6 @@ public class BoundaryTree {
 				else {
 					intersectedNodes.add(thisNode);
 				}
-			} else {//debugging 
-				System.out.println("UHOH ALG MESSED UP!");
 			}
 		}
 
@@ -131,9 +130,59 @@ public class BoundaryTree {
 	 * a list of the largest areas which is put into bTree variable
 	 * */
 	public List<Rectangle2D> getLargestAreas() {
-		List<Rectangle2D> bTree = new ArrayList<>();
-		preorder(bTree, root);
-		return bTree;
+		List<Rectangle2D> bTreeAreas = new ArrayList<>();
+		preorderArea(bTreeAreas, root);
+		
+		double totalArea = getTotalArea(bTreeAreas);
+		double summedArea = 0.;
+		Iterator<Rectangle2D> recIterator = bTreeAreas.iterator();
+		List<Rectangle2D> largestAreas = new ArrayList<>();
+		
+		while(recIterator.hasNext() && summedArea < totalArea * 0.85) {
+			Rectangle2D nextRect = recIterator.next();
+			largestAreas.add(nextRect);
+			summedArea += getNonIntersectedArea(nextRect, largestAreas, largestAreas.size() - 1);
+		}
+
+		return largestAreas;
+	}
+	
+	/*
+	 * @param areas: a list of rectangles of which you want to find the total area
+	 * 
+	 * @return the total area, taking into account intersections between rectangles*/
+	public static double getTotalArea(List<Rectangle2D> areas) {
+		double totalArea = 0.;
+		int areasCounter = 0;
+		Iterator<Rectangle2D> recIterator = areas.iterator();
+		
+		while(recIterator.hasNext()) {
+			Rectangle2D nextRect = recIterator.next();
+			totalArea += getNonIntersectedArea(nextRect, areas, areasCounter++);
+		}
+		
+		return totalArea;
+	}
+	
+	/*
+	 * @param nextRect is a rectangle you want to find the area of
+	 * @param areas is a list of rectangles that you must compare nextRect with to determine
+	 * any intersections
+	 * @param areasCounter is a counter for the upper limit in the list areas for the method to look at
+	 * 
+	 * @return the non-intersected area of nextRect with respect to the list areas*/
+	private static double getNonIntersectedArea(Rectangle2D nextRect, List<Rectangle2D> areas, int areasCounter) {
+		List<Rectangle2D> intersections = new ArrayList<>();
+		for(int intersect = 0; intersect < areasCounter; intersect++) {
+			Rectangle2D intersectRect = areas.get(intersect);
+			if(nextRect.intersects(intersectRect)) {
+				Rectangle2D intersection = new Rectangle2D.Double();
+				Rectangle2D.intersect(nextRect, intersectRect, intersection);
+				intersections.add(intersection);
+			}
+		}
+		double repeatArea = getTotalArea(intersections);
+		return nextRect.getWidth() * nextRect.getHeight() - repeatArea;
 	}
 
 	/*
@@ -143,39 +192,37 @@ public class BoundaryTree {
 	 * 
 	 * preorder does a preorder search of the tree and only looks at the leaves
 	 * */
-	public void preorder(List<Rectangle2D> areas, BoundaryTreeNode bNode) {
-		if(bNode == null) 
-			return;
-		if(!bNode.hasChildren()) {
-			// System.out.println("For leaf: " + (bNode.entry.getWidth() * bNode.entry.getHeight()));
-			if(areas.size() > 2)
-				changeMinimum(areas, bNode.entry);
-			else 
-				areas.add(bNode.entry);
-		} else {
-			// System.out.println("For non-leaf: " + 
-			// 		(bNode.entry.getWidth() * bNode.entry.getHeight()));
-			for(BoundaryTreeNode childNode : bNode.children.values())
-				preorder(areas, childNode);
+	private void preorderArea(List<Rectangle2D> areas, BoundaryTreeNode bNode) {
+		if(bNode != null) {
+			if(!bNode.hasChildren()) {
+				appendSorted(areas, bNode.entry);//keep sorted in order of decreasing area
+			} else {
+				for(BoundaryTreeNode childNode : bNode.children.values())
+					preorderArea(areas, childNode);
+			}
 		}
 	}
 
-	private static void changeMinimum(List<Rectangle2D> areas, 
-			Rectangle2D leafAreaRectangle) {
-		int minAreaIndex = 0;
-		Rectangle2D minAreaRectangle = areas.get(minAreaIndex);
-		for(int i = 1; i < areas.size(); i++) {
-			Rectangle2D thisAreaRectangle = areas.get(i);
-			if(minAreaRectangle.getHeight() * minAreaRectangle.getWidth() > 
-			thisAreaRectangle.getHeight() * thisAreaRectangle.getWidth()) {
-				minAreaIndex = i;
-				minAreaRectangle = thisAreaRectangle;
+	/*
+	 * @param areas is a sorted list and this method keeps the sorted property
+	 * @param leafRect is the rectangle you want to add to areas
+	 * 
+	 * This method adds leafRect to list areas, which is sorted in terms of decreasing area*/
+	private static void appendSorted(List<Rectangle2D> areas, Rectangle2D leafRect) { 
+		if(areas == null)
+			areas = new ArrayList<>();
+		if(areas.size() == 0) {
+			areas.add(leafRect);
+		} else {
+			int areaCount = 0;
+			double leafArea = leafRect.getWidth() * leafRect.getHeight();
+			double area = areas.get(areaCount).getWidth() * areas.get(areaCount).getHeight();
+			while(areaCount < areas.size() && leafArea < area) {
+				areaCount++;
+				if(areaCount < areas.size())
+					area = areas.get(areaCount).getWidth() * areas.get(areaCount).getHeight();
 			}
-		}
-
-		if(minAreaRectangle.getHeight() * minAreaRectangle.getWidth() < 
-				leafAreaRectangle.getHeight() * leafAreaRectangle.getWidth()) {
-			areas.set(minAreaIndex, leafAreaRectangle);
+			areas.add(areaCount, leafRect);
 		}
 	}
 }

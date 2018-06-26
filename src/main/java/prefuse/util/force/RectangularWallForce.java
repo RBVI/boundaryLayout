@@ -9,10 +9,10 @@ public class RectangularWallForce extends AbstractForce {
 	public static final int OUT_GRAVITATIONAL_CONST = 1;
 	public static final int IN_PROJECTION = 1;
 	public static final int OUT_PROJECTION = -1;
-	private static final double DEFAULT_SCALEFACTOR = 1.25;
+	private static final double DEFAULT_SCALEFACTOR = 4.;
 	
 	private boolean variableStrength;
-	private double scaleFactor;
+	private float scaleFactor;
 
 	private Point2D center;
 	private Point2D dimensions;
@@ -31,7 +31,7 @@ public class RectangularWallForce extends AbstractForce {
 		this.dimensions = dimensions;
 		params = new float[] { gravConst, gravConst };
 		this.variableStrength = variableWall;
-		this.scaleFactor = scaleFactor;
+		this.scaleFactor = (float) scaleFactor;
 	}
 	
 	public RectangularWallForce(Point2D center, Point2D dimensions, float gravConst, boolean variableWall) {
@@ -53,20 +53,29 @@ public class RectangularWallForce extends AbstractForce {
 		return pnames;
 	}
 	
+	/*
+	 * @param scaleFactor is the new scale factor of this wall force
+	 * @precondition 0.1 <= scaleFactor <= 10.*/
 	public boolean setScaleFactor(double scaleFactor) {
 		if(Math.abs(scaleFactor) >= 0.1 && Math.abs(scaleFactor) <= 10.) {
-			this.scaleFactor = scaleFactor;
+			this.scaleFactor = (float) scaleFactor;
 			return true;
 		}
 		return false;
 	}
 	
+	/* This method scales the strength of the wall force in the direction of @param dir, 
+	 * only if variableStrength is true*/
 	public void scaleStrength(int dir) {
 		if(this.variableStrength) {
-			if(dir == IN_PROJECTION)
+			if(dir == IN_PROJECTION) {
 				params[IN_GRAVITATIONAL_CONST] *= scaleFactor;
-			else if(dir == OUT_PROJECTION)
+				System.out.println(params[IN_GRAVITATIONAL_CONST] + " is the new in projection strength!");
+			}
+			else if(dir == OUT_PROJECTION) {
 				params[OUT_GRAVITATIONAL_CONST] *= scaleFactor;
+				System.out.println(params[OUT_GRAVITATIONAL_CONST] + " is the new out projection strength!");
+			}
 		}
 	}
 
@@ -75,24 +84,20 @@ public class RectangularWallForce extends AbstractForce {
 	 */
 	public void getForce(ForceItem item) {
 		float[] n = item.location;
-		float dx = ((float) center.getX()) - n[0];
-		float dy = ((float) center.getY()) - n[1];
-		if ( dx == 0.0 && dy == 0.0) {
-			dx = getRandDisplacement();
-			dy = getRandDisplacement();
-		}
+		float dx = n[0] - (float) center.getX();
+		float dy = n[1] - ((float) center.getY());
 
 		//initialize dimensions and displacements
 		float width = (float) this.dimensions.getX();
 		float height = (float) this.dimensions.getY();
-		float drLeft = (width / 2f) - dx;
-		float drTop = (height / 2f) - dy;
+		float drLeft = (width / 2f) + dx;
+		float drTop = (height / 2f) + dy;
 		float drRight = width - drLeft; 
 		float drBottom = height - drTop;
-		if(drLeft < 1) drLeft = 1;
-		if(drRight < 1) drRight = 1;
-		if(drTop < 1) drTop = 1;
-		if(drBottom < 1) drBottom = 1;
+		if(Math.abs(drLeft) < 0.01f) drLeft = 0.01f;
+		if(Math.abs(drRight) < 0.01f) drRight = 0.01f;
+		if(Math.abs(drTop) < 0.01f) drTop = 0.01f;
+		if(Math.abs(drBottom) < 0.01f) drBottom = 0.01f;
 
 		//initialize orientation of shape
 		int cX = (Math.abs(dx) > width / 2 ? -1 : 1);
@@ -102,39 +107,38 @@ public class RectangularWallForce extends AbstractForce {
 			return;
 		
 		float gravConst = (cX == -1 || cY == -1 ? params[OUT_GRAVITATIONAL_CONST] : params[IN_GRAVITATIONAL_CONST]);
-		float vLeft = -cX * gravConst * item.mass / (drLeft * drLeft);
-		float vTop = -cY * gravConst * item.mass / (drTop * drTop);
-		float vRight = cX * gravConst * item.mass / (drRight * drRight);
-		float vBottom = cY * gravConst * item.mass / (drBottom * drBottom);
+		float vLeft = cX * gravConst * item.mass / (drLeft * drLeft);
+		float vTop = cY * gravConst * item.mass / (drTop * drTop);
+		float vRight = -cX * gravConst * item.mass / (drRight * drRight);
+		float vBottom = -cY * gravConst * item.mass / (drBottom * drBottom);
+		System.out.println(vLeft + " is vLeft, " + vRight + " is vRight, " + vTop + "  is vTop, " + vBottom + " is vBottom");
 		
 		if(cX + cY == -2) {//case where the node is outside the corner of the shape
-			float xPlaneDimensions = (float) (dx > 0 ? -dimensions.getX() : dimensions.getX());
-			float yPlaneDimensions = (float) (dy > 0 ? -dimensions.getY() : dimensions.getY());
-			float xCorner = (float) center.getX() + xPlaneDimensions;
-			float yCorner = (float) center.getY() + yPlaneDimensions;
+			float xCorner = (float) center.getX() + (width / 2 * (dx > 0 ? 1 : -1));
+			float yCorner = (float) center.getY() + (height / 2 * (dy > 0 ? 1 : -1));
 			float dxCorner = n[0] - xCorner;
 			float dyCorner = n[1] - yCorner;
 			float dCorner = (float) Math.sqrt(Math.pow(dxCorner, 2) + Math.pow(dyCorner, 2));
-			float vCorner = params[OUT_GRAVITATIONAL_CONST] * item.mass / (dCorner * dCorner * dCorner);
+			float vCorner = params[OUT_GRAVITATIONAL_CONST] * item.mass / (dCorner * dCorner);
 			float vxCorner = vCorner * dxCorner;
 			float vyCorner = vCorner * dyCorner;
 			item.force[0] += vxCorner;
 			item.force[1] += vyCorner;
 		} else if(cX == -1) {//case where the node is within the x normal lines of the shape
-			item.force[0] += vLeft;
-			item.force[0] += vRight;
+			if(dx > 0)
+				item.force[0] += vRight;
+			else
+				item.force[0] += vLeft;
 		} else if(cY == -1) {//case where the node is within the y normal lines of the shape
-			item.force[1] += vTop;
-			item.force[1] += vBottom;
+			if(dy > 0)
+				item.force[1] += vBottom;
+			else 
+				item.force[1] += vTop;
 		} else {//case where the node is completely inside the shape
 			item.force[0] += vLeft;
 			item.force[1] += vTop;
 			item.force[0] += vRight;
 			item.force[1] += vBottom;
 		}
-	}
-
-	private float getRandDisplacement() {
-		return ((float)Math.random() - 1f) / 50.0f;
 	}
 }

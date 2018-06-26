@@ -26,6 +26,7 @@ import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.undo.UndoSupport;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.algorithms.BoundaryContainsAlgorithm;
+import edu.ucsf.rbvi.boundaryLayout.internal.algorithms.BoundaryTree;
 import prefuse.util.force.DragForce;
 import prefuse.util.force.ForceItem;
 import prefuse.util.force.ForceSimulator;
@@ -79,8 +80,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if (boundaries == null && layoutAttribute != null) 
 			boundaries = AutoMode.createAnnotations(netView, nodeViewList, layoutAttribute, registrar);
 
-		if(context.wallGravitationalConstant < 0)
-			context.wallGravitationalConstant *= -1;
+		if(context.gravConst < 0)
+			context.gravConst *= -1;
 	}
 
 	// TODO: I think it would be better to layout each group in separate passes
@@ -119,10 +120,20 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			Object group = null;
 			if(chosenCategory != null)
 				group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
+			
+			double width = nodeView.getVisualProperty(BasicVisualLexicon.NODE_WIDTH);
+			double height = nodeView.getVisualProperty(BasicVisualLexicon.NODE_HEIGHT);
+			fitem.dimensions[0] = (float) width;
+			fitem.dimensions[1] = (float) height;
+			fitem.category = group;
 
 			if(boundaries != null && group != null) {
 				if(boundaries.keySet().contains(group)) {
-					Point2D initPosition = boundaries.get(group).getRandomNodeInit();
+					BoundaryAnnotation boundary = boundaries.get(group);
+					Point2D initPosition = boundary.getRandomNodeInit();
+					double thisArea = (double) (fitem.dimensions[0] * fitem.dimensions[1]) * 2.;
+					System.out.println(boundary.getName() + " add " + thisArea);
+					boundary.addNodeArea(thisArea);
 					fitem.location[0] = (float) initPosition.getX(); 
 					fitem.location[1] = (float) initPosition.getY(); 
 				} else if(unionOfBoundaries != null) {
@@ -130,14 +141,13 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					fitem.location[1] = (float) (unionOfBoundaries.getY() + (unionOfBoundaries.getHeight() / 2));
 				} 
 			}
-
-			double width = nodeView.getVisualProperty(BasicVisualLexicon.NODE_WIDTH);
-			double height = nodeView.getVisualProperty(BasicVisualLexicon.NODE_HEIGHT);
-			fitem.dimensions[0] = (float) width;
-			fitem.dimensions[1] = (float) height;
-			fitem.category = group;
+			
 			m_fsim.addItem(fitem);
 		}
+		
+		System.out.println(context.scaleNodes + " - scale the nodes");
+		if(context.scaleNodes)
+			nodeBoundaryScale();
 
 		// initialize edges
 		for (View<CyEdge> edgeView : edgeViewList) {
@@ -343,7 +353,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			annotationDimensions.setLocation(newWidth, newHeight);
 		} 
 		RectangularWallForce wall = new RectangularWallForce(annotationCenter, annotationDimensions, 
-				-context.wallGravitationalConstant, context.variableWallForce);
+				context.gravConst, context.variableWallForce);
 		boundary.setWallForce(wall);
 		m_fsim.addForce(wall);
 	}
@@ -380,16 +390,20 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		double yCenter = boundingBox.getY() + boundingBox.getHeight() / 2.;
 		List<Point2D> initNodes = new ArrayList<>();
 		initNodes.add(new Point2D.Double(xCenter, yCenter));
+		double totalArea = boundingBox.getWidth() * boundingBox.getHeight();
+		System.out.println("The original area is " + totalArea);
 		if(!applySpecialInitialization.isEmpty()) {
 			initNodes.remove(0);
 			List<Rectangle2D> initRectangles = BoundaryContainsAlgorithm.doAlgorithm(
-					boundary.getBoundingBox(), applySpecialInitialization);
+					boundingBox, applySpecialInitialization);
+			totalArea = BoundaryTree.getTotalArea(initRectangles);
 			for(Rectangle2D initRectangle : initRectangles) {
 				xCenter = initRectangle.getX() + initRectangle.getWidth() / 2.;
 				yCenter = initRectangle.getY() + initRectangle.getHeight() / 2.;
 				initNodes.add(new Point2D.Double(xCenter, yCenter));
 			}
 		}
+		boundary.setScalableArea(totalArea);
 		boundary.setInitializations(initNodes);
 	}
 
@@ -418,5 +432,27 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		for(BoundaryAnnotation newBoundary : this.boundaries.values()) 
 			unionOfBoundaries.setRect(unionOfBoundaries.createUnion(newBoundary.getBoundingBox()));
 		return unionOfBoundaries;
+	}
+	
+	private void nodeBoundaryScale() {
+		Map<Object, Double> nodeScalesMap = new HashMap<>();
+		
+		for(View<CyNode> nodeView : nodeViewList) {
+			ForceItem fitem = forceItems.get(nodeView.getModel()); 
+			
+			double nodeScale = 1.;
+			if(!nodeScalesMap.containsKey(fitem.category)) {
+				nodeScale = boundaries.get(fitem.category).getNodeScale();
+				nodeScalesMap.put(fitem.category, nodeScale);
+			} else {
+				nodeScale = nodeScalesMap.get(fitem.category);
+			}
+			
+			double dimScale = Math.sqrt(nodeScale);
+			fitem.dimensions[0] = fitem.dimensions[0] * (float) dimScale;
+			fitem.dimensions[1] = fitem.dimensions[1] * (float) dimScale;
+			nodeView.setVisualProperty(BasicVisualLexicon.NODE_WIDTH, (double) fitem.dimensions[0]);
+			nodeView.setVisualProperty(BasicVisualLexicon.NODE_HEIGHT, (double) fitem.dimensions[1]);
+		}
 	}
 }
