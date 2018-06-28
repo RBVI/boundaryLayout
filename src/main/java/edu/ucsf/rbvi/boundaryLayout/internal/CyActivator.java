@@ -29,6 +29,9 @@ import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateImport;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateNetworkRemove;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSave;
 
+/*
+ * This class creates the task factories, managers, and listeners used by boundary layout
+ */
 public class CyActivator extends AbstractCyActivator {
 	
 	public CyActivator() {
@@ -70,8 +73,7 @@ public class CyActivator extends AbstractCyActivator {
 		NetworkViewTaskFactory templateNetworkRemoveFactory = new TemplateNetworkRemove(templateManager);
 		taskFactories.put(TemplateThumbnailPanel.REMOVE_TEMPLATE_FROM_VIEW, templateNetworkRemoveFactory);
 		
-		TaskFactory templateThumbnailFactory = new CreateTemplateThumbnailTaskFactory(registrar, 
-				templateManager, taskFactories); 
+		TaskFactory templateThumbnailFactory = new CreateTemplateThumbnailTaskFactory(registrar, templateManager, taskFactories); 
 		
 		CyLayoutAlgorithm forceDirectedLayoutAlgorithm = new ForceDirectedLayout(registrar, undoSupport);
 		Properties forceDirectedLayoutAlgorithmProperties = new Properties();

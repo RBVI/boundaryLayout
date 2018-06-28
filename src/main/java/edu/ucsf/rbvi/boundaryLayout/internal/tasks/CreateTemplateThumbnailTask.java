@@ -10,7 +10,9 @@ import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskFactory;
 import org.cytoscape.work.TaskMonitor;
 
-
+/*
+ * Creates a template thumbnail
+ */
 public class CreateTemplateThumbnailTask extends AbstractTask {
 	public CytoPanelComponent thumbnailPanel;
 	private CyServiceRegistrar registrar;
@@ -33,8 +35,7 @@ public class CreateTemplateThumbnailTask extends AbstractTask {
 		if(!showComponent) {
 			panelProperties.setProperty(TITLE, "Show Templates in Control Panel");
 			registrar.unregisterService(thumbnailPanel, CytoPanelComponent.class);
-		}
-		else {
+		} else {
 			panelProperties.setProperty(TITLE, "Hide Templates in Control Panel");
 			registrar.registerService(thumbnailPanel, CytoPanelComponent.class, new Properties());
 		}

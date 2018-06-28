@@ -16,7 +16,6 @@ public class TemplateNetworkRemove extends AbstractNetworkViewTaskFactory {
 	
 	@Override
 	public TaskIterator createTaskIterator(CyNetworkView networkView) {
-		return new TaskIterator(new TemplateNetworkRemoveTask( 
-				networkView, templateManager));
+		return new TaskIterator(new TemplateNetworkRemoveTask(networkView, templateManager));
 	}
 }

@@ -8,6 +8,9 @@ import org.cytoscape.work.Tunable;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
+/*
+ * Imports a template from a particular file
+ */
 public class TemplateImportTask extends AbstractTask {
 	private TemplateManager templateManager;
 
@@ -20,7 +23,6 @@ public class TemplateImportTask extends AbstractTask {
 	public TemplateImportTask(TemplateManager templateManager) {
 		super();
 		this.templateManager = templateManager;
-		// System.out.println("should call for tunables?");
 	}
 
 	@Override

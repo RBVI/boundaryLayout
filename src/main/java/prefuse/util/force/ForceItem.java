@@ -58,9 +58,9 @@ public class ForceItem implements Cloneable {
     public float[][] k;
     /** Temporary variables for Runge-Kutta integration */
     public float[][] l;
-    
+    /** Holds the dimensions of the node corresponding to this force item*/
     public float[] dimensions;
-    
+    /** Holds the particular category of the node corresponding to this force item*/
     public Object category;
         
     /**

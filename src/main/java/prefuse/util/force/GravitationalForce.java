@@ -10,8 +10,7 @@ package prefuse.util.force;
  */
 public class GravitationalForce extends AbstractForce {
 
-    private static final String[] pnames
-        = { "GravitationalConstant", "Direction" };
+    private static final String[] pnames = { "GravitationalConstant", "Direction" };
     
     public static final int GRAVITATIONAL_CONST = 0;
     public static final int DIRECTION = 1;
@@ -71,5 +70,4 @@ public class GravitationalForce extends AbstractForce {
         item.force[0] += Math.cos(theta)*coeff;
         item.force[1] += Math.sin(theta)*coeff;
     }
-
 } // end of class GravitationalForce

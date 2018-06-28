@@ -13,6 +13,9 @@ import org.cytoscape.work.Tunable;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
+/*
+ * Overwrites a template with new annotation information in the templates view 
+ */
 public class TemplateOverwriteTask extends AbstractTask implements ObservableTask {
 	public static final int CANCEL_STATE = -1;
 	public static final int OVERWRITE_STATE = 0;
@@ -42,8 +45,7 @@ public class TemplateOverwriteTask extends AbstractTask implements ObservableTas
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {	
 		if(overwrite) {
-			List<Annotation> annotations = registrar.getService(
-					AnnotationManager.class).getAnnotations(networkView);
+			List<Annotation> annotations = registrar.getService(AnnotationManager.class).getAnnotations(networkView);
 			templateManager.overwriteTemplate(templateOverwriteName, annotations);
 			stateOfButton = OVERWRITE_STATE;
 		} else {

@@ -21,20 +21,19 @@ import org.json.simple.parser.JSONParser;
 public class TemplateListener implements CyShutdownListener {
 	public static String boundaryLayoutTemplatesPath;
 	private TemplateManager templateManager;
-	private CyServiceRegistrar registrar;
 	private File templateFile;
 	private static final String NAME = "name";
 	private static final String THUMBNAIL = "thumbnail";
 	private static final String ANNOTATIONS = "annotations";
 
-	@SuppressWarnings("resource")
+	/*
+	 * Constructs a Template Listener as well as loads the templates from the json file
+	 */
 	public TemplateListener(TemplateManager templateManager, CyServiceRegistrar registrar) {
 		this.templateManager = templateManager;
-		this.registrar = registrar;
 		CyApplicationConfiguration appConfig = registrar.getService(CyApplicationConfiguration.class);
 		File configurationDirectory = appConfig.getConfigurationDirectoryLocation();
-		boundaryLayoutTemplatesPath = configurationDirectory.getAbsolutePath() + 
-				File.separator + "boundaryLayoutTemplates.json";
+		boundaryLayoutTemplatesPath = configurationDirectory.getAbsolutePath() + File.separator + "boundaryLayoutTemplates.json";
 		templateFile = new File(boundaryLayoutTemplatesPath);
 
 		//load our templates
@@ -54,7 +53,13 @@ public class TemplateListener implements CyShutdownListener {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
+	/*
+	 * Saves the current templates to the json file where template information is being
+	 * stored. Each template has a list of annotation information and everything 
+	 * is stored in order.
+	 * 
+	 * @param shutdownEvent occurs when the user is about to shut down the session
+	 */
 	@Override
 	public void handleEvent(CyShutdownEvent shutdownEvent) {	
 		try {
@@ -63,8 +68,7 @@ public class TemplateListener implements CyShutdownListener {
 			templateFile.createNewFile();
 			FileWriter templateWriter = new FileWriter(templateFile);
 			JSONArray templatesInformation = new JSONArray();
-			Map<String, List<String>> templateMap = 
-					templateManager.getTemplateMap();
+			Map<String, List<String>> templateMap = templateManager.getTemplateMap();
 			for(String templateName : templateMap.keySet()) {
 				JSONObject templateObject = new JSONObject();
 				JSONArray annotationsArray = new JSONArray();
@@ -82,6 +86,9 @@ public class TemplateListener implements CyShutdownListener {
 		}
 	}
 
+	/* Private method
+	 * Prints the information of the template into the given file
+	 */
 	private void printJSON(FileWriter templateWriter, JSONArray templatesInformation) throws IOException {
 		int newLineCounter = 0;
 		for(Object templateObject : templatesInformation) {
@@ -93,14 +100,16 @@ public class TemplateListener implements CyShutdownListener {
 		}
 	}
 
+	/* Private method
+	 * Adds a template to the template manager
+	 */
 	private void addTemplate(JSONObject template) {
 		String templateName = (String) template.get(NAME);
 		String thumbnail = (String) template.get(THUMBNAIL);
 		JSONArray annotations = (JSONArray) template.get(ANNOTATIONS);
 		List<String> annotationList = new ArrayList<>();
-		for (Object ann : annotations) {
+		for (Object ann : annotations) 
 			annotationList.add((String) ann);
-		}
 		templateManager.addTemplateStrings(templateName, annotationList);
 		templateManager.addThumbnail(templateName, thumbnail);
 	}

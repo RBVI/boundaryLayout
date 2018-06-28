@@ -12,8 +12,7 @@ public class TemplateOverwrite extends AbstractNetworkViewTaskFactory {
 	private final CyServiceRegistrar registrar;
 	private String templateOverwriteName;
 	
-	public TemplateOverwrite(CyServiceRegistrar registrar, 
-			TemplateManager templateManager, String templateOverwriteName) {
+	public TemplateOverwrite(CyServiceRegistrar registrar, TemplateManager templateManager, String templateOverwriteName) {
 		super();
 		this.registrar = registrar;
 		this.templateManager = templateManager;
@@ -22,7 +21,6 @@ public class TemplateOverwrite extends AbstractNetworkViewTaskFactory {
 	
 	@Override
 	public TaskIterator createTaskIterator(CyNetworkView networkView) {
-		return new TaskIterator(new TemplateOverwriteTask(
-				registrar, networkView, templateManager, templateOverwriteName));
+		return new TaskIterator(new TemplateOverwriteTask(registrar, networkView, templateManager, templateOverwriteName));
 	}
 }

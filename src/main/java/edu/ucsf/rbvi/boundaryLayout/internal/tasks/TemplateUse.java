@@ -16,7 +16,6 @@ public class TemplateUse extends AbstractNetworkViewTaskFactory {
 	
 	@Override
 	public TaskIterator createTaskIterator(CyNetworkView netView) {
-		return new TaskIterator(new TemplateUseTask(
-				netView, templateManager));
+		return new TaskIterator(new TemplateUseTask(netView, templateManager));
 	}
 }

@@ -8,6 +8,9 @@ import org.cytoscape.work.util.ListSingleSelection;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
+/*
+ * Applies a given template to the current network view
+ */
 public class TemplateUseTask extends AbstractNetworkViewTask {	
 	private TemplateManager templateManager;
 	private CyNetworkView networkView;
@@ -15,18 +18,15 @@ public class TemplateUseTask extends AbstractNetworkViewTask {
 	@Tunable(description = "Choose the template text file to import")
 	public ListSingleSelection<String> templateNames = null;
 
-	public TemplateUseTask(CyNetworkView networkView, 
-			TemplateManager templateManager) {
+	public TemplateUseTask(CyNetworkView networkView, TemplateManager templateManager) {
 		super(networkView);
 		this.networkView = networkView;
 		this.templateManager = templateManager;
-		templateNames = new ListSingleSelection<>(
-				templateManager.getTemplateNames());
+		templateNames = new ListSingleSelection<>(templateManager.getTemplateNames());
 	}
 
 	@Override
 	public void run(TaskMonitor taskMonitor) {	
-		templateManager.useTemplate(
-				templateNames.getSelectedValue(), networkView);
+		templateManager.useTemplate(templateNames.getSelectedValue(), networkView);
 	}
 }

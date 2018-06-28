@@ -13,6 +13,10 @@ import org.cytoscape.work.Tunable;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
+/*
+ * Saves the annotation information as a new template and adds that 
+ * to the templates view
+ */
 public class TemplateSaveTask extends AbstractTask implements ObservableTask {
 	private final CyServiceRegistrar registrar;
 	private final CyNetworkView networkView;

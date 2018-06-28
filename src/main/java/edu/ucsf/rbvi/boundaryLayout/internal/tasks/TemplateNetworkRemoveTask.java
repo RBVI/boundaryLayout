@@ -13,6 +13,9 @@ import org.cytoscape.work.util.ListMultipleSelection;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
+/*
+ * Remove specific template from the templates view
+ */
 public class TemplateNetworkRemoveTask extends AbstractTask {
 	private final CyNetworkView networkView;
 	private TemplateManager templateManager;
@@ -20,7 +23,6 @@ public class TemplateNetworkRemoveTask extends AbstractTask {
 	@Tunable(description = "Choose templates to remove from view: ")
 	public ListMultipleSelection<String> templateNames = null;
 
-	@SuppressWarnings("unchecked")
 	public TemplateNetworkRemoveTask(CyNetworkView networkView, 
 			TemplateManager templateManager) {
 		super();
@@ -28,8 +30,7 @@ public class TemplateNetworkRemoveTask extends AbstractTask {
 		this.templateManager = templateManager;
 		CyTable networkTable = networkView.getModel().getDefaultNetworkTable();
 		CyRow networkRow = networkTable.getRow(networkView.getSUID());
-		List<String> activeTemplates = (List<String>) 
-				networkRow.getRaw(TemplateManager.NETWORK_TEMPLATES);
+		List<String> activeTemplates = (List<String>) networkRow.getRaw(TemplateManager.NETWORK_TEMPLATES);
 		if(activeTemplates != null)
 			templateNames = new ListMultipleSelection<>(activeTemplates);
 	}
@@ -37,7 +38,6 @@ public class TemplateNetworkRemoveTask extends AbstractTask {
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {
 		if(templateNames != null)
-			templateManager.networkRemoveTemplates(networkView, 
-					templateNames.getSelectedValues());
+			templateManager.networkRemoveTemplates(networkView, templateNames.getSelectedValues());
 	}
 }

@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 
@@ -33,12 +34,14 @@ import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
+import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.SavePolicy;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
+import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.presentation.RenderingEngine;
 import org.cytoscape.view.presentation.RenderingEngineFactory;
 import org.cytoscape.view.presentation.annotations.Annotation;
@@ -52,6 +55,11 @@ import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
 import org.cytoscape.view.presentation.annotations.TextAnnotation;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 
+/* 
+ * This is the manager of the Templates tab called Boundaries feature
+ * provided by boundary layout. Capabilities include saving, loading, deleting,
+ * overwriting, importing, exporting, and applying the template to the view
+ * */
 public class TemplateManager {
 	private Map<String, List<String>> templates;
 	private Map<String, Image> templateThumbnails;
@@ -63,7 +71,10 @@ public class TemplateManager {
 	public static final String NETWORK_TEMPLATES = "Templates Applied";
 	static double PADDING = 10.0; // Make sure we have some room around our annotations
 
-	@SuppressWarnings("unchecked")
+	/*
+	 * Initialize a template manager, which manages the entire Boundaries tab, corresponding
+	 * to the Template Mode feature of boundaryLayout.  
+	 * */
 	public TemplateManager(CyServiceRegistrar registrar) {
 		templates = new HashMap<>();
 		templateThumbnails = new HashMap<>();
@@ -74,13 +85,27 @@ public class TemplateManager {
 		renderingEngineFactory = registrar.getService(RenderingEngineFactory.class);	
 	}
 
-	public boolean addTemplate(String templateName, 
-			List<Annotation> annotations) {
-		List<String> annotationsInfo = 
-				getAnnotationInformation(annotations);
+	/*
+	 * Adds template to the templates map, with the mapping:
+	 * (template name - list of annotations information), by calling addTemplateStrings()
+	 * 
+	 * @param templateName is the name of the added template 
+	 * @param annotations is a list of annotations that make up the template 
+	 * @return true if the template has been successfully added
+	 */
+	public boolean addTemplate(String templateName, List<Annotation> annotations) {
+		List<String> annotationsInfo = getAnnotationInformation(annotations);
 		return addTemplateStrings(templateName, annotationsInfo);
 	}
 
+	/*
+	 * Adds the mapping (template name - list of annotations information) to templates map. 
+	 * If the mapping already exists, overwrite the template mapping.
+	 * 
+	 * @param templateName is the name of the added template 
+	 * @param annotations is a list of information of the annotations that comprise the template 
+	 * @return true if the template has been successfully added to the templates map
+	 * */
 	public boolean addTemplateStrings(String templateName, List<String> annotations) {
 		if(templates.containsKey(templateName)) 
 			return overwriteTemplateStrings(templateName, annotations);
@@ -90,6 +115,12 @@ public class TemplateManager {
 		return false;
 	}
 
+	/*
+	 * Removes the mapping (template name - list of annotations information) from templates map. 
+	 * 
+	 * @param templateName is the name of the added template 
+	 * @return true if the template has been successfully removed from the templates map
+	 * */
 	public boolean deleteTemplate(String templateName) {
 		if(!templates.containsKey(templateName))
 			return false;
@@ -99,20 +130,42 @@ public class TemplateManager {
 		return false;
 	}
 
-	public boolean overwriteTemplate(String templateName, 
-			List<Annotation> annotations) {
+	/*
+	 * Overwrites template mapping of key template name with the new value consisting
+	 * of a new list of annotation information, by calling overwriteTemplateStrings()
+	 * 
+	 * @param templateName is the name of the overwritten template 
+	 * @param annotations is a list of annotations that make up the template 
+	 * @return true if the template has been successfully overwritten
+	 */
+	public boolean overwriteTemplate(String templateName, List<Annotation> annotations) {
 		List<String> annotationsInfo = getAnnotationInformation(annotations);
 		return overwriteTemplateStrings(templateName, annotationsInfo);
 	}
 
-	public boolean overwriteTemplateStrings(String templateName, 
-			List<String> annotations) {
+	/*
+	 * Overwrites the mapping (template name - list of annotations information) to templates map. 
+	 * 
+	 * @precondition It is assumed that templates map already has the key templateName.
+	 * @param templateName is the name of the overwritten template 
+	 * @param annotations is a list of information of the annotations that comprise the template 
+	 * @return true if the template has been successfully added to the templates map
+	 */
+	public boolean overwriteTemplateStrings(String templateName, List<String> annotations) {
 		if(!templates.containsKey(templateName))
 			return false;
 		templates.replace(templateName, annotations);
 		return true;
 	}
 
+	/*
+	 * This method applies the template corresponding to the templateName to the given 
+	 * network view, meaning all the annotations and their properties are added to the view.
+	 * 
+	 * @param templateName is the name of the applied template 
+	 * @param networkView is the network view on which to apply the template
+	 * @return true if the template has been applied correctly
+	 */
 	public boolean useTemplate(String templateName, CyNetworkView networkView) {
 		if(!templates.containsKey(templateName)) 
 			return false;
@@ -138,16 +191,23 @@ public class TemplateManager {
 		return true;
 	}
 
-	public boolean importTemplate(String templateName,
-			File templateFile) throws IOException {
+	/*
+	 * Imports the template information given in the template file and creates the mapping
+	 * (template name - list of annotation information)
+	 * 
+	 * @precondition templateFile exists 
+	 * @param templateName is what the user chooses to call the template after importing that 
+	 * template's annotations from the file
+	 * @param templateFile is the file form which the user wishes to read the annotation information
+	 * @return true if the import was successful
+	 */
+	public boolean importTemplate(String templateName, File templateFile) throws IOException {
 		if(!templateFile.exists())
 			return false;
-		BufferedReader templateReader = new BufferedReader(
-				new FileReader(templateFile.getAbsolutePath()));
+		BufferedReader templateReader = new BufferedReader(new FileReader(templateFile.getAbsolutePath()));
 		List<String> templateInformation = new ArrayList<>();
 		String annotationInformation = "";
-		while((annotationInformation = templateReader.readLine()) 
-				!= null)
+		while((annotationInformation = templateReader.readLine()) != null)
 			templateInformation.add(annotationInformation);
 		if(!templates.containsKey(templateName))
 			templates.put(templateName, templateInformation);
@@ -157,23 +217,30 @@ public class TemplateManager {
 			templateReader.close();
 		} catch (IOException e) {
 			throw new IOException("Problems writing to stream: " + 
-					templateReader.toString() + 
-					"[" + e.getMessage()+ "]");
+					templateReader.toString() + "[" + e.getMessage()+ "]");
 		}
 		if(templates.containsKey(templateName))
 			return true;
 		return false;
 	}
 
-	public boolean exportTemplate(String templateName, 
-			String absoluteFilePath) throws IOException {
+	/*
+	 * Exports the template information associated with the template name to a file in the given
+	 * path. If the file does not exist, a file is created. The information of the annotations in the
+	 * template are written line by line to this file.
+	 * 
+	 * @param templateName is name of the template that the user wishes to export
+	 * @param absoluteFilePath is the path of the file that the template information is written to
+	 * @precondition templateName is valid and is in the templates map 
+	 * @return true if the import was successful
+	 */
+	public boolean exportTemplate(String templateName, String absoluteFilePath) throws IOException {
 		if(!templates.containsKey(templateName))
 			return false;
 		File exportedFile = new File(absoluteFilePath);
 		if(!exportedFile.exists())
 			exportedFile.createNewFile();
-		BufferedWriter templateWriter = new 
-				BufferedWriter(new FileWriter(exportedFile));
+		BufferedWriter templateWriter = new BufferedWriter(new FileWriter(exportedFile));
 		for(String annotationInformation : templates.get(templateName)) {
 			templateWriter.write(annotationInformation);
 			templateWriter.newLine();
@@ -182,30 +249,48 @@ public class TemplateManager {
 			templateWriter.close();
 		} catch (IOException e) {
 			throw new IOException("Problems writing to stream: " + 
-					templateWriter.toString() + 
-					"[" + e.getMessage()+ "]");
+					templateWriter.toString() + "[" + e.getMessage()+ "]");
 		}
 		return true;
 	}
 
+	/*
+	 * This method removes all the templates from the current view. This includes removing
+	 * all of the annotations corresponding to each template only from the current network view, achieved
+	 * by calling clearNetworkofTemplates(CyNetworkView)
+	 * 
+	 * @return the resultant network view with the removed templates
+	 */
 	public CyNetworkView clearCurrentNetworkOfTemplates() {
-		CyNetworkView netView = registrar.getService(
-				CyApplicationManager.class).getCurrentNetworkView();
+		CyNetworkView netView = registrar.getService(CyApplicationManager.class).getCurrentNetworkView();
 		this.clearNetworkofTemplates(netView);
 		return netView;
 	}
 
-	@SuppressWarnings("unchecked")
+	/*
+	 * This method removes all the templates from the given network view. This method
+	 * uses networkRemoveTemplates(), passing the list of templates active in the view.
+	 * 
+	 * @param networkView is the network view whose templates will be removed
+	 */
 	public void clearNetworkofTemplates(CyNetworkView networkView) { 
 		CyRow networkRow = getNetworkRow(networkView);
-		networkRemoveTemplates(networkView, (List<String>) 
-				networkRow.getRaw(NETWORK_TEMPLATES));
+		networkRemoveTemplates(networkView, (List<String>) networkRow.getRaw(NETWORK_TEMPLATES));
 	}
 
-	public void networkRemoveTemplates(CyNetworkView networkView, 
-			List<String> templateRemoveNames) {
-		List<Annotation> annotations = annotationManager.
-				getAnnotations(networkView);
+	/*
+	 * Given a list of template names to remove from the passed network view, this method
+	 * removes every template name in the list from the network view.
+	 * 
+	 * @param networkView is the network view from which to remove the templates
+	 * @param templateRemoveNames is the list of template names corresponding to templates and 
+	 * their annotations to remove from the view
+	 * @precondition templateRemoveNames != null & templateRemoveNames is not empty
+	 * Given @param networkView and @param templateRemoveNames, remove the templates from networkView
+	 * corresponding to these names 
+	 */
+	public void networkRemoveTemplates(CyNetworkView networkView, List<String> templateRemoveNames) {
+		List<Annotation> annotations = annotationManager.getAnnotations(networkView);
 		List<String> uuidsToRemove = new ArrayList<>();
 		if(templateRemoveNames != null && !templateRemoveNames.isEmpty())
 			for(String templateRemoveName : templateRemoveNames) {
@@ -226,8 +311,7 @@ public class TemplateManager {
 				}
 			}
 
-		//make sure that the annotation is only deleted in the specific network view and 
-		//not all views
+		//make sure that the annotation is only deleted in the specific network view, not all views
 		if(annotations != null) {
 			for(Annotation annotation : annotations)  
 				if(uuidsToRemove.contains(annotation.getUUID().toString())) {
@@ -239,8 +323,14 @@ public class TemplateManager {
 		}
 	}
 
-	private static List<String> getAnnotationInformation(
-			List<Annotation> annotations) {
+	/* Private method
+	 * Creates a list of the annotation information corresponding to the given list
+	 * of annotations. The annotation information is simply a String representing the
+	 * respective argument maps, argMap, of each annotation
+	 * 
+	 * @return that list of annotation information
+	 */
+	private static List<String> getAnnotationInformation(List<Annotation> annotations) {
 		List<String> annotationsInfo = new ArrayList<>();
 		if(annotations != null)
 			for(Annotation annotation : annotations)
@@ -248,28 +338,31 @@ public class TemplateManager {
 		return annotationsInfo;
 	}
 
+	/*
+	 * @return a list of template names
+	 */
 	public List<String> getTemplateNames() {
 		return new ArrayList<>(templates.keySet());
 	}
 
-	@SuppressWarnings("unchecked")
-	private void appendTemplatesActive(CyNetworkView networkView, 
-			String templateName) {
+	/* Private method
+	 * Apply the template corresponding to @param templateName to @param networkView
+	 */
+	private void appendTemplatesActive(CyNetworkView networkView, String templateName) {
 		CyRow networkRow = getNetworkRow(networkView);
-		List<String> activeTemplates = (List<String>) 
-				networkRow.getRaw(NETWORK_TEMPLATES);
+		List<String> activeTemplates = (List<String>) networkRow.getRaw(NETWORK_TEMPLATES);
 		if(activeTemplates == null)
 			activeTemplates = new ArrayList<>();
 		activeTemplates.add(templateName);
 		networkRow.set(NETWORK_TEMPLATES, activeTemplates);		
 	}
 
-	@SuppressWarnings("unchecked")
-	private void removeTemplatesActive(CyNetworkView networkView, 
-			List<String> templateRemoveNames) {
+	/* Private method
+	 * Removes the templates in @param templateRemoveNames from the @param networkView
+	 */
+	private void removeTemplatesActive(CyNetworkView networkView, List<String> templateRemoveNames) {
 		CyRow networkRow = getNetworkRow(networkView);
-		List<String> activeTemplates = (List<String>) 
-				networkRow.getRaw(NETWORK_TEMPLATES);
+		List<String> activeTemplates = (List<String>) networkRow.getRaw(NETWORK_TEMPLATES);
 		List<String> templatesToRemove = new ArrayList<>();
 		if(templateRemoveNames != null && !templateRemoveNames.isEmpty()) {
 			for(String templateRemoveName : templateRemoveNames)
@@ -280,17 +373,36 @@ public class TemplateManager {
 		}
 	}
 
+	/* 
+	 * Gets the network CyRow of the given network view and if the templates column
+	 * is null, initialize it.
+	 * 
+	 * @param networkView is the view whose requested CyRow corresponds to 
+	 * @return the CyRow of the networkView, containing information about the view
+	 */
 	public CyRow getNetworkRow(CyNetworkView networkView) {
-		CyTable networkTable = networkView.getModel().getDefaultNetworkTable();
+		return getNetworkRow(networkView.getModel());
+	}
+	
+	public CyRow getNetworkRow(CyNetwork network) {
+		CyTable networkTable = network.getDefaultNetworkTable();
 		if(!columnAlreadyExists(networkTable, NETWORK_TEMPLATES)) 
 			networkTable.createListColumn(NETWORK_TEMPLATES, String.class, true);
-		List<String> templatesActive = networkTable.getRow(networkView.getSUID()).
+		List<String> templatesActive = networkTable.getRow(network.getSUID()).
 				getList(NETWORK_TEMPLATES, String.class);
 		if(templatesActive == null)
 			templatesActive = new ArrayList<>();
-		return networkTable.getRow(networkView.getSUID());
+		return networkTable.getRow(network.getSUID());
 	}
 
+	/*
+	 * Checks if a certain column name already exists in the given network table. This method
+	 * is used to avoid any null pointer errors.
+	 * 
+	 * @param networkTable is the table containing all the network information in the session
+	 * @param columnName is the name of the column on which to check whether or not it exists
+	 * @return true if the column already exists in the networkTable
+	 */
 	public static boolean columnAlreadyExists(CyTable networkTable, String columnName) {
 		for(CyColumn networkColumn : networkTable.getColumns())
 			if(networkColumn.getName().equals(columnName))
@@ -298,7 +410,10 @@ public class TemplateManager {
 		return false;
 	}
 
-	@SuppressWarnings("unchecked")
+	/*
+	 * Creates an annotation with arguments @param argMap, in the @param networkView, and with the
+	 * information @argMap
+	 */
 	public Annotation getCreatedAnnotation(CyServiceRegistrar registrar, 
 			CyNetworkView networkView, Map<String, String> argMap) {
 		String annotationType = argMap.get("type");
@@ -335,14 +450,24 @@ public class TemplateManager {
 		return addedShape;
 	}
 
-	@SuppressWarnings("unchecked")
-	public boolean renameTemplate(String oldName, String newName, CyNetworkView networkView) {
+	/* Private Method
+	 * Rename the template corresponding to oldName with a new name, without changing any properties 
+	 * of the template. Also rename all instances of the active template in the network views.
+	 * 
+	 * @param oldName is the name of the template to be changed 
+	 * @param newName is the new name of the template
+	 * @param networkView is the network view on which to check for the active template
+	 * 
+	 * @precondition oldName must exist in the templates map as a template
+	 * @return true if the renaming was successful
+	 */
+	private boolean renameTemplateHelper(String oldName, String newName, CyNetwork network) {
 		if(!templates.containsKey(oldName))
 			return false;
 		templates.put(newName, templates.get(oldName));
 		templates.remove(oldName);
-		if(networkView != null) {
-			CyRow networkRow = getNetworkRow(networkView);
+		if(network != null) {
+			CyRow networkRow = getNetworkRow(network);
 			List<String> templatesActive = (List<String>) networkRow.getRaw(NETWORK_TEMPLATES);
 			if(templatesActive != null && templatesActive.contains(oldName)) {
 				templatesActive.add(newName);
@@ -355,29 +480,60 @@ public class TemplateManager {
 		return false;
 	}
 
+	/*
+	 * Rename the template corresponding to oldName with a new name, without changing any properties 
+	 * of the template, by calling the helper function. Also, rename all instances of the active 
+	 * template in the network views found in the manager.
+	 * 
+	 * @param oldName is the name of the template to be changed 
+	 * @param newName is the new name of the template
+	 * 
+	 * @precondition oldName must exist in the templates map as a template
+	 * @return true if the renaming was successful
+	 */
 	public boolean renameTemplate(String oldName, String newName) {
-		return renameTemplate(oldName, newName, registrar.getService(
-				CyApplicationManager.class).getCurrentNetworkView());
+		boolean rename = true;
+		Set<CyNetwork> networks = registrar.getService(CyNetworkManager.class).getNetworkSet();
+		for(CyNetwork network : networks) {
+			boolean temp = renameTemplateHelper(oldName, newName, network);
+			if(rename && !temp)
+				rename = temp;
+		}
+		return rename;
 	}
 
+	/*
+	 * @return the template map
+	 */
 	public Map<String, List<String>> getTemplateMap() {
 		return templates;
 	}
 
+	/*
+	 * This method returns the annotation information corresponding to the given template.
+	 * 
+	 * @return annotation information corresponding to the template as a list of strings
+	 * @precondition template exists in the templates map
+	 */
 	public List<String> getTemplate(String template) {
 		if (templates.containsKey(template))
 			return templates.get(template);
 		return null;
 	}
 
-	// Thumbnail handling
+	/*
+	 * This method handles encoding the thumbnail of the given template
+	 * 
+	 * @param template is the template in which to create a thumbnail of
+	 * @return encoded thumbnail in the form of a string
+	 */
 	public String getEncodedThumbnail(String template) {
-		Image th = getThumbnail(template);
-		if (th == null) return null;
+		Image thumb = getThumbnail(template);
+		if (thumb == null) return null;
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
-			ImageIO.write((BufferedImage) th, "png", baos);
+			ImageIO.write((BufferedImage) thumb, "png", baos);
 			baos.flush();
 			byte[] imageBytes = Base64.getEncoder().encode(baos.toByteArray());
 			baos.close();
@@ -387,6 +543,14 @@ public class TemplateManager {
 		}
 	}
 
+	/*
+	 * This method creates a new thumbnail corresponding to the given template.
+	 * Add the mapping (template - thumbnail) to the thumbnails map.
+	 * 
+	 * @param template, the name of the thumbnail to be created
+	 * @return the thumbnail corresponding to template
+	 * @precondition template exists in templates map
+	 */
 	public Image getNewThumbnail(String template) {
 		if (templates.containsKey(template)) {
 			Image thumbnail = createThumbnail(template);
@@ -399,25 +563,45 @@ public class TemplateManager {
 		return null;
 	}
 
+	/*
+	 * This method gets a thumbnail corresponding to the given template.
+	 * If the thumbnail has not yet been created, create one and add the mapping
+	 * (template - thumbnail) to the thumbnails map.
+	 * 
+	 * @param template, the name of the thumbnail to be created
+	 * @return the thumbnail corresponding to template
+	 * @precondition template exists in templates map
+	 */
 	public Image getThumbnail(String template) {
 		if (templateThumbnails.containsKey(template))
 			return templateThumbnails.get(template);
-		if (templates.containsKey(template)) {
-			// Create the thumbnail
+		if (templates.containsKey(template)) { //Create the thumbnail
 			Image thumbnail = createThumbnail(template);
 			templateThumbnails.put(template, thumbnail);
 			return thumbnail;
 		}
 		return null;
 	}
-	
-	public void addThumbnail(String template, Image thumbnail) {
+
+	/* Private method
+	 * Adds the thumbnail to the thumbnail map iff the list of templates
+	 * contains the template
+	 */
+	private void addThumbnail(String template, Image thumbnail) {
 		if (!templates.containsKey(template))
 			return;
 
 		templateThumbnails.put(template, thumbnail);
 	}
 
+	/*
+	 * Reads a thumbnail corresponding to the string thumbnail and adds the 
+	 * (template - image thumbnail) mapping to the thumbnails map
+	 * 
+	 * @param template is the name of the template corresponding to the thumbnail 
+	 * @param thumbnail is an encoded string, which contains the image
+	 * @precondition templates map must contain the mapping template
+	 */
 	public void addThumbnail(String template, String thumbnail) {
 		if (template == null || thumbnail == null) return;
 		if (!templates.containsKey(template))
@@ -433,17 +617,19 @@ public class TemplateManager {
 		}
 	}
 
+	/* Private method
+	 * This method creates a thumbnail of the list of annotations corresponding 
+	 * to @param template and @return that thumbnail
+	 */
 	private Image createThumbnail(String template) {
 		if (template == null || !templates.containsKey(template))
 			return null;
 
-		// Create a network
+		//Create network and view
 		CyNetwork net = networkFactory.createNetwork(SavePolicy.DO_NOT_SAVE);
-
-		// Create a networkView
 		CyNetworkView view = networkViewFactory.createNetworkView(net);
 
-		// Add the template to our view
+		//Add the template to our view
 		useTemplate(template, view);
 		Rectangle2D.Double unionRectangle = getUnionofAnnotations(view); 
 		if(unionRectangle.getWidth() * unionRectangle.getHeight() < 101)
@@ -460,6 +646,10 @@ public class TemplateManager {
 		return img;
 	}
 
+	/* Private method 
+	 * Given @param networkView, this method finds the union of annotations and @return
+	 * this union in the form of a Rectangle2D.Double
+	 * */
 	private Rectangle2D.Double getUnionofAnnotations(CyNetworkView networkView) { 
 		Rectangle2D.Double unionOfAnnotations = new Rectangle2D.Double();
 		List<Annotation> annotations = registrar.getService(AnnotationManager.class).getAnnotations(networkView);
@@ -487,6 +677,11 @@ public class TemplateManager {
 		return unionOfAnnotations;
 	}
 
+	/* Private method
+	 * Gets the image, with size @param bounds, of the network view @param view with the name @param template
+	 * 
+	 * @return the image corresponding to the view
+	 */
 	private Image getViewImage(final String template, final CyNetworkView view, Rectangle2D.Double bounds) {
 		final int width = (int) Math.abs(bounds.getWidth());
 		final int height = (int) Math.abs(bounds.getHeight());
@@ -511,6 +706,9 @@ public class TemplateManager {
 		return image.getScaledInstance((int) newBounds.getWidth(), (int) newBounds.getHeight(), Image.SCALE_SMOOTH);
 	}
 
+	/* Private method
+	 * Given @param bounds, adjust and scale the dimensions of them to fit within a specific containment
+	 * */
 	private static Rectangle2D.Double getAdjustedDimensions(Rectangle2D.Double bounds) { 
 		final int width = (int) Math.abs(bounds.getWidth());
 		final int height = (int) Math.abs(bounds.getHeight());
@@ -532,6 +730,16 @@ public class TemplateManager {
 		return new Rectangle2D.Double(bounds.getX(), bounds.getY(), newWidth, newHeight);
 	}
 
+	/*
+	 * Renders the template and its annotations into the given network view and places it in
+	 * its own template panel.
+	 * 
+	 * @param template is the name of the template to be rendered
+	 * @param view is the network view containing a visual of what the template looks like
+	 * @param img contains an wrapper image of the view
+	 * @param width is the width of the image
+	 * @param height is the height of the image
+	 */
 	public void renderTemplate(String template, CyNetworkView view, BufferedImage img, int width, int height) {
 		final Graphics2D g = (Graphics2D) img.getGraphics();
 
@@ -547,11 +755,9 @@ public class TemplateManager {
 
 			JWindow window = new JWindow();
 			window.getContentPane().add(panel, BorderLayout.CENTER);
-
 			RenderingEngine<CyNetwork> re = renderingEngineFactory.createRenderingEngine(panel, view);
 
 			useTemplate(template, view);
-
 			window.pack();
 			window.repaint();
 

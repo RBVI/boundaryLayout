@@ -28,9 +28,7 @@ public class WallForce extends AbstractForce {
      * @param x2 the second x-coordinate of the wall
      * @param y2 the second y-coordinate of the wall
      */
-    public WallForce(float gravConst, 
-        float x1, float y1, float x2, float y2) 
-    {
+    public WallForce(float gravConst, float x1, float y1, float x2, float y2) {
         params = new float[] { gravConst };
         minValues = new float[] { DEFAULT_MIN_GRAV_CONSTANT };
         maxValues = new float[] { DEFAULT_MAX_GRAV_CONSTANT };

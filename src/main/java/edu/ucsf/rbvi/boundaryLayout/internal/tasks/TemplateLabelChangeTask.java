@@ -9,6 +9,9 @@ import org.cytoscape.work.Tunable;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
 
+/*
+ * Changes the name of a template in the templates view
+ */
 public class TemplateLabelChangeTask extends AbstractTask {
 	private JLabel templateLabel;
 	private TemplateManager templateManager;
@@ -17,7 +20,7 @@ public class TemplateLabelChangeTask extends AbstractTask {
 	@Tunable (description = "New name of template: ")
 	public String newTemplateName = null;
 
-	public TemplateLabelChangeTask(TemplateManager templateManager,
+	public TemplateLabelChangeTask(TemplateManager templateManager, 
 			TemplateThumbnailPanel templatesPanel, JLabel templateLabel) {
 		super();
 		this.templateManager = templateManager;
@@ -29,10 +32,8 @@ public class TemplateLabelChangeTask extends AbstractTask {
 	public void run(TaskMonitor taskMonitor) throws Exception {
 		if(newTemplateName != null) {
 			String oldTemplateName = templateLabel.getText();
-			if(!templateManager.renameTemplate(oldTemplateName, newTemplateName) || 
-					!templatesPanel.renameTemplate(oldTemplateName, newTemplateName)) {
-				System.out.println("did not rename properly!");
-			}
+			templateManager.renameTemplate(oldTemplateName, newTemplateName);
+			templatesPanel.renameTemplate(oldTemplateName, newTemplateName);
 			templateLabel.setText(newTemplateName);
 			templateLabel.update(templateLabel.getGraphics());
 		}

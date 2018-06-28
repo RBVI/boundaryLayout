@@ -10,6 +10,9 @@ import org.cytoscape.view.model.CyNetworkView;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
 
+/*
+ * Listens for network view switches and operates accordingly
+ */
 public class CurrentNetworkViewTemplateListener implements SetCurrentNetworkViewListener {
 	private TemplateThumbnailPanel thumbnailPanel;
 	
@@ -25,8 +28,7 @@ public class CurrentNetworkViewTemplateListener implements SetCurrentNetworkView
 		CyTable networkTable = networkView.getModel().getDefaultNetworkTable();
 		if(!TemplateManager.columnAlreadyExists(networkTable, TemplateManager.NETWORK_TEMPLATES))
 			networkTable.createListColumn(TemplateManager.NETWORK_TEMPLATES, String.class, false);
-		List<String> templatesActive = networkTable.getRow(networkView.getSUID()).
-				getList(TemplateManager.NETWORK_TEMPLATES, String.class);
+		List<String> templatesActive = networkTable.getRow(networkView.getSUID()).getList(TemplateManager.NETWORK_TEMPLATES, String.class);
 		if(templatesActive == null) 
 			templatesActive = new ArrayList<>();
 		if(!templatesActive.isEmpty()) 

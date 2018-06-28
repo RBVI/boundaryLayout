@@ -21,6 +21,10 @@ import org.cytoscape.work.Tunable;
 import org.cytoscape.work.TunableValidator;
 import org.cytoscape.work.util.ListSingleSelection;
 
+/* 
+ * This is the context for performing boundary layout and handles
+ * tunables and setting the layout categories
+ */
 public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentNetworkListener {	
 	
 	@Tunable(description="Number of Iterations:", gravity=4.0, groups={"Layout Parameters"})
@@ -48,17 +52,13 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	public float overlapForce = 100f;
 		
 	@Tunable(description="speed limit", gravity=9.0, groups={"Layout Parameters"})
-	public float speedLimit = 1f;
+	public float speedLimit = 0.1f;
 	
 	@Tunable(description="Strength of boundaries", gravity=13.0, groups = {"Boundary Parameters"})
-	public float gravConst = 20.0f;
+	public float gravConst = 20f;
 	
 	@Tunable(description="Variable wall forces", gravity = 14.0, groups = {"Boundary Parameters"})
 	public boolean variableWallForce = true;
-	
-	@Tunable(description="Scale nodes with boundaries", gravity = 15.0, groups = {"Boundary Parameters"}, 
-			tooltip = "Scales nodes to fit within their boundaries")
-	public boolean scaleNodes = true;
 	
 	@Tunable(description="Edge weight column", groups={"Edge Weight Settings"}, gravity=16.0)
 	public ListSingleSelection<String> edgeWeight = null; 
@@ -74,6 +74,9 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 			setColumnTunables(network);
 	}
 	
+	/*
+	 * Validates the parameters
+	 */
 	@Override
 	public ValidationState getValidationState(final Appendable errMsg) {
 		try {
@@ -99,17 +102,17 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 		return n > 0.0;
 	}
 
+	/*
+	 * Sets the categories for the user on which to perform boundary layout
+	 */
 	protected void setColumnTunables(CyNetwork network) {
 		CyTable edgeTable = network.getDefaultEdgeTable();
 		Collection<CyColumn> columnsCollection = edgeTable.getColumns();
 		List<String> columnNames = new ArrayList<String>();
-		for(CyColumn column : columnsCollection)
-		{
+		for(CyColumn column : columnsCollection) {
 			String name = column.getName();
-			if (name.equals(CyNetwork.SUID) ||
-					name.equals(CyNetwork.NAME) ||
-					name.equals(CyRootNetwork.SHARED_NAME) || 
-					name.equals(CyNetwork.SELECTED))
+			if (name.equals(CyNetwork.SUID) || name.equals(CyNetwork.NAME) ||
+				name.equals(CyRootNetwork.SHARED_NAME) || name.equals(CyNetwork.SELECTED))
 				continue;
 			columnNames.add(name);
 		}

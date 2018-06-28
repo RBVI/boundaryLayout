@@ -11,6 +11,9 @@ import org.cytoscape.work.Tunable;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
 
+/*
+ * Prompts to save the template when the session is about to be closed
+ */
 public class TemplateSaveShutdownTask extends AbstractTask {
 	@Tunable(description = "Would you like to save this template before closing? ")
 	public boolean saveTemplate = false;
@@ -19,10 +22,8 @@ public class TemplateSaveShutdownTask extends AbstractTask {
 	private CyNetworkView networkView;
 	private TemplateManager manager;
 	private TemplateThumbnailPanel templatePanel;
-	@SuppressWarnings("rawtypes")
 	private TaskManager taskManager;
 	
-	@SuppressWarnings("rawtypes")
 	public TemplateSaveShutdownTask(CyServiceRegistrar registrar, CyNetworkView networkView, 
 			TemplateManager manager, TemplateThumbnailPanel templatePanel) {
 		super();
@@ -38,8 +39,7 @@ public class TemplateSaveShutdownTask extends AbstractTask {
 		if(saveTemplate) {
 			TemplateOverwriteTask overwriteTask = null;
 			if(templatePanel.currentTemplateName != null) {
-				overwriteTask = new TemplateOverwriteTask(registrar, networkView, 
-						manager, templatePanel.currentTemplateName);
+				overwriteTask = new TemplateOverwriteTask(registrar, networkView, manager, templatePanel.currentTemplateName);
 				taskManager.execute(new TaskIterator(overwriteTask));
 				if(overwriteTask.overwrite) 
 					templatePanel.replaceThumbnailTemplate(templatePanel.currentTemplateName);

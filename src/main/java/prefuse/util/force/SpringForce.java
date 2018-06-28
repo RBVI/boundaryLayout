@@ -8,8 +8,7 @@ package prefuse.util.force;
  */
 public class SpringForce extends AbstractForce {
 
-	private static String[] pnames 
-	= new String[] { "SpringCoefficient", "DefaultSpringLength" };
+	private static String[] pnames = new String[] { "SpringCoefficient", "DefaultSpringLength" };
 
 	public static final float DEFAULT_SPRING_COEFF = 1E-4f;
 	public static final float DEFAULT_MAX_SPRING_COEFF = 1E-3f;
@@ -29,10 +28,8 @@ public class SpringForce extends AbstractForce {
 	 */
 	public SpringForce(float springCoeff, float defaultLength) {
 		params = new float[] { springCoeff, defaultLength };
-		minValues = new float[] 
-				{ DEFAULT_MIN_SPRING_COEFF, DEFAULT_MIN_SPRING_LENGTH };
-		maxValues = new float[] 
-				{ DEFAULT_MAX_SPRING_COEFF, DEFAULT_MAX_SPRING_LENGTH };
+		minValues = new float[] { DEFAULT_MIN_SPRING_COEFF, DEFAULT_MIN_SPRING_LENGTH };
+		maxValues = new float[] { DEFAULT_MAX_SPRING_COEFF, DEFAULT_MAX_SPRING_LENGTH };
 	}
 
 	/**

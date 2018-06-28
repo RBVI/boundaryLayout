@@ -10,6 +10,9 @@ import org.cytoscape.work.util.ListSingleSelection;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
+/*
+ * Exports a specific template to a given path
+ */
 public class TemplateExportTask extends AbstractTask {
 	private TemplateManager templateManager;
 
@@ -22,13 +25,11 @@ public class TemplateExportTask extends AbstractTask {
 	public TemplateExportTask(TemplateManager templateManager) {
 		super();
 		this.templateManager = templateManager;
-		templateNames = new ListSingleSelection<>(
-				templateManager.getTemplateNames());
+		templateNames = new ListSingleSelection<>(templateManager.getTemplateNames());
 	}
 
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {	
-		templateManager.exportTemplate(
-				templateNames.getSelectedValue(), exportTemplateFile.getAbsolutePath());
+		templateManager.exportTemplate(templateNames.getSelectedValue(), exportTemplateFile.getAbsolutePath());
 	}
 }
