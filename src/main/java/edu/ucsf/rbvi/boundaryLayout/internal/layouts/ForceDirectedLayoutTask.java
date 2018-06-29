@@ -71,15 +71,17 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		this.integrator = integrator;
 		this.registrar = registrar;
 		this.chosenCategory = layoutAttribute;
-		
+
 		// We don't want to recenter or we'll move all of our nodes away from their boundaries
 		recenter = false; // This is provided by AbstractLayoutTask
 		forceItems = new HashMap<CyNode, ForceItem>();
 
 		getBoundaries();
 		this.unionOfBoundaries = null;
-		if (boundaries == null && layoutAttribute != null) 
+		if ((boundaries == null || boundaries.isEmpty()) && layoutAttribute != null)  
 			boundaries = AutoMode.createAnnotations(netView, nodeViewList, layoutAttribute, registrar);
+		if(boundaries.containsKey(null))
+			boundaries.remove(null);
 
 		if(context.gravConst < 0)
 			context.gravConst *= -1;
@@ -115,6 +117,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			for(BoundaryAnnotation boundary : boundaries.values()) 
 				addAnnotationForce(m_fsim, boundary);
 
+		Map<BoundaryAnnotation, Integer> nodeCounter = new HashMap<>();
+		
 		// initialize node locations and properties
 		for (View<CyNode> nodeView : nodeViewList) {
 			ForceItem fitem = forceItems.get(nodeView.getModel()); 
@@ -128,7 +132,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			Object group = null;
 			if(chosenCategory != null)
 				group = netView.getModel().getRow(nodeView.getModel()).getRaw(chosenCategory);
-			
+
 			double width = nodeView.getVisualProperty(BasicVisualLexicon.NODE_WIDTH);
 			double height = nodeView.getVisualProperty(BasicVisualLexicon.NODE_HEIGHT);
 			fitem.dimensions[0] = (float) width;
@@ -146,7 +150,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					fitem.location[1] = (float) (unionOfBoundaries.getY() + (unionOfBoundaries.getHeight() / 2));
 				} 
 			}
-			
+
 			m_fsim.addItem(fitem);
 		}
 		
@@ -186,7 +190,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	}
 
 	/*Functions related to node projections*/
-	
+
 	/*
 	 * This method projects all the nodes which have left their boundary
 	 * or entered into another boundary to their nearest respective locations
@@ -285,8 +289,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		item.location[1] = (float) loc.getY();
 		item.plocation[0] = item.location[0];
 		item.plocation[1] = item.location[1];
-		bbox.setRect((double) item.location[0], (double) item.location[1], 
-				item.dimensions[0], item.dimensions[1]);
+		bbox.setRect((double) item.location[0], (double) item.location[1], item.dimensions[0], item.dimensions[1]);
 	} 
 
 	/* Private method
@@ -298,14 +301,14 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		double[] diffVector = { bbox.getX() - shapeBox.getCenterX(), bbox.getY() - shapeBox.getCenterY()};
 		diffVector[0] += bbox.getWidth() / 2 * moveDir * (diffVector[0] < 0 ? -1 : 1);
 		diffVector[1] += bbox.getHeight() / 2 * moveDir * (diffVector[1] < 0 ? -1 : 1);
-		
+
 		double scale = 1.;
 		switch(boundary.getShapeAnnotation().getShapeType()) {
 		case "Rounded Rectangle":
 		case "Rectangle":
 			scale = getScaleRectangle(shapeBox, diffVector);
 			break;
-			
+
 		case "Ellipse":
 			scale = getScaleEllipse(shapeBox, bbox, diffVector);
 			break;
@@ -332,7 +335,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			scale = (shape.getWidth() / 2) / Math.abs(diffVector[0]);
 		return scale;
 	}
-	
+
 	/* Private method
 	 * @return the scale factor by which to scale the @param diffVector of a node
 	 * with respect to @param shape, corresponding to an ellipse

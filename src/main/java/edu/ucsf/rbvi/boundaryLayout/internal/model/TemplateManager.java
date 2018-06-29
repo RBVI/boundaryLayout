@@ -388,8 +388,7 @@ public class TemplateManager {
 		CyTable networkTable = network.getDefaultNetworkTable();
 		if(!columnAlreadyExists(networkTable, NETWORK_TEMPLATES)) 
 			networkTable.createListColumn(NETWORK_TEMPLATES, String.class, true);
-		List<String> templatesActive = networkTable.getRow(network.getSUID()).
-				getList(NETWORK_TEMPLATES, String.class);
+		List<String> templatesActive = networkTable.getRow(network.getSUID()).getList(NETWORK_TEMPLATES, String.class);
 		if(templatesActive == null)
 			templatesActive = new ArrayList<>();
 		return networkTable.getRow(network.getSUID());

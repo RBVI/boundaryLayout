@@ -86,15 +86,13 @@ public class AutoMode {
 
 		while(categoryNamesIndex < categoryLists.size()) {
 			Map<String, String> argMap = new HashMap<>();
-			argMap.put(ShapeAnnotation.NAME, "" + 
-					categoryNames.get(categoryNamesIndex));
+			argMap.put(ShapeAnnotation.NAME, "" + categoryNames.get(categoryNamesIndex));
 			argMap.put(ShapeAnnotation.X, "" + x);
 			argMap.put(ShapeAnnotation.Y, "" + y);
 			argMap.put(ShapeAnnotation.WIDTH, "" + shapeDimensions.getX());
 			argMap.put(ShapeAnnotation.HEIGHT, "" + shapeDimensions.getY());
 			argMap.put(ShapeAnnotation.SHAPETYPE, "Rounded Rectangle");
-			Annotation addedShape = shapeFactory.createAnnotation(
-					ShapeAnnotation.class, netView, argMap);
+			Annotation addedShape = shapeFactory.createAnnotation(ShapeAnnotation.class, netView, argMap);
 			addedShape.setName("" + categoryNames.get(categoryNamesIndex));
 			annotationManager.addAnnotation(addedShape);
 			addedShape.update();
