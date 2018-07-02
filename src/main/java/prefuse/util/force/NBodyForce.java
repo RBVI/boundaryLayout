@@ -41,7 +41,7 @@ public class NBodyForce extends AbstractForce {
 	public static final float DEFAULT_MAX_GRAV_CONSTANT = 10f;
 
 	public static final float DEFAULT_DISTANCE = -1f;
-	public static final float DEFAULT_MIN_DISTANCE = -1f;
+	public static final float DEFAULT_MIN_DISTANCE = 20f;
 	public static final float DEFAULT_MAX_DISTANCE = 500f;
 
 	public static final float DEFAULT_THETA = 0.9f;
@@ -52,7 +52,6 @@ public class NBodyForce extends AbstractForce {
 	public static final int MIN_DISTANCE = 1;
 	public static final int BARNES_HUT_THETA = 2;
 	private boolean avoidOverlap = false;
-	private float overlapForce = 0f;
 
 	private float xMin, xMax, yMin, yMax;
 	private QuadTreeNodeFactory factory = new QuadTreeNodeFactory();
@@ -63,8 +62,8 @@ public class NBodyForce extends AbstractForce {
 	/**
 	 * Create a new NBodyForce with default parameters.
 	 */
-	public NBodyForce(boolean avoidOverlap, float overlapForce) {
-		this(DEFAULT_GRAV_CONSTANT, DEFAULT_DISTANCE, DEFAULT_THETA, avoidOverlap, overlapForce);
+	public NBodyForce(boolean avoidOverlap) {
+		this(DEFAULT_GRAV_CONSTANT, DEFAULT_DISTANCE, DEFAULT_THETA, avoidOverlap);
 	}
 
 	/**
@@ -78,16 +77,12 @@ public class NBodyForce extends AbstractForce {
 	 * an aggregated mass is used rather than drilling down to individual
 	 * item mass values.
 	 */
-	public NBodyForce(float gravConstant, float minDistance, float theta, 
-			boolean avoidOverlap, float overlapForce) {
-		params = new float[] { gravConstant, minDistance, theta };
-		minValues = new float[] { DEFAULT_MIN_GRAV_CONSTANT,
-				DEFAULT_MIN_DISTANCE, DEFAULT_MIN_THETA };
-		maxValues = new float[] { DEFAULT_MAX_GRAV_CONSTANT,
-				DEFAULT_MAX_DISTANCE, DEFAULT_MAX_THETA };
+	public NBodyForce(float gravConstant, float minDistance, float theta, boolean avoidOverlap) {
+		params = new float[] {gravConstant, minDistance, theta};
+		minValues = new float[] {DEFAULT_MIN_GRAV_CONSTANT, DEFAULT_MIN_DISTANCE, DEFAULT_MIN_THETA};
+		maxValues = new float[] {DEFAULT_MAX_GRAV_CONSTANT, DEFAULT_MAX_DISTANCE, DEFAULT_MAX_THETA};
 		root = factory.getQuadTreeNode();
 		this.avoidOverlap = avoidOverlap;
-		this.overlapForce = overlapForce;
 	}
 
 	/**
@@ -117,8 +112,6 @@ public class NBodyForce extends AbstractForce {
 		this.yMin = yMin;
 		this.xMax = xMax;
 		this.yMax = yMax;
-		//System.out.println("bounds = "+xMin+","+yMin+"x"+xMax+","+yMax);
-		//System.out.println("bounds = "+xMin+","+yMin+" "+(xMax-xMin)+"x"+(yMax-yMin));
 	}
 
 	/**
@@ -159,9 +152,8 @@ public class NBodyForce extends AbstractForce {
 			if ( x > x2 ) x2 = x;
 			if ( y > y2 ) y2 = y;
 		}
-		// System.out.println("final x1="+x1+" x2="+x2+" y1="+y1+" y2="+y2);
+
 		float dx = x2-x1, dy = y2-y1;
-		// System.out.println("dx="+dx+", dy="+dy);
 		if ( dx > dy ) { y2 = y1 + dx; } else { x2 = x1 + dy; }
 		setBounds(x1,y1,x2,y2);
 
@@ -222,7 +214,7 @@ public class NBodyForce extends AbstractForce {
 	private static boolean isSameLocation(ForceItem f1, ForceItem f2) {
 		float dx = Math.abs(f1.location[0]-f2.location[0]);
 		float dy = Math.abs(f1.location[1]-f2.location[1]);
-		return ( dx < 0.01 && dy < 0.01 );
+		return ( dx < 0.001f && dy < 0.001f );
 	}
 
 	private void insertHelper(ForceItem p, QuadTreeNode n, 
@@ -285,13 +277,11 @@ public class NBodyForce extends AbstractForce {
 		float dy = n.com[1] - item.location[1];
 		float effectivedx = (float) Math.abs(dx), effectivedy = (float) Math.abs(dy);
 
-		boolean same = false;
 		float r = (float) Math.sqrt(dx * dx + dy * dy);
-		if (r < 0f) { // if items are in the exact same place, make some noise;
-			dx = (rand.nextFloat()-0.5f) / 50.0f;
-			dy = (rand.nextFloat()-0.5f) / 50.0f;
+		if (r == 0f) { // if items are in the exact same place, make some noise;
+			dx = (rand.nextFloat() - 0.5f) / 50.0f;
+			dy = (rand.nextFloat() - 0.5f) / 50.0f;
 			r  = (float)Math.sqrt(dx*dx+dy*dy);
-			same = true;
 		}
 
 		double width = 0., height = 0.;
@@ -306,28 +296,34 @@ public class NBodyForce extends AbstractForce {
 
 			effectivedx = (float) (Math.abs(dx) - width);
 			effectivedy = (float) (Math.abs(dy) - height);
-			r = (float) Math.sqrt(dx * dx + dy * dy);
 			isOverlapping = (effectivedx < 0 && effectivedy < 0);
+
+			if(isOverlapping) {
+				effectivedx = 1 / effectivedx;
+				effectivedy = 1 / effectivedy;
+			}
+			r = (float) Math.sqrt(effectivedx * effectivedx + effectivedy * effectivedy);
+			if(r < 0.001f)
+				r = 0.001f;
+			if(Math.abs(effectivedx) < 0.00001f)
+				effectivedx = 0.00001f;
+			if(Math.abs(effectivedy) < 0.00001f)
+				effectivedy = 0.00001f;
 		}
 
-		boolean minDist = params[MIN_DISTANCE] > 0f && r > params[MIN_DISTANCE];
+		boolean minDist = params[MIN_DISTANCE] > 0f && r > params[MIN_DISTANCE] && !isOverlapping;
 
 		// the Barnes-Hut approximation criteria is if the ratio of the
 		// size of the quadtree box to the distance between the point and
 		// the box's center of mass is beneath some threshold theta.
-		if ((!n.hasChildren && n.value != item) || (!same && (x2 - x1) / r < params[BARNES_HUT_THETA])) {
+		if ((!n.hasChildren && n.value != item) || ((x2 - x1) / r < params[BARNES_HUT_THETA])) {
 			if ( minDist ) return;
-			
+
 			// either only 1 particle or we meet criteria
 			// for Barnes-Hut approximation, so calc force
-			float v = params[GRAVITATIONAL_CONST] * item.mass * n.mass / (r*r*r);
-			if (isOverlapping) {
-				item.force[0] += overlapForce * (dx < 0 ? 1 : -1);
-				item.force[1] += overlapForce * (dy < 0 ? 1 : -1);
-			} else if(effectivedx < 20f && effectivedy < 20f){
-				item.force[0] += v * Math.abs(effectivedx) * (dx < 0 ? 1 : -1);
-				item.force[1] += v * Math.abs(effectivedy) * (dy < 0 ? 1 : -1);
-			}
+			float v = params[GRAVITATIONAL_CONST] * item.mass * n.mass / (r * r * r);
+			item.force[0] += v * Math.abs(effectivedx) * (dx < 0 ? -1 : 1);
+			item.force[1] += v * Math.abs(effectivedy) * (dy < 0 ? -1 : 1);
 		} else if ( n.hasChildren ) { // recurse for more accurate calculation
 			float splitx = (x1 + x2) / 2;
 			float splity = (y1 + y2) / 2;
@@ -341,19 +337,13 @@ public class NBodyForce extends AbstractForce {
 			if ( minDist ) return;
 			if ( n.value != null && n.value != item ) {
 				float v = params[GRAVITATIONAL_CONST] * item.mass * n.mass / (r * r * r);
-
-				if (isOverlapping) {
-					item.force[0] += overlapForce * (dx < 0 ? 1 : -1);
-					item.force[1] += overlapForce * (dy < 0 ? 1 : -1);
-				} else if(effectivedx < 20f && effectivedy < 20f) {
-					item.force[0] += v * Math.abs(effectivedx) * (dx < 0 ? 1 : -1);
-					item.force[1] += v * Math.abs(effectivedy) * (dy < 0 ? 1 : -1);
-				}
+				item.force[0] += v * Math.abs(effectivedx) * (dx < 0 ? -1 : 1);
+				item.force[1] += v * Math.abs(effectivedy) * (dy < 0 ? -1 : 1);
 			}
 		}
 	}
 
-	/**
+	/*
 	 * Represents a node in the quadtree.
 	 */
 	public static final class QuadTreeNode {

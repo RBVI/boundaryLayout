@@ -15,7 +15,7 @@ public class RectangularWallForce extends AbstractForce {
 	public static final int OUT_GRAVITATIONAL_CONST = 1;
 	public static final int IN_PROJECTION = 1;
 	public static final int OUT_PROJECTION = -1;
-	private static final double DEFAULT_SCALEFACTOR = 1.1;
+	private static final double DEFAULT_SCALEFACTOR = 2.5;
 
 	private boolean variableStrength;
 	private float scaleFactor;
@@ -31,8 +31,7 @@ public class RectangularWallForce extends AbstractForce {
 	 * @param variableWall tells whether or not the wall changes gravitational constants
 	 * @param scaleFactor is the scale by which the wall force changes
 	 */
-	public RectangularWallForce(Point2D center, Point2D dimensions, float gravConst, 
-			boolean variableWall, double scaleFactor) {
+	public RectangularWallForce(Point2D center, Point2D dimensions, float gravConst, boolean variableWall, double scaleFactor) {
 		this.center = center;
 		this.dimensions = dimensions;
 		params = new float[] { gravConst, gravConst };
@@ -60,8 +59,13 @@ public class RectangularWallForce extends AbstractForce {
 	}
 
 	/*
+	 * This method sets the scaling factor of this wall force. The scaling factor
+	 * is the value that the gravitational constant is multiplied by when the wall
+	 * is scaled.
+	 * 
 	 * @param scaleFactor is the new scale factor of this wall force
-	 * @precondition 0.1 <= scaleFactor <= 10.*/
+	 * @precondition 0.1 <= scaleFactor <= 10
+	 * */
 	public boolean setScaleFactor(double scaleFactor) {
 		if(Math.abs(scaleFactor) >= 0.1 && Math.abs(scaleFactor) <= 10.) {
 			this.scaleFactor = (float) scaleFactor;
@@ -97,14 +101,14 @@ public class RectangularWallForce extends AbstractForce {
 		//initialize dimensions and displacements
 		float width = (float) this.dimensions.getX();
 		float height = (float) this.dimensions.getY();
-		float drLeft = (width / 2f) - dx;
-		float drTop = (height / 2f) - dy;
-		float drRight = width - drLeft; 
-		float drBottom = height - drTop;
-		if(Math.abs(drLeft) < 0.01f) drLeft = 0.01f * drLeft < 0 ? -1 : 1;
-		if(Math.abs(drRight) < 0.01f) drRight = 0.01f * drRight < 0 ? -1 : 1;
-		if(Math.abs(drTop) < 0.01f) drTop = 0.01f * drTop < 0 ? -1 : 1;
-		if(Math.abs(drBottom) < 0.01f) drBottom = 0.01f * drBottom < 0 ? -1 : 1;
+		float drLeft = Math.abs((width / 2f) - dx - item.dimensions[0] / 2);
+		float drTop = Math.abs((height / 2f) - dy - item.dimensions[1] / 2);
+		float drRight = width - drLeft - item.dimensions[0]; 
+		float drBottom = height - drTop - item.dimensions[1];
+		if(drLeft < 0.01f) drLeft = 0.01f;
+		if(drRight < 0.01f) drRight = 0.01f;
+		if(drTop < 0.01f) drTop = 0.01f;
+		if(drBottom < 0.01f) drBottom = 0.01f;
 
 		//initialize orientation of shape
 		int cX = (Math.abs(dx) > width / 2 ? -1 : 1);
@@ -115,10 +119,10 @@ public class RectangularWallForce extends AbstractForce {
 
 		//calculate forces due to each wall of the rectangle
 		float gravConst = (cX == -1 || cY == -1 ? params[OUT_GRAVITATIONAL_CONST] : params[IN_GRAVITATIONAL_CONST]);
-		float vLeft = -cX * gravConst * item.mass / (drLeft * drLeft);
-		float vTop = -cY * gravConst * item.mass / (drTop * drTop);
-		float vRight = cX * gravConst * item.mass / (drRight * drRight);
-		float vBottom = cY * gravConst * item.mass / (drBottom * drBottom);
+		float vLeft = -cX * gravConst * item.mass / (drLeft * drLeft * drLeft);
+		float vTop = -cY * gravConst * item.mass / (drTop * drTop * drTop);
+		float vRight = cX * gravConst * item.mass / (drRight * drRight * drTop);
+		float vBottom = cY * gravConst * item.mass / (drBottom * drBottom * drBottom);
 
 		if(cX + cY == -2) {//case where the node is outside the corner of the shape
 			float xCorner = (float) center.getX() + (width / 2 * (dx > 0 ? -1 : 1));

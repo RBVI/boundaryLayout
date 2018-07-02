@@ -46,10 +46,6 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	         groups={"Layout Parameters"},gravity=12.0,	
 			tooltip="Apply a force to minimize node overlap")
 	public boolean avoidOverlap = true;
-
-	@Tunable(description="Force to apply to avoid node overlap",
-	         groups={"Layout Parameters"},gravity=10.0)
-	public float overlapForce = 100f;
 		
 	@Tunable(description="speed limit", gravity=9.0, groups={"Layout Parameters"})
 	public float speedLimit = 0.1f;
@@ -59,6 +55,9 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	
 	@Tunable(description="Variable wall forces", gravity = 14.0, groups = {"Boundary Parameters"})
 	public boolean variableWallForce = true;
+
+	@Tunable(description="Scale wall forces", gravity = 15.0, groups = {"Boundary Parameters"})
+	public double wallScale = 2.5;
 	
 	@Tunable(description="Edge weight column", groups={"Edge Weight Settings"}, gravity=16.0)
 	public ListSingleSelection<String> edgeWeight = null; 

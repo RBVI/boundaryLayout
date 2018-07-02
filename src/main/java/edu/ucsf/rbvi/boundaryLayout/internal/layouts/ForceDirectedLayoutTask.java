@@ -108,7 +108,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		//initialize simulation and add the various forces
 		ForceSimulator m_fsim = new ForceSimulator();
 		m_fsim.speedLimit = context.speedLimit;
-		m_fsim.addForce(new NBodyForce(context.avoidOverlap, context.overlapForce));
+		m_fsim.addForce(new NBodyForce(context.avoidOverlap));
 		m_fsim.addForce(new SpringForce());
 		m_fsim.addForce(new DragForce());
 		forceItems.clear();
@@ -117,8 +117,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			for(BoundaryAnnotation boundary : boundaries.values()) 
 				addAnnotationForce(m_fsim, boundary);
 
-		Map<BoundaryAnnotation, Integer> nodeCounter = new HashMap<>();
-		
 		// initialize node locations and properties
 		for (View<CyNode> nodeView : nodeViewList) {
 			ForceItem fitem = forceItems.get(nodeView.getModel()); 
@@ -154,6 +152,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			m_fsim.addItem(fitem);
 		}
 		
+		
 		// initialize edges
 		for (View<CyEdge> edgeView : edgeViewList) {
 			CyEdge edge = edgeView.getModel();
@@ -173,9 +172,9 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		for ( int i = 0; i < context.numIterations && !cancelled; i++ ) {
 			timestep *= (1.0 - i/(double)context.numIterations);
 			long step = timestep + 50;
-			m_fsim.runSimulator(step);
 			if(i % checkCenter == 0) 
 				checkCenter(m_fsim);
+			m_fsim.runSimulator(step);
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
 		}
 		checkCenter(m_fsim);
@@ -387,7 +386,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			double newHeight = dimensions.getY() * Math.sqrt(2) / 2;
 			dimensions.setLocation(newWidth, newHeight);
 		} 
-		RectangularWallForce wall = new RectangularWallForce(center, dimensions, -context.gravConst, context.variableWallForce);
+		RectangularWallForce wall = new RectangularWallForce(center, dimensions, 
+				-context.gravConst, context.variableWallForce, context.wallScale);
 		boundary.setWallForce(wall);
 		m_fsim.addForce(wall);
 	}
