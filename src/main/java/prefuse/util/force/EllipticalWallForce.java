@@ -60,7 +60,6 @@ public class EllipticalWallForce extends BoundaryWallForce {
 		//initialize orientation of shape
 		int cX = (0.25f < widthRatio ? -1 : 1);
 		int cY = (0.25f < heightRatio ? -1 : 1);
-		System.out.println("cX is: " + (cX == -1 ? "outside" : "inside") + "        cY is: " + (cY == -1 ? "outside" : "inside"));
 
 		if(cX + cY != 2)
 			return;

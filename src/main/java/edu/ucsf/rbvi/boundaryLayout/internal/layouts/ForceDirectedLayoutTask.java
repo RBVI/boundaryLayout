@@ -397,13 +397,12 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		BoundaryWallForce wall;
 		
 		if(boundary.getShapeAnnotation().getShapeType().equals("Ellipse")) {
-			System.out.println("create an ellipse");
 			wall = new EllipticalWallForce(center, dimensions, -context.gravConst,
 					context.variableWallForce, context.wallScale);
-		}
-		else
+		} else {
 			wall = new RectangularWallForce(center, dimensions, -context.gravConst, 
 					context.variableWallForce, context.wallScale);
+		}
 		boundary.setWallForce(wall);
 		m_fsim.addForce(wall);
 	}
