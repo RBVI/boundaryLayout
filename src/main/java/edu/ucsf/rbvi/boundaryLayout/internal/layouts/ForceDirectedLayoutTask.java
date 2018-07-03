@@ -18,6 +18,7 @@ import org.cytoscape.view.layout.AbstractLayoutTask;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.annotations.Annotation;
+import org.cytoscape.view.presentation.annotations.AnnotationFactory;
 import org.cytoscape.view.presentation.annotations.AnnotationManager;
 import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
@@ -49,6 +50,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private final String chosenCategory;
 	final CyNetworkView netView;
 	private Map<Object, BoundaryAnnotation> boundaries;
+	private static final String OUTER_UNION_KEY = "";
+
 	private Rectangle2D unionOfBoundaries;
 
 	/*
@@ -87,6 +90,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 		if(context.gravConst < 0)
 			context.gravConst *= -1;
+		this.initializeOuterBoundary();
 	}
 
 	/*
@@ -139,14 +143,18 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			fitem.category = group;
 
 			if(boundaries != null && group != null) {
-				if(boundaries.keySet().contains(group)) {
-					BoundaryAnnotation boundary = boundaries.get(group);
+				BoundaryAnnotation boundary;
+				if(unionOfBoundaries != null) {
+					if(boundaries.containsKey(group))
+						boundary = boundaries.get(group);
+					else
+						boundary = boundaries.get(OUTER_UNION_KEY);
 					Point2D initPosition = boundary.getRandomNodeInit();
 					fitem.location[0] = (float) initPosition.getX(); 
 					fitem.location[1] = (float) initPosition.getY(); 
-				} else if(unionOfBoundaries != null) {
-					fitem.location[0] = (float) (unionOfBoundaries.getX() - (unionOfBoundaries.getWidth() / 4));
-					fitem.location[1] = (float) (unionOfBoundaries.getY() + (unionOfBoundaries.getHeight() / 2));
+				} else {
+					fitem.location[0] = 0f;
+					fitem.location[1] = 0f;
 				} 
 			}
 
@@ -178,7 +186,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
 		}
 		checkCenter(m_fsim);
-		
+
 		// perform layout while looking at NBodyForce interactions
 		m_fsim.addForce(new NBodyForce(context.avoidOverlap));
 		for(int i = 2 * context.numIterations / 3; i < context.numIterations && !cancelled; i++) {
@@ -189,8 +197,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			m_fsim.runSimulator(step);
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
 		}
-		checkCenter(m_fsim)
-;
+		checkCenter(m_fsim);
+		
 		// update positions of nodes
 		for (CyNode node : forceItems.keySet()) {
 			ForceItem fitem = forceItems.get(node); 
@@ -198,6 +206,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, (double) fitem.location[0]);
 			nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, (double) fitem.location[1]);
 		}
+		if(boundaries.containsKey(OUTER_UNION_KEY))
+			boundaries.get(OUTER_UNION_KEY).getShapeAnnotation().removeAnnotation();
 	}
 
 	/*Functions related to node projections*/
@@ -218,46 +228,34 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				ForceItem nextItem = (ForceItem) itemsIterator.next();
 				Rectangle2D bbox = new Rectangle2D.Double((double) nextItem.location[0], (double) nextItem.location[1], 
 						nextItem.dimensions[0], nextItem.dimensions[1]);
-				if(boundaries.containsKey(nextItem.category)) {
-					BoundaryAnnotation nextBoundary = boundaries.get(nextItem.category);
-					int moveDir = RectangularWallForce.IN_PROJECTION;
-					if(!contains(nextBoundary, bbox, moveDir)) {
-						// We moved the node outside of the shape. Find the closest point in the bound and move back
-						nextBoundary.newProjection(moveDir);
-						Point2D nearestPoint = getNearestPoint(nextBoundary, bbox, moveDir);
-						updateItemInfo(nextItem, nearestPoint, bbox);
-					} 
+				BoundaryAnnotation nextBoundary;
+				if(boundaries.containsKey(nextItem.category))
+					nextBoundary = boundaries.get(nextItem.category);
+				else
+					nextBoundary = boundaries.get(OUTER_UNION_KEY);
+				
+				int moveDir = RectangularWallForce.IN_PROJECTION;
+				if(!contains(nextBoundary, bbox, moveDir)) {
+					// We moved the node outside of the shape. Find the closest point in the bound and move back
+					nextBoundary.newProjection(moveDir);
+					Point2D nearestPoint = getNearestPoint(nextBoundary, bbox, moveDir);
+					updateItemInfo(nextItem, nearestPoint, bbox);
+				} 
 
-					//look at each intersecting shape annotation and project accordingly
-					moveDir = RectangularWallForce.OUT_PROJECTION;
-					if(nextBoundary.hasIntersections()) {
-						for(BoundaryAnnotation intersectingBoundary : nextBoundary.getIntersections()) {
-							if(contains(intersectingBoundary, bbox, moveDir)) {
-								Point2D nearestPoint = getNearestPoint(intersectingBoundary, bbox, moveDir);
-								updateItemInfo(nextItem, nearestPoint, bbox);
-								intersectingBoundary.newProjection(moveDir);
-							}
-						}
-						moveDir = RectangularWallForce.IN_PROJECTION;
-						if(!contains(nextBoundary, bbox, moveDir)) 
-							updateItemInfo(nextItem, nextBoundary.getRandomNodeInit(), bbox);
-					}
-				} else { //if the item does not belong to a boundary, make sure it is not in any boundary
-					int moveDir = RectangularWallForce.OUT_PROJECTION;
-					for(BoundaryAnnotation boundary : boundaries.values()) {
-						if(contains(boundary, bbox, moveDir)) {
-							Point2D nearestPoint = getNearestPoint(boundary, bbox, moveDir);
+				//look at each intersecting shape annotation and project accordingly
+				moveDir = RectangularWallForce.OUT_PROJECTION;
+				if(nextBoundary.hasIntersections()) {
+					for(BoundaryAnnotation intersectingBoundary : nextBoundary.getIntersections()) {
+						if(contains(intersectingBoundary, bbox, moveDir)) {
+							Point2D nearestPoint = getNearestPoint(intersectingBoundary, bbox, moveDir);
 							updateItemInfo(nextItem, nearestPoint, bbox);
-							boundary.newProjection(moveDir);
+							intersectingBoundary.newProjection(moveDir);
 						}
 					}
-					if(unionOfBoundaries != null && unionOfBoundaries.contains(new Point2D.Double(bbox.getX(), bbox.getY()))) {
-						nextItem.location[0] = (float) (unionOfBoundaries.getX() - (unionOfBoundaries.getWidth() / 4));
-						nextItem.location[1] = (float) (unionOfBoundaries.getY() + (unionOfBoundaries.getHeight() / 2));
-						nextItem.plocation[0] = nextItem.location[0];
-						nextItem.plocation[1] = nextItem.location[1];
-					}
-				}
+					moveDir = RectangularWallForce.IN_PROJECTION;
+					if(!contains(nextBoundary, bbox, moveDir)) 
+						updateItemInfo(nextItem, nextBoundary.getRandomNodeInit(), bbox);
+				} 
 			}
 		}
 	}
@@ -395,7 +393,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		Point2D dimensions = getAnnotationDimensions(boundary);
 		Point2D center = getAnnotationCenter(boundary);
 		BoundaryWallForce wall;
-		
+
 		if(boundary.getShapeAnnotation().getShapeType().equals("Ellipse")) {
 			wall = new EllipticalWallForce(center, dimensions, -context.gravConst,
 					context.variableWallForce, context.wallScale);
@@ -480,9 +478,36 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private Rectangle2D getUnionofBoundaries() {
 		if(boundaries.size() == 0)
 			return null;
-		Rectangle2D unionOfBoundaries = new Rectangle2D.Double();
-		for(BoundaryAnnotation newBoundary : this.boundaries.values()) 
-			unionOfBoundaries.setRect(unionOfBoundaries.createUnion(newBoundary.getBoundingBox()));
+		Iterator<BoundaryAnnotation> unionIterate = this.boundaries.values().iterator();
+		Rectangle2D unionOfBoundaries = unionIterate.next().getBoundingBox();
+		
+		while(unionIterate.hasNext()) {
+			Rectangle2D nextRect = unionIterate.next().getBoundingBox();
+			unionOfBoundaries.setRect(unionOfBoundaries.createUnion(nextRect));
+		}
 		return unionOfBoundaries;
+	}
+
+	private void initializeOuterBoundary() {
+		AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
+				AnnotationFactory.class, "(type=ShapeAnnotation.class)");
+		Map<String, String> argMap = new HashMap<>();
+		argMap.put(ShapeAnnotation.NAME, OUTER_UNION_KEY);
+
+		Rectangle2D union = getUnionofBoundaries();
+		if(union != null) {
+			double newWidth = union.getWidth() * context.outerBoundsThickness;
+			double newHeight = union.getHeight() * context.outerBoundsThickness;
+			argMap.put(ShapeAnnotation.X, "" + (union.getCenterX() - newWidth / 2.));
+			argMap.put(ShapeAnnotation.Y, "" + (union.getCenterY() - newHeight / 2.));
+			argMap.put(ShapeAnnotation.WIDTH, "" + newWidth);
+			argMap.put(ShapeAnnotation.HEIGHT, "" + newHeight);
+			argMap.put(ShapeAnnotation.SHAPETYPE, "Rounded Rectangle");
+			ShapeAnnotation addedShape = (ShapeAnnotation) shapeFactory.createAnnotation(ShapeAnnotation.class, netView, argMap);
+			addedShape.setName(OUTER_UNION_KEY);
+
+			BoundaryAnnotation boundary = new BoundaryAnnotation(addedShape);
+			boundaries.put(OUTER_UNION_KEY, boundary);
+		}
 	}
 }

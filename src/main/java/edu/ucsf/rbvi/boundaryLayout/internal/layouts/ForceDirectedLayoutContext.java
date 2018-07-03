@@ -60,6 +60,10 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 			tooltip = "Scale the boundary force by this factor, as more nodes are stuck on the edges of the boundary")
 	public double wallScale = 2.5;
 	
+	@Tunable(description = "Outer bounds thickness", gravity = 16.0, groups = {"Boundary Parameters"},
+			tooltip = "Thickness of the outer boundary relative to the union of boundaries")
+	public double outerBoundsThickness = 1.25;
+	
 	@Tunable(description="Edge weight column", groups={"Edge Weight Settings"}, gravity=16.0)
 	public ListSingleSelection<String> edgeWeight = null; 
 
@@ -81,13 +85,18 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	public ValidationState getValidationState(final Appendable errMsg) {
 		try {
 			if (!isPositive(numIterations))
-				errMsg.append("Number of iterations must be > 0; current value = "+numIterations);
+				errMsg.append("Number of iterations must be > 0; current value = " + numIterations);
 			if (!isPositive(defaultSpringCoefficient))
-				errMsg.append("Default spring coefficient must be > 0; current value = "+defaultSpringCoefficient);
+				errMsg.append("Default spring coefficient must be > 0; current value = " + defaultSpringCoefficient);
 			if (!isPositive(defaultSpringLength))
-				errMsg.append("Default spring length must be > 0; current value = "+defaultSpringLength);
+				errMsg.append("Default spring length must be > 0; current value = " + defaultSpringLength);
 			if (!isPositive(defaultNodeMass))
-				errMsg.append("Default node mass must be > 0; current value = "+defaultNodeMass);
+				errMsg.append("Default node mass must be > 0; current value = " + defaultNodeMass);
+			if(outerBoundsThickness <= 1.)
+				errMsg.append("The thickness of the outer network boundary must be > 1.0; current value = " + outerBoundsThickness);
+			if(wallScale < 1. || wallScale > 10.)
+				errMsg.append("The wall scale factor must be < 1.0 and > 10.0; current value = " + wallScale);
+			
 		} catch (IOException e) {}
 		return isPositive(numIterations) && isPositive(defaultSpringCoefficient)
 				&& isPositive(defaultSpringLength) && isPositive(defaultNodeMass)
