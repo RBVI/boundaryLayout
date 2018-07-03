@@ -26,7 +26,9 @@ import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.undo.UndoSupport;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.algorithms.BoundaryContainsAlgorithm;
+import prefuse.util.force.BoundaryWallForce;
 import prefuse.util.force.DragForce;
+import prefuse.util.force.EllipticalWallForce;
 import prefuse.util.force.ForceItem;
 import prefuse.util.force.ForceSimulator;
 import prefuse.util.force.NBodyForce;
@@ -108,7 +110,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		//initialize simulation and add the various forces
 		ForceSimulator m_fsim = new ForceSimulator();
 		m_fsim.speedLimit = context.speedLimit;
-		m_fsim.addForce(new NBodyForce(context.avoidOverlap));
 		m_fsim.addForce(new SpringForce());
 		m_fsim.addForce(new DragForce());
 		forceItems.clear();
@@ -151,8 +152,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 			m_fsim.addItem(fitem);
 		}
-		
-		
+
+
 		// initialize edges
 		for (View<CyEdge> edgeView : edgeViewList) {
 			CyEdge edge = edgeView.getModel();
@@ -165,11 +166,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			m_fsim.addSpring(f1, f2, (float) context.defaultSpringCoefficient, (float) context.defaultSpringLength); 
 		}
 
-		final int checkCenter = (context.numIterations / 15) + 1;
-
 		// perform layout and check center at intervals
+		final int checkCenter = (context.numIterations / 15) + 1;
 		long timestep = 1000L;
-		for ( int i = 0; i < context.numIterations && !cancelled; i++ ) {
+		for (int i = 0; i < 2 * context.numIterations / 3 && !cancelled; i++) {
 			timestep *= (1.0 - i/(double)context.numIterations);
 			long step = timestep + 50;
 			if(i % checkCenter == 0) 
@@ -178,7 +178,19 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
 		}
 		checkCenter(m_fsim);
-
+		
+		// perform layout while looking at NBodyForce interactions
+		m_fsim.addForce(new NBodyForce(context.avoidOverlap));
+		for(int i = 2 * context.numIterations / 3; i < context.numIterations && !cancelled; i++) {
+			timestep *= (1.0 - i/(double)context.numIterations);
+			long step = timestep + 50;
+			if(i % checkCenter == 0) 
+				checkCenter(m_fsim);
+			m_fsim.runSimulator(step);
+			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
+		}
+		checkCenter(m_fsim)
+;
 		// update positions of nodes
 		for (CyNode node : forceItems.keySet()) {
 			ForceItem fitem = forceItems.get(node); 
@@ -258,7 +270,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		boolean contained = true;
 		ShapeAnnotation shape = boundary.getShapeAnnotation();
 		Rectangle2D shapeBox = boundary.getBoundingBox();
-		double[] diffVector = { Math.abs(nodebbox.getX() - shapeBox.getCenterX()), Math.abs(nodebbox.getY() - shapeBox.getCenterY())};
+		double[] diffVector = {Math.abs(nodebbox.getX() - shapeBox.getCenterX()), Math.abs(nodebbox.getY() - shapeBox.getCenterY())};
 		diffVector[0] += nodebbox.getWidth() / 2 * moveDir;
 		diffVector[1] += nodebbox.getHeight() / 2 * moveDir;
 
@@ -313,6 +325,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			break;
 		}	
 
+		scale *= (moveDir == 1 ? 0.985 : 1.015);
 		diffVector[0] = diffVector[0] * scale; 
 		diffVector[1] = diffVector[1] * scale;
 		diffVector[0] -= bbox.getWidth() / 2 * moveDir * (diffVector[0] < 0 ? -1 : 1);
@@ -381,13 +394,16 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	protected void addAnnotationForce(ForceSimulator m_fsim, BoundaryAnnotation boundary) {
 		Point2D dimensions = getAnnotationDimensions(boundary);
 		Point2D center = getAnnotationCenter(boundary);
-		if(boundary.getShapeAnnotation().getShapeType().equals("Ellipse")) { //only want inner rectangle
-			double newWidth = dimensions.getX() * Math.sqrt(2) / 2;
-			double newHeight = dimensions.getY() * Math.sqrt(2) / 2;
-			dimensions.setLocation(newWidth, newHeight);
-		} 
-		RectangularWallForce wall = new RectangularWallForce(center, dimensions, 
-				-context.gravConst, context.variableWallForce, context.wallScale);
+		BoundaryWallForce wall;
+		
+		if(boundary.getShapeAnnotation().getShapeType().equals("Ellipse")) {
+			System.out.println("create an ellipse");
+			wall = new EllipticalWallForce(center, dimensions, -context.gravConst,
+					context.variableWallForce, context.wallScale);
+		}
+		else
+			wall = new RectangularWallForce(center, dimensions, -context.gravConst, 
+					context.variableWallForce, context.wallScale);
 		boundary.setWallForce(wall);
 		m_fsim.addForce(wall);
 	}

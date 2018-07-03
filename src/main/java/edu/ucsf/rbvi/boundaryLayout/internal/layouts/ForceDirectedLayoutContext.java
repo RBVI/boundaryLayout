@@ -33,7 +33,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	@Tunable(description="Default Spring Coefficient",
 			tooltip="The smaller this number is, the more the network "+
 			"topology affects the layout.", gravity=5.0, groups={"Layout Parameters"})
-	public double defaultSpringCoefficient = 1e-6;
+	public double defaultSpringCoefficient = 1e-4;
 
 	@Tunable(description="Default Spring Length", groups={"Layout Parameters"}, gravity=6.0)
 	public double defaultSpringLength = 140.0;
@@ -53,10 +53,11 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	@Tunable(description="Strength of boundaries", gravity=13.0, groups = {"Boundary Parameters"})
 	public float gravConst = 20f;
 	
-	@Tunable(description="Variable wall forces", gravity = 14.0, groups = {"Boundary Parameters"})
+	@Tunable(description="Variable boundary forces", gravity = 14.0, groups = {"Boundary Parameters"})
 	public boolean variableWallForce = true;
 
-	@Tunable(description="Scale wall forces", gravity = 15.0, groups = {"Boundary Parameters"})
+	@Tunable(description = "Scale boundary forces", gravity = 15.0, groups = {"Boundary Parameters"},
+			tooltip = "Scale the boundary force by this factor, as more nodes are stuck on the edges of the boundary")
 	public double wallScale = 2.5;
 	
 	@Tunable(description="Edge weight column", groups={"Edge Weight Settings"}, gravity=16.0)

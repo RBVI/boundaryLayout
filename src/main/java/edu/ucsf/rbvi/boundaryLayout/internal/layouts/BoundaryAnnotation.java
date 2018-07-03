@@ -9,7 +9,7 @@ import java.util.Random;
 
 import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
 
-import prefuse.util.force.RectangularWallForce;
+import prefuse.util.force.BoundaryWallForce;
 
 /*
  * This class represents a boundary annotation with all of the information corresponding
@@ -26,7 +26,7 @@ public class BoundaryAnnotation {
 	
 	private List<BoundaryAnnotation> intersections;
 	
-	private RectangularWallForce wallForce;
+	private BoundaryWallForce wallForce;
 	private int inProjections;
 	private int outProjections;
 	private static final int DEFAULT_SCALEMOD = 10;
@@ -45,7 +45,7 @@ public class BoundaryAnnotation {
 	 * @param scaleMod, scale the wall force every scaleMod'th interval
 	 * */
 	public BoundaryAnnotation(ShapeAnnotation shape, List<Point2D> initLocations, 
-			List<BoundaryAnnotation> intersections, RectangularWallForce wallForce, int scaleMod) {
+			List<BoundaryAnnotation> intersections, BoundaryWallForce wallForce, int scaleMod) {
 		this.shape = shape;
 		this.initBoundingBox();
 		this.initLocations = initLocations;
@@ -82,7 +82,7 @@ public class BoundaryAnnotation {
 		double yCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
 		double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH)) / shape.getZoom();
 		double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT)) / shape.getZoom();
-
+		
 		boundingBox = new Rectangle2D.Double(xCoordinate, yCoordinate, width, height);
 	}
 	
@@ -225,7 +225,7 @@ public class BoundaryAnnotation {
 	 * @param wallForce is the wall force corresponding to this boundary
 	 * @param scaleFactor is the factor by which to scale the wall force when needed
 	 * */
-	protected void setWallForce(RectangularWallForce wallForce, double scaleFactor) {
+	protected void setWallForce(BoundaryWallForce wallForce, double scaleFactor) {
 		this.setWallForce(wallForce);
 		this.setScaleFactor(scaleFactor);
 	}
@@ -235,7 +235,7 @@ public class BoundaryAnnotation {
 	 * 
 	 * @param wallForce is the rectangular wall force corresponding to this boundary annotation
 	 */
-	protected void setWallForce(RectangularWallForce wallForce) {
+	protected void setWallForce(BoundaryWallForce wallForce) {
 		this.wallForce = wallForce;
 	}
 	
@@ -270,11 +270,11 @@ public class BoundaryAnnotation {
 	 * @precondition dir = -1 or dir = 1
 	 * */
 	protected void newProjection(int dir) {
-		if(dir == RectangularWallForce.IN_PROJECTION) {
+		if(dir == BoundaryWallForce.IN_PROJECTION) {
 			this.inProjections++;
 			if(inProjections % scaleMod == 0)
 				scaleWallForce(dir);
-		} else if(dir == RectangularWallForce.OUT_PROJECTION) {
+		} else if(dir == BoundaryWallForce.OUT_PROJECTION) {
 			this.outProjections++;
 			if(outProjections % scaleMod == 0)
 				scaleWallForce(dir);

@@ -41,7 +41,7 @@ public class NBodyForce extends AbstractForce {
 	public static final float DEFAULT_MAX_GRAV_CONSTANT = 10f;
 
 	public static final float DEFAULT_DISTANCE = -1f;
-	public static final float DEFAULT_MIN_DISTANCE = 20f;
+	public static final float DEFAULT_MIN_DISTANCE = 15f;
 	public static final float DEFAULT_MAX_DISTANCE = 500f;
 
 	public static final float DEFAULT_THETA = 0.9f;

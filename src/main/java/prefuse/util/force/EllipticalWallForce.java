@@ -8,9 +8,9 @@ import java.awt.geom.Point2D;
  * this rectangle. The walls may or may not be of variable wall force, depending
  * on the user's choice
  */
-public class RectangularWallForce extends BoundaryWallForce {
+public class EllipticalWallForce extends BoundaryWallForce {
 
-	/**
+	/*
 	 * Create a new RectangularWallForce with given parameters
 	 * @param center is a 2D point of the center of the rectangle
 	 * @param dimensions is a 2D field representing the width and height
@@ -18,14 +18,14 @@ public class RectangularWallForce extends BoundaryWallForce {
 	 * @param variableWall tells whether or not the wall changes gravitational constants
 	 * @param scaleFactor is the scale by which the wall force changes
 	 */
-	public RectangularWallForce(Point2D center, Point2D dimensions, float gravConst, boolean variableWall, double scaleFactor) {
+	public EllipticalWallForce(Point2D center, Point2D dimensions, float gravConst, boolean variableWall, double scaleFactor) {
 		super(center, dimensions, gravConst, variableWall, scaleFactor);
 	}
 
-	public RectangularWallForce(Point2D center, Point2D dimensions, float gravConst, boolean variableWall) {
+	public EllipticalWallForce(Point2D center, Point2D dimensions, float gravConst, boolean variableWall) {
 		super(center, dimensions, gravConst, variableWall);
 	}
-	
+
 	/**
 	 * @see prefuse.util.force.Force#getForce(prefuse.util.force.ForceItem)
 	 */
@@ -43,18 +43,24 @@ public class RectangularWallForce extends BoundaryWallForce {
 		//initialize dimensions and displacements
 		float width = (float) this.dimensions.getX();
 		float height = (float) this.dimensions.getY();
-		float drLeft = Math.abs((width / 2f) - dx - item.dimensions[0] / 2);
-		float drTop = Math.abs((height / 2f) - dy - item.dimensions[1] / 2);
-		float drRight = Math.abs(width - drLeft - item.dimensions[0]); 
-		float drBottom = Math.abs(height - drTop - item.dimensions[1]);
+		float heightRatio = (dy * dy) / (height * height);
+		float widthRatio = (dx * dx) / (width * width);
+		float effectiveXWidth = (width) * (float) Math.sqrt(Math.abs(0.25f - heightRatio));
+		float effectiveYHeight = (height) * (float) Math.sqrt(Math.abs(0.25f - widthRatio));
+
+		float drLeft = Math.abs(effectiveXWidth - dx - item.dimensions[0] / 2f);
+		float drTop = Math.abs(effectiveYHeight - dy - item.dimensions[1] / 2f);
+		float drRight = Math.abs(2 * effectiveXWidth - drLeft - item.dimensions[0]); 
+		float drBottom = Math.abs(2 * effectiveYHeight - drTop - item.dimensions[1]);
 		if(drLeft < 0.01f) drLeft = 0.01f;
 		if(drRight < 0.01f) drRight = 0.01f;
 		if(drTop < 0.01f) drTop = 0.01f;
 		if(drBottom < 0.01f) drBottom = 0.01f;
 
 		//initialize orientation of shape
-		int cX = (Math.abs(dx) > width / 2 ? -1 : 1);
-		int cY = (Math.abs(dy) > height / 2 ? -1 : 1);
+		int cX = (0.25f < widthRatio ? -1 : 1);
+		int cY = (0.25f < heightRatio ? -1 : 1);
+		System.out.println("cX is: " + (cX == -1 ? "outside" : "inside") + "        cY is: " + (cY == -1 ? "outside" : "inside"));
 
 		if(cX + cY != 2)
 			return;
@@ -71,7 +77,7 @@ public class RectangularWallForce extends BoundaryWallForce {
 			float yCorner = (float) center.getY() + (height / 2 * (dy > 0 ? -1 : 1));
 			float dxCorner = n[0] - xCorner;
 			float dyCorner = n[1] - yCorner;
-			float dCorner = (float) Math.sqrt(dxCorner * dxCorner + dyCorner * dyCorner);
+			float dCorner = (float) Math.sqrt(Math.pow(dxCorner, 2) + Math.pow(dyCorner, 2));
 			float vCorner = params[OUT_GRAVITATIONAL_CONST] * item.mass / (dCorner * dCorner * dCorner);
 			float vxCorner = Math.abs(vCorner) * dxCorner;
 			float vyCorner = Math.abs(vCorner) * dyCorner;
