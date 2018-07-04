@@ -23,7 +23,7 @@ import org.cytoscape.view.model.View;
  * instance where the user does not create any
  */
 public class AutoMode {
-	
+
 	/*
 	 * This method creates shape annotations for each value of the given category and places those
 	 * annotations in the network view. The shape annotations are large enough to encompass 
@@ -40,7 +40,7 @@ public class AutoMode {
 	public static Map<Object, BoundaryAnnotation> createAnnotations(CyNetworkView netView, 
 			List<View<CyNode>> nodesToLayout, String categoryColumn, CyServiceRegistrar registrar) {	
 		AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
-			AnnotationFactory.class, "(type=ShapeAnnotation.class)");
+				AnnotationFactory.class, "(type=ShapeAnnotation.class)");
 		AnnotationManager annotationManager = registrar.getService(AnnotationManager.class);			                                                   
 
 		CyNetwork network = netView.getModel();
@@ -73,27 +73,29 @@ public class AutoMode {
 		}
 
 		for(Object categoryName : categoryLists.keySet())
-			categoryNames.add(categoryName);
+			if(categoryName != null && !categoryName.equals(""))
+				categoryNames.add(categoryName);
 
 		Point2D.Double maxWidth = getMaxWidth(dimensions, categoryLists);
 		Point2D.Double maxHeight = getMaxHeight(dimensions, categoryLists);
 		Point2D.Double shapeDimensions = getShapeDimensions(maxWidth, maxHeight);
-		
+
 		int categoryNamesIndex = 0;
 		double x = 0.0;
 		double y = 0.0;
-		int numCols = (int) Math.sqrt(categoryLists.size()) + 1;
+		int numCols = (int) Math.sqrt(categoryNames.size()) + 1;
 
-		while(categoryNamesIndex < categoryLists.size()) {
+		while(categoryNamesIndex < categoryNames.size()) {
+			String name = "" + categoryNames.get(categoryNamesIndex);
 			Map<String, String> argMap = new HashMap<>();
-			argMap.put(ShapeAnnotation.NAME, "" + categoryNames.get(categoryNamesIndex));
+			argMap.put(ShapeAnnotation.NAME, name);
 			argMap.put(ShapeAnnotation.X, "" + x);
 			argMap.put(ShapeAnnotation.Y, "" + y);
 			argMap.put(ShapeAnnotation.WIDTH, "" + shapeDimensions.getX());
 			argMap.put(ShapeAnnotation.HEIGHT, "" + shapeDimensions.getY());
 			argMap.put(ShapeAnnotation.SHAPETYPE, "Rounded Rectangle");
 			Annotation addedShape = shapeFactory.createAnnotation(ShapeAnnotation.class, netView, argMap);
-			addedShape.setName("" + categoryNames.get(categoryNamesIndex));
+			addedShape.setName("" + name);
 			annotationManager.addAnnotation(addedShape);
 			addedShape.update();
 			x += shapeDimensions.getX() + 100;
@@ -176,7 +178,7 @@ public class AutoMode {
 
 		return new Point2D.Double(maxWidth / maxWidthQuantity, maxWidthQuantity);
 	}
-	
+
 	/* Private method
 	 * This method calculates the maximum width of all the boundaries
 	 * 

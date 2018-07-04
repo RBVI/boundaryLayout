@@ -64,6 +64,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			final CyServiceRegistrar registrar, final UndoSupport undo) {
 		super(displayName, netView, nodesToLayOut, layoutAttribute, undo);
 
+		System.out.println("EHLLLOOOO");
+		
 		if (nodesToLayOut != null && nodesToLayOut.size() > 0)
 			nodeViewList = new ArrayList<>(nodesToLayOut);
 		else
@@ -90,7 +92,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 		if(context.gravConst < 0)
 			context.gravConst *= -1;
-		this.initializeOuterBoundary();
 	}
 
 	/*
@@ -106,9 +107,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	protected void doLayout(TaskMonitor taskMonitor) {
 		//initialize initial node locations
 		if (boundaries != null) {
+			this.unionOfBoundaries = getUnionofBoundaries();
+			this.initializeOuterBoundary();
 			for(BoundaryAnnotation boundary : boundaries.values()) 
 				initNodeLocations(boundary);
-			unionOfBoundaries = this.getUnionofBoundaries();
 		}
 
 		//initialize simulation and add the various forces
@@ -145,19 +147,22 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			if(boundaries != null && group != null) {
 				BoundaryAnnotation boundary;
 				if(unionOfBoundaries != null) {
-					if(boundaries.containsKey(group))
+					if(boundaries.containsKey(group)) {
+						System.out.println("finds it");
 						boundary = boundaries.get(group);
+					}
 					else
 						boundary = boundaries.get(OUTER_UNION_KEY);
 					Point2D initPosition = boundary.getRandomNodeInit();
 					fitem.location[0] = (float) initPosition.getX(); 
 					fitem.location[1] = (float) initPosition.getY(); 
+					System.out.println(fitem.location[0] + " is x " + fitem.location[1] + " is y");
 				} else {
 					fitem.location[0] = 0f;
 					fitem.location[1] = 0f;
 				} 
 			}
-
+			
 			m_fsim.addItem(fitem);
 		}
 
@@ -479,13 +484,14 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if(boundaries.size() == 0)
 			return null;
 		Iterator<BoundaryAnnotation> unionIterate = this.boundaries.values().iterator();
-		Rectangle2D unionOfBoundaries = unionIterate.next().getBoundingBox();
+		Rectangle2D union = new Rectangle2D.Double();
+		union.setRect(unionIterate.next().getBoundingBox());
 		
 		while(unionIterate.hasNext()) {
 			Rectangle2D nextRect = unionIterate.next().getBoundingBox();
-			unionOfBoundaries.setRect(unionOfBoundaries.createUnion(nextRect));
+			union.setRect(union.createUnion(nextRect));
 		}
-		return unionOfBoundaries;
+		return union;
 	}
 
 	private void initializeOuterBoundary() {
@@ -494,7 +500,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		Map<String, String> argMap = new HashMap<>();
 		argMap.put(ShapeAnnotation.NAME, OUTER_UNION_KEY);
 
-		Rectangle2D union = getUnionofBoundaries();
+		Rectangle2D union = unionOfBoundaries;
 		if(union != null) {
 			double newWidth = union.getWidth() * context.outerBoundsThickness;
 			double newHeight = union.getHeight() * context.outerBoundsThickness;
@@ -506,6 +512,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			ShapeAnnotation addedShape = (ShapeAnnotation) shapeFactory.createAnnotation(ShapeAnnotation.class, netView, argMap);
 			addedShape.setName(OUTER_UNION_KEY);
 
+			
 			BoundaryAnnotation boundary = new BoundaryAnnotation(addedShape);
 			boundaries.put(OUTER_UNION_KEY, boundary);
 		}
