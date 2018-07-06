@@ -33,7 +33,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	@Tunable(description="Default Spring Coefficient",
 			tooltip="The smaller this number is, the more the network "+
 			"topology affects the layout.", gravity=5.0, groups={"Layout Parameters"})
-	public double defaultSpringCoefficient = 1e-4;
+	public double defaultSpringCoefficient = 1e-6;
 
 	@Tunable(description="Default Spring Length", groups={"Layout Parameters"}, gravity=6.0)
 	public double defaultSpringLength = 140.0;
