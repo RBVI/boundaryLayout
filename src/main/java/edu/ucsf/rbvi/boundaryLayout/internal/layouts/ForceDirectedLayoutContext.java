@@ -58,7 +58,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 
 	@Tunable(description = "Scale boundary forces", gravity = 15.0, groups = {"Boundary Parameters"},
 			tooltip = "Scale the boundary force by this factor, as more nodes are stuck on the edges of the boundary")
-	public double wallScale = 2.5;
+	public double wallScale = 1.5;
 	
 	@Tunable(description = "Outer bounds thickness", gravity = 16.0, groups = {"Boundary Parameters"},
 			tooltip = "Thickness of the outer boundary relative to the union of boundaries")
@@ -99,7 +99,8 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 			
 		} catch (IOException e) {}
 		return isPositive(numIterations) && isPositive(defaultSpringCoefficient)
-				&& isPositive(defaultSpringLength) && isPositive(defaultNodeMass)
+				&& isPositive(defaultSpringLength) && isPositive(defaultNodeMass) && outerBoundsThickness > 1.
+				&& (wallScale >= 1. && wallScale <= 10.)
 				? ValidationState.OK : ValidationState.INVALID;
 	}
 

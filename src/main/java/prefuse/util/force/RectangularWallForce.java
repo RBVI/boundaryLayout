@@ -73,8 +73,8 @@ public class RectangularWallForce extends BoundaryWallForce {
 			float dyCorner = n[1] - yCorner;
 			float dCorner = (float) Math.sqrt(dxCorner * dxCorner + dyCorner * dyCorner);
 			float vCorner = params[OUT_GRAVITATIONAL_CONST] * item.mass / (dCorner * dCorner * dCorner);
-			float vxCorner = Math.abs(vCorner) * dxCorner;
-			float vyCorner = Math.abs(vCorner) * dyCorner;
+			float vxCorner = Math.abs(vCorner) * (dxCorner < 0 ? -1 : 1);
+			float vyCorner = Math.abs(vCorner) * (dyCorner < 0 ? -1 : 1);
 			item.force[0] += vxCorner;
 			item.force[1] += vyCorner;
 		} else if(cX == -1) {//case where the node is within the x normal lines of the shape

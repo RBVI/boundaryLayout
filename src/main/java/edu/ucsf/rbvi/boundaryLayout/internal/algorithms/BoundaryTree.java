@@ -151,7 +151,6 @@ public class BoundaryTree {
 		Iterator<Rectangle2D> recIterator = bTreeAreas.iterator();
 		List<Rectangle2D> largestAreas = new ArrayList<>();
 
-		//Add edge case where the shape has a large part of it instersected to be 100%, or have a variable coeff?
 		while(recIterator.hasNext() && summedArea < totalArea * 0.85) {
 			Rectangle2D nextRect = recIterator.next();
 			largestAreas.add(nextRect);

@@ -175,6 +175,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 
 		// perform layout and check center at intervals
+		
 		final int checkCenter = (context.numIterations / 15) + 1;
 		long timestep = 1000L;
 		for (int i = 0; i < 2 * context.numIterations / 3 && !cancelled; i++) {
@@ -392,9 +393,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				if(annotation instanceof ShapeAnnotation) {
 					ShapeAnnotation shapeAnnotation = (ShapeAnnotation) annotation;
 					if(!shapeAnnotation.getName().equals(OUTER_UNION_KEY)) {
-						System.out.println("Shape annotation for " + shapeAnnotation.getName() + " is: " + shapeAnnotation);
 						BoundaryAnnotation boundary = new BoundaryAnnotation(shapeAnnotation);
-						System.out.println(" bound box for this shape is " + boundary.getBoundingBox());
 						boundaries.put(shapeAnnotation.getName(), boundary);
 					}
 				}
@@ -450,7 +449,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 */
 	private Point2D getAnnotationCenter(BoundaryAnnotation boundary) { 
 		Rectangle2D bb = boundary.getBoundingBox();
-		return new Point2D.Double(bb.getX() + bb.getWidth() / 2, bb.getY() + bb.getHeight() / 2);
+		return new Point2D.Double(bb.getX() + (bb.getWidth() / 2.), bb.getY() + (bb.getHeight() / 2.));
 	}
 
 	/* Private method
