@@ -372,22 +372,19 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 * means AutoMode must be run.
 	 */
 	private void getBoundaries() {
-		System.out.println("getBoundaries");
-		AnnotationManager manager = registrar.getService(AnnotationManager.class);
 		/* For some reason, at least one foreground annotation must exist in order to get the correct
 		 x and y positions of the annotation. So, we add a trivial foreground shape and then later remove it */
-		/*
 		AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
 				AnnotationFactory.class, "(type=ShapeAnnotation.class)");
+		AnnotationManager manager = registrar.getService(AnnotationManager.class);
 		ShapeAnnotation shape = shapeFactory.createAnnotation(ShapeAnnotation.class, netView, new HashMap<>());
 		shape.setBorderWidth(0);
 		shape.setCanvas(ShapeAnnotation.FOREGROUND);
 		manager.addAnnotation(shape);
 		shape.update();
-		shape.setName(OUTER_UNION_KEY);
 		netView.updateView();
-		*/
 
+		//get the boundaries in the network view
 		List<Annotation> annotations = manager.getAnnotations(netView);
 		if(boundaries == null)
 			boundaries = new HashMap<>();
@@ -403,12 +400,11 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			}
 		}
 
-		/*
+		//Remove the trivially added annotation
 		manager.removeAnnotation(shape);
 		shape.removeAnnotation();
 		shape.update();
 		netView.updateView();
-		*/
 	}
 
 	/* 
