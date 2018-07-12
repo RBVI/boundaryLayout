@@ -372,11 +372,13 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 * means AutoMode must be run.
 	 */
 	private void getBoundaries() {
+		System.out.println("getBoundaries");
+		AnnotationManager manager = registrar.getService(AnnotationManager.class);
 		/* For some reason, at least one foreground annotation must exist in order to get the correct
 		 x and y positions of the annotation. So, we add a trivial foreground shape and then later remove it */
+		/*
 		AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
 				AnnotationFactory.class, "(type=ShapeAnnotation.class)");
-		AnnotationManager manager = registrar.getService(AnnotationManager.class);
 		ShapeAnnotation shape = shapeFactory.createAnnotation(ShapeAnnotation.class, netView, new HashMap<>());
 		shape.setBorderWidth(0);
 		shape.setCanvas(ShapeAnnotation.FOREGROUND);
@@ -384,6 +386,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		shape.update();
 		shape.setName(OUTER_UNION_KEY);
 		netView.updateView();
+		*/
 
 		List<Annotation> annotations = manager.getAnnotations(netView);
 		if(boundaries == null)
@@ -400,10 +403,12 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			}
 		}
 
+		/*
 		manager.removeAnnotation(shape);
 		shape.removeAnnotation();
 		shape.update();
 		netView.updateView();
+		*/
 	}
 
 	/* 
@@ -518,7 +523,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private void initializeOuterBoundary() {
 		AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
 				AnnotationFactory.class, "(type=ShapeAnnotation.class)");
-		AnnotationManager annotationManager = registrar.getService(AnnotationManager.class);			                                                   
+		AnnotationManager annotationManager = registrar.getService(AnnotationManager.class);
 		Map<String, String> argMap = new HashMap<>();
 		argMap.put(ShapeAnnotation.NAME, OUTER_UNION_KEY);
 
