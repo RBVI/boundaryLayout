@@ -146,18 +146,19 @@ public class BoundaryTree {
 		List<Rectangle2D> bTreeAreas = new ArrayList<>();
 		preorderArea(bTreeAreas, root);
 
-		double totalArea = getTotalArea(bTreeAreas);
-		double summedArea = 0.;
-		Iterator<Rectangle2D> recIterator = bTreeAreas.iterator();
-		List<Rectangle2D> largestAreas = new ArrayList<>();
+		//double totalArea = getTotalArea(bTreeAreas);
+		//double summedArea = 0.;
+		//Iterator<Rectangle2D> recIterator = bTreeAreas.iterator();
+		//List<Rectangle2D> largestAreas = new ArrayList<>();
 
-		while(recIterator.hasNext() && summedArea < totalArea * 0.85) {
+		return bTreeAreas.subList(0, 1);
+		/*while(recIterator.hasNext()) {
 			Rectangle2D nextRect = recIterator.next();
 			largestAreas.add(nextRect);
-			summedArea += getNonIntersectedArea(nextRect, largestAreas, largestAreas.size() - 1);
+			//summedArea += getNonIntersectedArea(nextRect, largestAreas, largestAreas.size() - 1);
 		}
 
-		return largestAreas;
+		return largestAreas;*/
 	}
 
 	/*

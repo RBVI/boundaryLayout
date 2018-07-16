@@ -25,13 +25,10 @@ public class BoundaryContainsAlgorithm {
 		
 		BoundaryTree shapeTree = new BoundaryTree(new BoundaryTreeNode(thisShape));
 		
-		while(!intersectingShapes.isEmpty()) {
-			Rectangle2D rectangle = intersectingShapes.remove(0);
-			shapeTree.do2DShapePartitioning(rectangle);
-		}
+		while(!intersectingShapes.isEmpty()) 
+			shapeTree.do2DShapePartitioning(intersectingShapes.remove(0));
 		
 		boundingAreas = shapeTree.getLargestAreas(); 
-			
 		return boundingAreas;
 	}
 }

@@ -2,6 +2,7 @@ package edu.ucsf.rbvi.boundaryLayout.internal.tasks;
 
 import org.cytoscape.work.AbstractTaskFactory;
 import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 

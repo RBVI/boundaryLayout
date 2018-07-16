@@ -76,14 +76,17 @@ public class BoundaryAnnotation {
 	 * 
 	 * @precondition shape != null
 	 */
-	private void initBoundingBox() {
+	protected void initBoundingBox() {
 		Map<String, String> argMap = shape.getArgMap();
 		double xCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.X));
 		double yCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
 		double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH)) / shape.getZoom();
 		double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT)) / shape.getZoom();
 		
-		boundingBox = new Rectangle2D.Double(xCoordinate, yCoordinate, width, height);
+		if(boundingBox == null)
+			boundingBox = new Rectangle2D.Double(xCoordinate, yCoordinate, width, height);
+		else
+			boundingBox.setRect(xCoordinate, yCoordinate, width, height);
 	}
 	
 	/*

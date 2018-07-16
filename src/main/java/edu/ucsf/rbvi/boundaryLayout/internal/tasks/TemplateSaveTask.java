@@ -25,8 +25,7 @@ public class TemplateSaveTask extends AbstractTask implements ObservableTask {
 	@Tunable(description = "Name of new template: ")
 	public String templateName = "";
 	
-	public TemplateSaveTask(CyServiceRegistrar registrar, 
-			CyNetworkView networkView, TemplateManager templateManager) {
+	public TemplateSaveTask(CyServiceRegistrar registrar, CyNetworkView networkView, TemplateManager templateManager) {
 		super();
 		this.registrar = registrar;
 		this.networkView = networkView;

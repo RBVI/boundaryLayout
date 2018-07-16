@@ -33,7 +33,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	@Tunable(description="Default Spring Coefficient",
 			tooltip="The smaller this number is, the more the network "+
 			"topology affects the layout.", gravity=5.0, groups={"Layout Parameters"})
-	public double defaultSpringCoefficient = 1e-6;
+	public double defaultSpringCoefficient = 5e-4;
 
 	@Tunable(description="Default Spring Length", groups={"Layout Parameters"}, gravity=6.0)
 	public double defaultSpringLength = 140.0;
@@ -48,7 +48,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	public boolean avoidOverlap = true;
 		
 	@Tunable(description="speed limit", gravity=9.0, groups={"Layout Parameters"})
-	public float speedLimit = 0.1f;
+	public float speedLimit = 1f;
 	
 	@Tunable(description="Strength of boundaries", gravity=13.0, groups = {"Boundary Parameters"})
 	public float gravConst = 20f;
@@ -58,7 +58,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 
 	@Tunable(description = "Scale boundary forces", gravity = 15.0, groups = {"Boundary Parameters"},
 			tooltip = "Scale the boundary force by this factor, as more nodes are stuck on the edges of the boundary")
-	public double wallScale = 1.5;
+	public double wallScale = 2.;
 	
 	@Tunable(description = "Outer bounds thickness", gravity = 16.0, groups = {"Boundary Parameters"},
 			tooltip = "Thickness of the outer boundary relative to the union of boundaries")

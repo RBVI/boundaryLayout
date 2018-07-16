@@ -17,7 +17,7 @@ public class TemplateImportTask extends AbstractTask {
 	@Tunable (description = "Name of template: ")
 	public String templateName = "";
 	
-	@Tunable (description = "Location of file to import: ")
+	@Tunable (description = "Location of file to import: ", params = "input=true")
 	public File templateFile = null;
 
 	public TemplateImportTask(TemplateManager templateManager) {
@@ -27,6 +27,9 @@ public class TemplateImportTask extends AbstractTask {
 
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {	
-		templateManager.importTemplate(templateName, templateFile);
+		if(templateManager.hasTemplate(templateName))
+			this.insertTasksAfterCurrentTask(new TemplateImportOverwriteTask(templateManager, this));
+		else
+			templateManager.importTemplate(templateName, templateFile);
 	}
 }

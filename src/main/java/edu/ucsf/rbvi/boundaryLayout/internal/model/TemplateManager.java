@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.imageio.ImageIO;
 
@@ -31,17 +30,14 @@ import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
 import org.cytoscape.application.CyApplicationManager;
-import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
-import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.SavePolicy;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
-import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.presentation.RenderingEngine;
 import org.cytoscape.view.presentation.RenderingEngineFactory;
 import org.cytoscape.view.presentation.annotations.Annotation;
@@ -61,14 +57,13 @@ import org.cytoscape.view.presentation.property.BasicVisualLexicon;
  * overwriting, importing, exporting, and applying the template to the view
  * */
 public class TemplateManager {
-	private Map<String, List<String>> templates;
-	private Map<String, Image> templateThumbnails;
+	private Map<String, Template> templates;
+	private Map<CyNetworkView, String> activeTemplates;
 	private final CyServiceRegistrar registrar;
 	private final AnnotationManager annotationManager;
 	private final CyNetworkFactory networkFactory;
 	private final CyNetworkViewFactory networkViewFactory;
 	private final RenderingEngineFactory<CyNetwork> renderingEngineFactory;
-	public static final String NETWORK_TEMPLATES = "Templates Applied";
 	static double PADDING = 10.0; // Make sure we have some room around our annotations
 
 	/*
@@ -77,14 +72,18 @@ public class TemplateManager {
 	 * */
 	public TemplateManager(CyServiceRegistrar registrar) {
 		templates = new HashMap<>();
-		templateThumbnails = new HashMap<>();
+		activeTemplates = new HashMap<>();
 		this.registrar = registrar;
 		annotationManager = registrar.getService(AnnotationManager.class);	
 		networkFactory = registrar.getService(CyNetworkFactory.class);	
 		networkViewFactory = registrar.getService(CyNetworkViewFactory.class);	
-		renderingEngineFactory = registrar.getService(RenderingEngineFactory.class);	
+		renderingEngineFactory = registrar.getService(RenderingEngineFactory.class);
 	}
 
+	public boolean hasTemplate(String template) {
+		return templates.containsKey(template);
+	}
+	
 	/*
 	 * Adds template to the templates map, with the mapping:
 	 * (template name - list of annotations information), by calling addTemplateStrings()
@@ -94,8 +93,12 @@ public class TemplateManager {
 	 * @return true if the template has been successfully added
 	 */
 	public boolean addTemplate(String templateName, List<Annotation> annotations) {
+		if(templates.containsKey(templateName)) 
+			return overwriteTemplate(templateName, annotations);
 		List<String> annotationsInfo = getAnnotationInformation(annotations);
-		return addTemplateStrings(templateName, annotationsInfo);
+		boolean added = addTemplateStrings(templateName, annotationsInfo);
+		this.changeActiveTemplate(registrar.getService(CyApplicationManager.class).getCurrentNetworkView(), templateName);
+		return added;
 	}
 
 	/*
@@ -109,7 +112,7 @@ public class TemplateManager {
 	public boolean addTemplateStrings(String templateName, List<String> annotations) {
 		if(templates.containsKey(templateName)) 
 			return overwriteTemplateStrings(templateName, annotations);
-		templates.put(templateName, annotations);
+		templates.put(templateName, new Template(templateName, annotations));
 		if(templates.containsKey(templateName)) 
 			return true;
 		return false;
@@ -124,6 +127,15 @@ public class TemplateManager {
 	public boolean deleteTemplate(String templateName) {
 		if(!templates.containsKey(templateName))
 			return false;
+		Template template = templates.get(templateName);
+		if(template.hasActiveViews()) 
+			for(CyNetworkView networkView : template.getActiveViews())
+				if(activeTemplates.containsKey(networkView))
+					activeTemplates.remove(networkView);
+		
+		template.removeAllActiveViews();
+		template.setAnnotations(null);
+		template.setThumbnail(null);
 		templates.remove(templateName);
 		if(!templates.containsKey(templateName))
 			return true;
@@ -140,7 +152,9 @@ public class TemplateManager {
 	 */
 	public boolean overwriteTemplate(String templateName, List<Annotation> annotations) {
 		List<String> annotationsInfo = getAnnotationInformation(annotations);
-		return overwriteTemplateStrings(templateName, annotationsInfo);
+		boolean overwritten = overwriteTemplateStrings(templateName, annotationsInfo);
+		this.changeActiveTemplate(registrar.getService(CyApplicationManager.class).getCurrentNetworkView(), templateName);
+		return overwritten;
 	}
 
 	/*
@@ -154,7 +168,8 @@ public class TemplateManager {
 	public boolean overwriteTemplateStrings(String templateName, List<String> annotations) {
 		if(!templates.containsKey(templateName))
 			return false;
-		templates.replace(templateName, annotations);
+		templates.get(templateName).setAnnotations(annotations);
+		templates.get(templateName).setThumbnail(this.getNewThumbnail(templateName));
 		return true;
 	}
 
@@ -169,7 +184,7 @@ public class TemplateManager {
 	public boolean useTemplate(String templateName, CyNetworkView networkView) {
 		if(!templates.containsKey(templateName)) 
 			return false;
-		List<String> templateInformation = templates.get(templateName);
+		List<String> templateInformation = templates.get(templateName).getAnnotations();
 
 		for(String annotationInformation : templateInformation) {
 			String[] argsArray = annotationInformation.substring(
@@ -185,7 +200,7 @@ public class TemplateManager {
 			annotationManager.addAnnotation(addedAnnotation);
 			addedAnnotation.update();
 		}
-		appendTemplatesActive(networkView, templateName);
+		this.changeActiveTemplate(networkView, templateName);
 
 		networkView.updateView();
 		return true;
@@ -204,24 +219,23 @@ public class TemplateManager {
 	public boolean importTemplate(String templateName, File templateFile) throws IOException {
 		if(!templateFile.exists())
 			return false;
+		boolean successful = true;
 		BufferedReader templateReader = new BufferedReader(new FileReader(templateFile.getAbsolutePath()));
 		List<String> templateInformation = new ArrayList<>();
 		String annotationInformation = "";
 		while((annotationInformation = templateReader.readLine()) != null)
 			templateInformation.add(annotationInformation);
 		if(!templates.containsKey(templateName))
-			templates.put(templateName, templateInformation);
-		else
-			templates.replace(templateName, templateInformation);
+			this.addTemplateStrings(templateName, templateInformation);
+		else 
+			this.overwriteTemplateStrings(templateName, templateInformation);
 		try {
 			templateReader.close();
 		} catch (IOException e) {
-			throw new IOException("Problems writing to stream: " + 
+			throw new IOException("Problems reading from stream: " + 
 					templateReader.toString() + "[" + e.getMessage()+ "]");
 		}
-		if(templates.containsKey(templateName))
-			return true;
-		return false;
+		return successful;
 	}
 
 	/*
@@ -241,7 +255,7 @@ public class TemplateManager {
 		if(!exportedFile.exists())
 			exportedFile.createNewFile();
 		BufferedWriter templateWriter = new BufferedWriter(new FileWriter(exportedFile));
-		for(String annotationInformation : templates.get(templateName)) {
+		for(String annotationInformation : templates.get(templateName).getAnnotations()) {
 			templateWriter.write(annotationInformation);
 			templateWriter.newLine();
 		}
@@ -255,27 +269,14 @@ public class TemplateManager {
 	}
 
 	/*
-	 * This method removes all the templates from the current view. This includes removing
-	 * all of the annotations corresponding to each template only from the current network view, achieved
-	 * by calling clearNetworkofTemplates(CyNetworkView)
-	 * 
-	 * @return the resultant network view with the removed templates
-	 */
-	public CyNetworkView clearCurrentNetworkOfTemplates() {
-		CyNetworkView netView = registrar.getService(CyApplicationManager.class).getCurrentNetworkView();
-		this.clearNetworkofTemplates(netView);
-		return netView;
-	}
-
-	/*
 	 * This method removes all the templates from the given network view. This method
 	 * uses networkRemoveTemplates(), passing the list of templates active in the view.
 	 * 
 	 * @param networkView is the network view whose templates will be removed
 	 */
-	public void clearNetworkofTemplates(CyNetworkView networkView) { 
-		CyRow networkRow = getNetworkRow(networkView);
-		networkRemoveTemplates(networkView, (List<String>) networkRow.getRaw(NETWORK_TEMPLATES));
+	public void removeCurrentTemplate() { 
+		CyNetworkView netView = registrar.getService(CyApplicationManager.class).getCurrentNetworkView();
+		this.removeTemplate(netView);
 	}
 
 	/*
@@ -289,27 +290,23 @@ public class TemplateManager {
 	 * Given @param networkView and @param templateRemoveNames, remove the templates from networkView
 	 * corresponding to these names 
 	 */
-	public void networkRemoveTemplates(CyNetworkView networkView, List<String> templateRemoveNames) {
+	public void removeTemplate(CyNetworkView networkView) {
+		String activeTemplate = activeTemplates.get(networkView);
+		if(activeTemplate == null || !templates.containsKey(activeTemplate)) return;
 		List<Annotation> annotations = annotationManager.getAnnotations(networkView);
 		List<String> uuidsToRemove = new ArrayList<>();
-		if(templateRemoveNames != null && !templateRemoveNames.isEmpty())
-			for(String templateRemoveName : templateRemoveNames) {
-				if(templates.containsKey(templateRemoveName)) {
-					List<String> templateInformation =
-							templates.get(templateRemoveName);
-					for(String annotationInformation : templateInformation) {
-						String[] argsArray = annotationInformation.substring(
-								annotationInformation.indexOf(')') + 3, 
-								annotationInformation.length() - 1).split(", ");
-						Map<String, String> argMap = new HashMap<>();
-						for(String arg : argsArray) {
-							String[] keyValuePair = arg.split("=");
-							argMap.put(keyValuePair[0], keyValuePair[1]);
-						}
-						uuidsToRemove.add(argMap.get("uuid"));
-					}
-				}
+		List<String> templateInformation = templates.get(activeTemplate).getAnnotations();
+		for(String annotationInformation : templateInformation) {
+			String[] argsArray = annotationInformation.substring(
+					annotationInformation.indexOf(')') + 3, 
+					annotationInformation.length() - 1).split(", ");
+			Map<String, String> argMap = new HashMap<>();
+			for(String arg : argsArray) {
+				String[] keyValuePair = arg.split("=");
+				argMap.put(keyValuePair[0], keyValuePair[1]);
 			}
+			uuidsToRemove.add(argMap.get("uuid"));
+		}
 
 		//make sure that the annotation is only deleted in the specific network view, not all views
 		if(annotations != null) {
@@ -318,7 +315,7 @@ public class TemplateManager {
 					annotationManager.removeAnnotation(annotation);
 					annotation.removeAnnotation();
 				}
-			removeTemplatesActive(networkView, templateRemoveNames);
+			removeActiveTemplate(networkView, activeTemplate);
 			networkView.updateView();
 		}
 	}
@@ -345,32 +342,46 @@ public class TemplateManager {
 		return new ArrayList<>(templates.keySet());
 	}
 
-	/* Private method
-	 * Apply the template corresponding to @param templateName to @param networkView
+	/*
+	 * This method appends the given template name, which must be a template in the user's 
+	 * list of templates, into the network view's list of active templates 
+	 * 
+	 * @param networkView is the network view that the template corresponding to the variable
+	 * templateName is being applied on
+	 * @param templateName is the name of the template that the user has applied onto the network
 	 */
-	private void appendTemplatesActive(CyNetworkView networkView, String templateName) {
-		CyRow networkRow = getNetworkRow(networkView);
-		List<String> activeTemplates = (List<String>) networkRow.getRaw(NETWORK_TEMPLATES);
-		if(activeTemplates == null)
-			activeTemplates = new ArrayList<>();
-		activeTemplates.add(templateName);
-		networkRow.set(NETWORK_TEMPLATES, activeTemplates);		
+	public void changeActiveTemplate(CyNetworkView netView, String templateName) {
+		if(activeTemplates.containsKey(netView)) 
+			removeActiveTemplate(netView, activeTemplates.get(netView));
+		if(templateName != null && templates.containsKey(templateName))
+			addActiveTemplate(netView, templateName);
+	}
+	
+	private void addActiveTemplate(CyNetworkView networkView, String templateName) {
+		activeTemplates.put(networkView, templateName);
+		templates.get(templateName).addActiveView(networkView);
 	}
 
 	/* Private method
 	 * Removes the templates in @param templateRemoveNames from the @param networkView
 	 */
-	private void removeTemplatesActive(CyNetworkView networkView, List<String> templateRemoveNames) {
-		CyRow networkRow = getNetworkRow(networkView);
-		List<String> activeTemplates = (List<String>) networkRow.getRaw(NETWORK_TEMPLATES);
-		List<String> templatesToRemove = new ArrayList<>();
-		if(templateRemoveNames != null && !templateRemoveNames.isEmpty()) {
-			for(String templateRemoveName : templateRemoveNames)
-				if(activeTemplates.contains(templateRemoveName))
-					templatesToRemove.add(templateRemoveName);
-			activeTemplates.removeAll(templatesToRemove);
-			networkRow.set(NETWORK_TEMPLATES, activeTemplates);		
+	private void removeActiveTemplate(CyNetworkView networkView, String templateName) {
+		if(activeTemplates.containsKey(networkView)) {
+			String oldTemplate = activeTemplates.get(networkView);
+			activeTemplates.remove(networkView);
+			if(templates.containsKey(oldTemplate))	
+				templates.get(oldTemplate).removeActiveView(networkView);
 		}
+	}
+	
+	public String getCurrentActiveTemplate() {
+		return getActiveTemplate(registrar.getService(CyApplicationManager.class).getCurrentNetworkView());
+	}
+	
+	public String getActiveTemplate(CyNetworkView networkView) {
+		if(!activeTemplates.containsKey(networkView))
+			return null;
+		return activeTemplates.get(networkView);
 	}
 
 	/* 
@@ -383,38 +394,17 @@ public class TemplateManager {
 	public CyRow getNetworkRow(CyNetworkView networkView) {
 		return getNetworkRow(networkView.getModel());
 	}
-	
+
 	public CyRow getNetworkRow(CyNetwork network) {
 		CyTable networkTable = network.getDefaultNetworkTable();
-		if(!columnAlreadyExists(networkTable, NETWORK_TEMPLATES)) 
-			networkTable.createListColumn(NETWORK_TEMPLATES, String.class, true);
-		List<String> templatesActive = networkTable.getRow(network.getSUID()).getList(NETWORK_TEMPLATES, String.class);
-		if(templatesActive == null)
-			templatesActive = new ArrayList<>();
 		return networkTable.getRow(network.getSUID());
-	}
-
-	/*
-	 * Checks if a certain column name already exists in the given network table. This method
-	 * is used to avoid any null pointer errors.
-	 * 
-	 * @param networkTable is the table containing all the network information in the session
-	 * @param columnName is the name of the column on which to check whether or not it exists
-	 * @return true if the column already exists in the networkTable
-	 */
-	public static boolean columnAlreadyExists(CyTable networkTable, String columnName) {
-		for(CyColumn networkColumn : networkTable.getColumns())
-			if(networkColumn.getName().equals(columnName))
-				return true;
-		return false;
 	}
 
 	/*
 	 * Creates an annotation with arguments @param argMap, in the @param networkView, and with the
 	 * information @argMap
 	 */
-	public Annotation getCreatedAnnotation(CyServiceRegistrar registrar, 
-			CyNetworkView networkView, Map<String, String> argMap) {
+	public Annotation getCreatedAnnotation(CyServiceRegistrar registrar, CyNetworkView networkView, Map<String, String> argMap) {
 		String annotationType = argMap.get("type");
 		Annotation addedShape = null;
 		if(networkView.getModel().getDefaultNetworkTable().getColumn("__Annotations") == null) {
@@ -449,36 +439,6 @@ public class TemplateManager {
 		return addedShape;
 	}
 
-	/* Private Method
-	 * Rename the template corresponding to oldName with a new name, without changing any properties 
-	 * of the template. Also rename all instances of the active template in the network views.
-	 * 
-	 * @param oldName is the name of the template to be changed 
-	 * @param newName is the new name of the template
-	 * @param networkView is the network view on which to check for the active template
-	 * 
-	 * @precondition oldName must exist in the templates map as a template
-	 * @return true if the renaming was successful
-	 */
-	private boolean renameTemplateHelper(String oldName, String newName, CyNetwork network) {
-		if(!templates.containsKey(oldName))
-			return false;
-		templates.put(newName, templates.get(oldName));
-		templates.remove(oldName);
-		if(network != null) {
-			CyRow networkRow = getNetworkRow(network);
-			List<String> templatesActive = (List<String>) networkRow.getRaw(NETWORK_TEMPLATES);
-			if(templatesActive != null && templatesActive.contains(oldName)) {
-				templatesActive.add(newName);
-				templatesActive.remove(oldName);
-				networkRow.set(NETWORK_TEMPLATES, templatesActive);		
-			}
-		}
-		if(templates.containsKey(newName) && !templates.containsKey(oldName))
-			return true;
-		return false;
-	}
-
 	/*
 	 * Rename the template corresponding to oldName with a new name, without changing any properties 
 	 * of the template, by calling the helper function. Also, rename all instances of the active 
@@ -491,21 +451,27 @@ public class TemplateManager {
 	 * @return true if the renaming was successful
 	 */
 	public boolean renameTemplate(String oldName, String newName) {
-		boolean rename = true;
-		Set<CyNetwork> networks = registrar.getService(CyNetworkManager.class).getNetworkSet();
-		for(CyNetwork network : networks) {
-			boolean temp = renameTemplateHelper(oldName, newName, network);
-			if(rename && !temp)
-				rename = temp;
-		}
-		return rename;
+		if(!templates.containsKey(oldName))
+			return false;
+		if(!activeTemplates.isEmpty()) 
+			for(CyNetworkView view : activeTemplates.keySet()) 
+				if(activeTemplates.get(view).equals(oldName)) 
+					activeTemplates.replace(view, newName);
+
+		templates.get(oldName).setName(newName);
+		templates.put(newName, templates.get(oldName));
+		templates.remove(oldName);
+		return true;
 	}
 
 	/*
 	 * @return the template map
 	 */
 	public Map<String, List<String>> getTemplateMap() {
-		return templates;
+		Map<String, List<String>> templateMap = new HashMap<>();
+		for(Template template : templates.values())
+			templateMap.put(template.getName(), template.getAnnotations());
+		return templateMap;
 	}
 
 	/*
@@ -516,7 +482,7 @@ public class TemplateManager {
 	 */
 	public List<String> getTemplate(String template) {
 		if (templates.containsKey(template))
-			return templates.get(template);
+			return templates.get(template).getAnnotations();
 		return null;
 	}
 
@@ -553,10 +519,7 @@ public class TemplateManager {
 	public Image getNewThumbnail(String template) {
 		if (templates.containsKey(template)) {
 			Image thumbnail = createThumbnail(template);
-			if(templateThumbnails.containsKey(template))
-				templateThumbnails.replace(template, thumbnail);
-			else
-				templateThumbnails.put(template, thumbnail);
+			templates.get(template).setThumbnail(thumbnail);
 			return thumbnail;
 		}
 		return null;
@@ -572,12 +535,11 @@ public class TemplateManager {
 	 * @precondition template exists in templates map
 	 */
 	public Image getThumbnail(String template) {
-		if (templateThumbnails.containsKey(template))
-			return templateThumbnails.get(template);
-		if (templates.containsKey(template)) { //Create the thumbnail
-			Image thumbnail = createThumbnail(template);
-			templateThumbnails.put(template, thumbnail);
-			return thumbnail;
+		if (templates.containsKey(template)) {
+			if(templates.get(template).getThumbnail() != null)
+				return templates.get(template).getThumbnail();
+			else //Create the thumbnail
+				return getNewThumbnail(template);
 		}
 		return null;
 	}
@@ -590,7 +552,7 @@ public class TemplateManager {
 		if (!templates.containsKey(template))
 			return;
 
-		templateThumbnails.put(template, thumbnail);
+		templates.get(template).setThumbnail(thumbnail);
 	}
 
 	/*
@@ -632,7 +594,7 @@ public class TemplateManager {
 		useTemplate(template, view);
 		Rectangle2D.Double unionRectangle = getUnionofAnnotations(view); 
 		if(unionRectangle.getWidth() * unionRectangle.getHeight() < 101)
-			unionRectangle.setRect(0., 0., 1000., 1000.);
+			unionRectangle.setRect(unionRectangle.getCenterX() - 500., unionRectangle.getCenterY() - 500., 1000., 1000.);
 		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_X_LOCATION, 
 				unionRectangle.getX() + (unionRectangle.getWidth() / 2));
 		view.setVisualProperty(BasicVisualLexicon.NETWORK_CENTER_Y_LOCATION, 
@@ -650,7 +612,8 @@ public class TemplateManager {
 	 * this union in the form of a Rectangle2D.Double
 	 * */
 	private Rectangle2D.Double getUnionofAnnotations(CyNetworkView networkView) { 
-		Rectangle2D.Double unionOfAnnotations = new Rectangle2D.Double();
+		Rectangle2D.Double union = new Rectangle2D.Double();
+		
 		List<Annotation> annotations = registrar.getService(AnnotationManager.class).getAnnotations(networkView);
 		List<ShapeAnnotation> shapeAnnotations = new ArrayList<>();
 		if(annotations != null) 
@@ -664,16 +627,15 @@ public class TemplateManager {
 			double yCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
 			double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH)) / shapeAnnotation.getZoom();
 			double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT)) / shapeAnnotation.getZoom();
-			if(unionOfAnnotations.isEmpty())
-				unionOfAnnotations = new Rectangle2D.Double(xCoordinate, yCoordinate, width, height);
+			if(union.isEmpty())
+				union = new Rectangle2D.Double(xCoordinate, yCoordinate, width, height);
 			else
-				Rectangle2D.Double.union(new Rectangle2D.Double(xCoordinate, yCoordinate, width, height), 
-						unionOfAnnotations, unionOfAnnotations);
+				union.setRect(union.createUnion(new Rectangle2D.Double(xCoordinate, yCoordinate, width, height)));
 		}
 
-		unionOfAnnotations = new Rectangle2D.Double(unionOfAnnotations.getX()-PADDING, unionOfAnnotations.getY()-PADDING, 
-				unionOfAnnotations.getWidth()+PADDING, unionOfAnnotations.getHeight()+PADDING);
-		return unionOfAnnotations;
+		union = new Rectangle2D.Double(union.getX() - PADDING, union.getY() - PADDING, 
+				union.getWidth() + (PADDING * 2), union.getHeight() + (PADDING * 2));
+		return union;
 	}
 
 	/* Private method
@@ -709,21 +671,21 @@ public class TemplateManager {
 	 * Given @param bounds, adjust and scale the dimensions of them to fit within a specific containment
 	 * */
 	private static Rectangle2D.Double getAdjustedDimensions(Rectangle2D.Double bounds) { 
-		final int width = (int) Math.abs(bounds.getWidth());
-		final int height = (int) Math.abs(bounds.getHeight());
-		int min = (width < height ? width : height);
-		int max = (width < height ? height : width);
-		int newWidth = 0;
-		int newHeight = 0;
+		final double width = Math.abs(bounds.getWidth());
+		final double height = Math.abs(bounds.getHeight());
+		double min = (width < height ? width : height);
+		double max = (width < height ? height : width);
+		double newWidth = 0;
+		double newHeight = 0;
 
 		if(((double) max) / ((double) min) > 5.) {
 			double adjustmentRatio = max / 500.;
-			newWidth = (int) (width / adjustmentRatio);
-			newHeight = (int) (height / adjustmentRatio);
+			newWidth = width / adjustmentRatio;
+			newHeight = height / adjustmentRatio;
 		} else {
 			double adjustmentRatio = min / 100.;
-			newWidth = (int) (width / adjustmentRatio);
-			newHeight = (int) (height / adjustmentRatio);
+			newWidth = width / adjustmentRatio;
+			newHeight = height / adjustmentRatio;
 		}
 
 		return new Rectangle2D.Double(bounds.getX(), bounds.getY(), newWidth, newHeight);

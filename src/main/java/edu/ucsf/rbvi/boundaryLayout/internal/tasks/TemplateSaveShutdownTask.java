@@ -38,16 +38,15 @@ public class TemplateSaveShutdownTask extends AbstractTask {
 	public void run(TaskMonitor taskMonitor) {
 		if(saveTemplate) {
 			TemplateOverwriteTask overwriteTask = null;
-			if(templatePanel.currentTemplateName != null) {
-				overwriteTask = new TemplateOverwriteTask(registrar, networkView, manager, templatePanel.currentTemplateName);
+			if(manager.getCurrentActiveTemplate() != null) {
+				overwriteTask = new TemplateOverwriteTask(registrar, networkView, manager, manager.getCurrentActiveTemplate());
 				taskManager.execute(new TaskIterator(overwriteTask));
 				if(overwriteTask.overwrite) 
-					templatePanel.replaceThumbnailTemplate(templatePanel.currentTemplateName);
+					templatePanel.replaceThumbnailTemplate(manager.getCurrentActiveTemplate());
 			}
 			if(overwriteTask == null || !overwriteTask.overwrite) {
 				TemplateSaveTask saveTask = new TemplateSaveTask(registrar, networkView, manager);
 				taskManager.execute(new TaskIterator(saveTask));
-				templatePanel.setCurrentTemplateName(saveTask.templateName);
 			}
 		}
 	}

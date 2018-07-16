@@ -20,7 +20,6 @@ import org.osgi.framework.BundleContext;
 import edu.ucsf.rbvi.boundaryLayout.internal.layouts.ForceDirectedLayout;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateListener;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
-import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateUse;
 import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.CreateTemplateThumbnailTaskFactory;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateDelete;
@@ -63,9 +62,6 @@ public class CyActivator extends AbstractCyActivator {
 		
 		NetworkViewTaskFactory templateSaveFactory = new TemplateSave(registrar, templateManager);
 		taskFactories.put(TemplateThumbnailPanel.ADD_TEMPLATE, templateSaveFactory);	
-		
-		NetworkViewTaskFactory templateUseFactory = new TemplateUse(templateManager);
-		taskFactories.put(TemplateThumbnailPanel.USE_TEMPLATE, templateUseFactory);
 		
 		TaskFactory templateDeleteFactory = new TemplateDelete(templateManager);
 		taskFactories.put(TemplateThumbnailPanel.DELETE_TEMPLATE, templateDeleteFactory);
