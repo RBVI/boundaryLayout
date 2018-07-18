@@ -108,7 +108,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		m_fsim.speedLimit = context.speedLimit;
 		m_fsim.addForce(new SpringForce());
 		forceItems.clear();
-		
+
 		//initialize initial node locations
 		if (boundaries != null) {
 			this.unionOfBoundaries = getUnionofBoundaries();
@@ -140,13 +140,15 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			fitem.dimensions[1] = (float) height;
 			fitem.category = group;
 
-			if(unionOfBoundaries != null && boundaries.get(fitem.category).hasIntersections()) {
-				fitem.location[0] = (float) unionOfBoundaries.getCenterX();
-				fitem.location[1] = (float) unionOfBoundaries.getCenterY();
-			} else if(unionOfBoundaries != null) {
-				Point2D init = boundaries.get(fitem.category).getRandomNodeInit();
-				fitem.location[0] = (float) init.getX();
-				fitem.location[1] = (float) init.getY();
+			if(unionOfBoundaries != null) {
+				if(boundaries.containsKey(fitem.category) && !boundaries.get(fitem.category).hasIntersections()) {
+					Point2D init = boundaries.get(fitem.category).getRandomNodeInit();
+					fitem.location[0] = (float) init.getX();
+					fitem.location[1] = (float) init.getY();
+				} else {
+					fitem.location[0] = (float) unionOfBoundaries.getCenterX();
+					fitem.location[1] = (float) unionOfBoundaries.getCenterY();
+				}
 			} else {
 				fitem.location[0] = 0f;
 				fitem.location[1] = 0f;
@@ -212,10 +214,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		checkCenter(m_fsim);
 
 		if(boundaries.containsKey(OUTER_UNION_KEY)) {
-			AnnotationManager manager = registrar.getService(AnnotationManager.class);
 			ShapeAnnotation outerShape = boundaries.get(OUTER_UNION_KEY).getShapeAnnotation();
-			manager.removeAnnotation(outerShape);
 			outerShape.removeAnnotation();
+			netView.updateView();
+			boundaries.remove(OUTER_UNION_KEY);
 		}
 
 		updateNodeViews();
@@ -387,26 +389,14 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 * means AutoMode must be run.
 	 */
 	private void getBoundaries() {
-		/* For some reason, at least one foreground annotation must exist in order to get the correct
-		 x and y positions of the annotation. So, we add a trivial foreground shape and then later remove it */
-		AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
-				AnnotationFactory.class, "(type=ShapeAnnotation.class)");
 		AnnotationManager manager = registrar.getService(AnnotationManager.class);
-		ShapeAnnotation shape = shapeFactory.createAnnotation(ShapeAnnotation.class, netView, new HashMap<>());
-		shape.setBorderWidth(0);
-		shape.setCanvas(ShapeAnnotation.FOREGROUND);
-		manager.addAnnotation(shape);
-		shape.setName(OUTER_UNION_KEY);
-		shape.update();
-		netView.updateView();
-
 		//get the boundaries in the network view
 		List<Annotation> annotations = manager.getAnnotations(netView);
 		if(boundaries == null)
 			boundaries = new HashMap<>();
 		if(annotations != null) {
 			for(Annotation annotation : annotations) {
-				if(annotation instanceof ShapeAnnotation) {
+				if(annotation instanceof ShapeAnnotation && !annotation.getName().equals(OUTER_UNION_KEY)) {
 					ShapeAnnotation shapeAnnotation = (ShapeAnnotation) annotation;
 					BoundaryAnnotation boundary = new BoundaryAnnotation(shapeAnnotation);
 					boundaries.put(shapeAnnotation.getName(), boundary);
@@ -533,41 +523,41 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 	private void initializeOuterBoundary() {
 		Rectangle2D union = unionOfBoundaries;
+		Iterator<BoundaryAnnotation> unionIterate = this.boundaries.values().iterator();
+		BoundaryAnnotation zoomBoundary = unionIterate.next();
+		if(zoomBoundary.getName().equals(OUTER_UNION_KEY))
+			zoomBoundary = unionIterate.next();	
 		if(union == null)
 			return;
 		double newWidth = union.getWidth() * context.outerBoundsThickness;
 		double newHeight = union.getHeight() * context.outerBoundsThickness;
 		double newX = (union.getCenterX() - newWidth / 2.);
 		double newY = (union.getCenterY() - newHeight / 2.);
-		Iterator<BoundaryAnnotation> unionIterate = this.boundaries.values().iterator();
-		BoundaryAnnotation zoomBoundary = unionIterate.next();
-		if(zoomBoundary.getName().equals(OUTER_UNION_KEY))
-			zoomBoundary = unionIterate.next();		
+		AnnotationFactory<ShapeAnnotation> factory = registrar.getService(AnnotationFactory.class, "(type=ShapeAnnotation.class)");
 
 		ShapeAnnotation outerShape = null;
-		Map<String, String> argMap = null;
-		if(boundaries.containsKey(OUTER_UNION_KEY)) {
-			outerShape = boundaries.get(OUTER_UNION_KEY).getShapeAnnotation();
-			argMap = outerShape.getArgMap();
-		} else {
-			AnnotationFactory<ShapeAnnotation> factory = registrar.getService(AnnotationFactory.class, "(type=ShapeAnnotation.class)");
-			AnnotationManager manager = registrar.getService(AnnotationManager.class);
-			outerShape = (ShapeAnnotation) factory.createAnnotation(ShapeAnnotation.class, netView, argMap);
-			manager.addAnnotation(outerShape);
-			BoundaryAnnotation boundary = new BoundaryAnnotation(outerShape);
-			boundaries.put(OUTER_UNION_KEY, boundary);
-		}
+		Map<String, String> argMap = new HashMap<>();
+		newWidth *= zoomBoundary.getShapeAnnotation().getZoom();
+		newHeight *= zoomBoundary.getShapeAnnotation().getZoom();
 		argMap.put(ShapeAnnotation.NAME, OUTER_UNION_KEY);
 		argMap.put(ShapeAnnotation.WIDTH, "" + newWidth);
+		argMap.put(ShapeAnnotation.HEIGHT, "" + newHeight);
 		argMap.put(ShapeAnnotation.SHAPETYPE, "Rounded Rectangle");
 		argMap.put(ShapeAnnotation.CANVAS, ShapeAnnotation.FOREGROUND);
 		argMap.put(ShapeAnnotation.EDGETHICKNESS, "" + 0.);
 		argMap.put(ShapeAnnotation.X, "" + newX);
 		argMap.put(ShapeAnnotation.Y, "" + newY);
 		argMap.put(ShapeAnnotation.ZOOM, "" + zoomBoundary.getShapeAnnotation().getZoom());
-		outerShape.setCanvas(Annotation.FOREGROUND);
-		outerShape.setSize(newWidth, newHeight);
-		outerShape.moveAnnotation(new Point2D.Double(newX, newY));
+
+		if(boundaries.containsKey(OUTER_UNION_KEY)) {
+			outerShape = boundaries.get(OUTER_UNION_KEY).getShapeAnnotation();
+			outerShape.removeAnnotation();
+			netView.updateView();
+		} else {
+			outerShape = (ShapeAnnotation) factory.createAnnotation(ShapeAnnotation.class, netView, argMap);
+			BoundaryAnnotation boundary = new BoundaryAnnotation(outerShape);
+			boundaries.put(OUTER_UNION_KEY, boundary);
+		}
 
 		outerShape.update();
 		networkView.updateView();

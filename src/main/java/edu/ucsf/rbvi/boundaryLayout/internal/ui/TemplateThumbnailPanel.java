@@ -209,7 +209,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		if(templateName == null || !thumbnailsMap.containsKey(templateName) || !templatesMap.containsKey(templateName)) 
 			return;
 		ImageIcon icon = (ImageIcon) thumbnailsMap.get(templateName).getIcon();
-		icon.setImage(manager.getNewThumbnail(templateName));
+		icon.setImage(manager.getThumbnail(templateName));
 		thumbnailsMap.get(templateName).repaint();
 		templatesMap.get(templateName).repaint();
 	}

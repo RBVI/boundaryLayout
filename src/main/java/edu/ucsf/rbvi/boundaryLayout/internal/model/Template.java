@@ -11,12 +11,15 @@ public class Template {
 	private List<String> annotationsString;
 	private Image thumbnail;
 	private List<CyNetworkView> activeViews;
+	private List<String> annotationUUIDs;
 	
 	public Template(String name, List<String> annotationsString, Image thumbnail) {
 		this.name = name;
 		this.annotationsString = annotationsString;
 		this.thumbnail = thumbnail;
 		this.activeViews = new ArrayList<>();
+		this.annotationUUIDs = new ArrayList<>();
+		this.initAnnotationUUIDs();
 	}
 	
 	public Template(String name) {
@@ -25,6 +28,29 @@ public class Template {
 	
 	public Template(String name, List<String> annotationsString) {
 		this(name, annotationsString, null);
+	}
+	
+	private void initAnnotationUUIDs() {
+		if(annotationUUIDs == null)
+			annotationUUIDs = new ArrayList<>();
+		else
+			annotationUUIDs.clear();
+		if(annotationsString != null && !annotationsString.isEmpty())
+			for(String annotation : annotationsString) {
+				String subAnnotation = annotation.substring(annotation.indexOf("uuid"));
+				String uuidEquality = subAnnotation.substring(0, subAnnotation.indexOf(", "));
+				String uuid = uuidEquality.substring(uuidEquality.indexOf("=") + 1);
+				annotationUUIDs.add(uuid);
+			}
+		for(String uuid : annotationUUIDs)
+			System.out.println(uuid);
+	}
+	
+	public boolean isContainedUUIDs(List<String> containingUUIDs) {
+		for(String uuid : this.annotationUUIDs) 
+			if(!containingUUIDs.contains(uuid))
+				return false;
+		return true;
 	}
 	
 	public void setName(String name) {
@@ -37,6 +63,7 @@ public class Template {
 	
 	public void setAnnotations(List<String> annotationsString) {
 		this.annotationsString = annotationsString;
+		this.initAnnotationUUIDs();
 	}
 	
 	public List<String> getAnnotations() {

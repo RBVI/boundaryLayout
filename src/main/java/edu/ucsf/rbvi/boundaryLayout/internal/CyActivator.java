@@ -9,6 +9,7 @@ import java.util.Properties;
 
 import org.cytoscape.application.events.CyShutdownListener;
 import org.cytoscape.application.swing.CySwingApplication;
+//import org.cytoscape.event.CyListener;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.task.NetworkViewTaskFactory;
@@ -20,6 +21,7 @@ import org.osgi.framework.BundleContext;
 import edu.ucsf.rbvi.boundaryLayout.internal.layouts.ForceDirectedLayout;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateListener;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
+//import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateNetworkViewListener;
 import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.CreateTemplateThumbnailTaskFactory;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateDelete;
@@ -53,6 +55,9 @@ public class CyActivator extends AbstractCyActivator {
 		UndoSupport undoSupport = getService(bc, UndoSupport.class);
 		registerService(bc, templateListener, CyShutdownListener.class, new Properties());
 		
+//		TemplateNetworkViewListener viewListener = new TemplateNetworkViewListener(registrar, templateManager);
+//		registerService(bc, viewListener, CyListener.class, new Properties());
+		
 		/* Tasks */
 		TaskFactory templateImportFactory = new TemplateImport(templateManager);
 		taskFactories.put(TemplateThumbnailPanel.IMPORT_TEMPLATE, templateImportFactory);
@@ -69,7 +74,7 @@ public class CyActivator extends AbstractCyActivator {
 		NetworkViewTaskFactory templateNetworkRemoveFactory = new TemplateNetworkRemove(templateManager);
 		taskFactories.put(TemplateThumbnailPanel.REMOVE_TEMPLATE_FROM_VIEW, templateNetworkRemoveFactory);
 		
-		TaskFactory templateThumbnailFactory = new CreateTemplateThumbnailTaskFactory(registrar, templateManager, taskFactories); 
+		new CreateTemplateThumbnailTaskFactory(registrar, templateManager, taskFactories); 
 		
 		CyLayoutAlgorithm forceDirectedLayoutAlgorithm = new ForceDirectedLayout(registrar, undoSupport);
 		Properties forceDirectedLayoutAlgorithmProperties = new Properties();

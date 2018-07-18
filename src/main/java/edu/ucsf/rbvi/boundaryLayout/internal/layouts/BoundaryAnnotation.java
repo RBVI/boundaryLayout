@@ -20,6 +20,7 @@ import prefuse.util.force.BoundaryWallForce;
 public class BoundaryAnnotation {
 	private ShapeAnnotation shape;
 	private Rectangle2D boundingBox;
+	private String shapeType;
 	
 	private List<Point2D> initLocations;
 	private Random RANDOM = new Random();
@@ -47,6 +48,7 @@ public class BoundaryAnnotation {
 	public BoundaryAnnotation(ShapeAnnotation shape, List<Point2D> initLocations, 
 			List<BoundaryAnnotation> intersections, BoundaryWallForce wallForce, int scaleMod) {
 		this.shape = shape;
+		this.shapeType = shape.getShapeType();
 		this.initBoundingBox();
 		this.initLocations = initLocations;
 		this.intersections = intersections;
@@ -94,6 +96,10 @@ public class BoundaryAnnotation {
 	 */
 	public String getName() {
 		return this.shape.getName();
+	}
+	
+	public String getShapeType() {
+		return this.shapeType;
 	}
 	
 	/*

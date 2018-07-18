@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 
@@ -83,7 +84,34 @@ public class TemplateManager {
 	public boolean hasTemplate(String template) {
 		return templates.containsKey(template);
 	}
+
+	private Template getTemplateWithUUIDs(List<String> uuids) {
+		for(Template template : templates.values())
+			if(template.isContainedUUIDs(uuids))
+				return template;
+		return null;
+	}
+
+	public void handleAddedNetworkView(CyNetworkView addedView, List<String> uuids) {
+		if(uuids == null || uuids.isEmpty()) return;
+		Template containedTemplate = getTemplateWithUUIDs(uuids);
+		if(containedTemplate != null) {
+			containedTemplate.addActiveView(addedView);
+			activeTemplates.put(addedView, containedTemplate.getName());
+		}
+	}
 	
+	public void handleDeletedNetworkView(Set<CyNetworkView> currentViews) {
+		List<CyNetworkView> deletedViews = new ArrayList<>();
+		for(CyNetworkView view : activeTemplates.keySet()) 
+			if(!currentViews.contains(view)) 
+				deletedViews.add(view);
+		for(CyNetworkView deletedView : deletedViews) {
+			templates.get(activeTemplates.get(deletedView)).removeActiveView(deletedView);
+			activeTemplates.remove(deletedView);
+		}
+	}
+
 	/*
 	 * Adds template to the templates map, with the mapping:
 	 * (template name - list of annotations information), by calling addTemplateStrings()
@@ -97,6 +125,7 @@ public class TemplateManager {
 			return overwriteTemplate(templateName, annotations);
 		List<String> annotationsInfo = getAnnotationInformation(annotations);
 		boolean added = addTemplateStrings(templateName, annotationsInfo);
+		this.newThumbnail(templateName);
 		this.changeActiveTemplate(registrar.getService(CyApplicationManager.class).getCurrentNetworkView(), templateName);
 		return added;
 	}
@@ -132,7 +161,7 @@ public class TemplateManager {
 			for(CyNetworkView networkView : template.getActiveViews())
 				if(activeTemplates.containsKey(networkView))
 					activeTemplates.remove(networkView);
-		
+
 		template.removeAllActiveViews();
 		template.setAnnotations(null);
 		template.setThumbnail(null);
@@ -169,7 +198,7 @@ public class TemplateManager {
 		if(!templates.containsKey(templateName))
 			return false;
 		templates.get(templateName).setAnnotations(annotations);
-		templates.get(templateName).setThumbnail(this.getNewThumbnail(templateName));
+		this.newThumbnail(templateName);
 		return true;
 	}
 
@@ -356,7 +385,7 @@ public class TemplateManager {
 		if(templateName != null && templates.containsKey(templateName))
 			addActiveTemplate(netView, templateName);
 	}
-	
+
 	private void addActiveTemplate(CyNetworkView networkView, String templateName) {
 		activeTemplates.put(networkView, templateName);
 		templates.get(templateName).addActiveView(networkView);
@@ -373,11 +402,11 @@ public class TemplateManager {
 				templates.get(oldTemplate).removeActiveView(networkView);
 		}
 	}
-	
+
 	public String getCurrentActiveTemplate() {
 		return getActiveTemplate(registrar.getService(CyApplicationManager.class).getCurrentNetworkView());
 	}
-	
+
 	public String getActiveTemplate(CyNetworkView networkView) {
 		if(!activeTemplates.containsKey(networkView))
 			return null;
@@ -516,7 +545,7 @@ public class TemplateManager {
 	 * @return the thumbnail corresponding to template
 	 * @precondition template exists in templates map
 	 */
-	public Image getNewThumbnail(String template) {
+	public Image newThumbnail(String template) {
 		if (templates.containsKey(template)) {
 			Image thumbnail = createThumbnail(template);
 			templates.get(template).setThumbnail(thumbnail);
@@ -539,7 +568,7 @@ public class TemplateManager {
 			if(templates.get(template).getThumbnail() != null)
 				return templates.get(template).getThumbnail();
 			else //Create the thumbnail
-				return getNewThumbnail(template);
+				return newThumbnail(template);
 		}
 		return null;
 	}
@@ -613,13 +642,28 @@ public class TemplateManager {
 	 * */
 	private Rectangle2D.Double getUnionofAnnotations(CyNetworkView networkView) { 
 		Rectangle2D.Double union = new Rectangle2D.Double();
-		
+		final String REFERENCE = "";
+
+		/*AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
+				AnnotationFactory.class, "(type=ShapeAnnotation.class)");
+		AnnotationManager manager = registrar.getService(AnnotationManager.class);
+		ShapeAnnotation shape = shapeFactory.createAnnotation(ShapeAnnotation.class, networkView, new HashMap<>());
+		shape.setBorderWidth(0);
+		shape.setCanvas(ShapeAnnotation.FOREGROUND);
+		manager.addAnnotation(shape);
+		shape.update();
+		shape.setName(REFERENCE);
+		networkView.updateView();*/
+
 		List<Annotation> annotations = registrar.getService(AnnotationManager.class).getAnnotations(networkView);
 		List<ShapeAnnotation> shapeAnnotations = new ArrayList<>();
 		if(annotations != null) 
 			for(Annotation annotation : annotations) 
-				if(annotation instanceof ShapeAnnotation) 
+				if(annotation instanceof ShapeAnnotation && !annotation.getName().equals(REFERENCE)) 
 					shapeAnnotations.add((ShapeAnnotation) annotation);
+
+		//	manager.removeAnnotation(shape);
+		//	shape.removeAnnotation();
 
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations) {
 			Map<String, String> argMap = shapeAnnotation.getArgMap();
