@@ -10,6 +10,7 @@ import java.util.Set;
 import  java.awt.geom.Point2D;
 import  java.awt.geom.Rectangle2D;
 
+import org.cytoscape.application.CyVersion;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.service.util.CyServiceRegistrar;
@@ -28,7 +29,6 @@ import org.cytoscape.work.undo.UndoSupport;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.algorithms.BoundaryContainsAlgorithm;
 import prefuse.util.force.BoundaryWallForce;
-import prefuse.util.force.DragForce;
 import prefuse.util.force.EllipticalWallForce;
 import prefuse.util.force.ForceItem;
 import prefuse.util.force.ForceSimulator;
@@ -36,9 +36,8 @@ import prefuse.util.force.NBodyForce;
 import prefuse.util.force.RectangularWallForce;
 import prefuse.util.force.SpringForce;
 
-/*
- * This class contains all the logic corresponding to the force-directed aspects of
- * boundary layout. 
+/**
+ * This class contains all the logic corresponding to the force-directed aspects of boundary layout
  */
 public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private ForceDirectedLayout.Integrators integrator;
@@ -54,9 +53,17 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 	private Rectangle2D unionOfBoundaries;
 
-	/*
+	/**
 	 * Construct a force directed layout task, holding the information relevant to the 
 	 * network view including: nodes, edges, boundaries.
+	 * @param displayName is the name of the algorithm
+	 * @param netView is the network view on which the user has chosen to execute the algorithm
+	 * @param nodesToLayOut is the list of nodes which are to be layed out
+	 * @param context is the context of this execution which the user has tuned or is the default context
+	 * @param layoutAttribute is the attribute by which the user chose to run the algorithm
+	 * @param integrator is the force integrator to be used for the force-directed layout
+	 * @param registrar provides the services used by this task including various managers
+	 * @param undo allows the user to undo this layout
 	 */
 	public ForceDirectedLayoutTask(final String displayName, final CyNetworkView netView,
 			final Set<View<CyNode>> nodesToLayOut, final ForceDirectedLayoutContext context,
@@ -82,7 +89,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		forceItems = new HashMap<CyNode, ForceItem>();
 	}
 
-	/*
+	/**
 	 * The layout initializes nodes to their respective boundaries and runs a force-directed
 	 * layout consisting of a variety of forces: 
 	 * 1) Wall forces: this repulsive force corresponds to the boundaries and push nodes away from the wall
@@ -113,11 +120,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if (boundaries != null) {
 			this.unionOfBoundaries = getUnionofBoundaries();
 			this.initializeOuterBoundary();
-			for(BoundaryAnnotation boundary : boundaries.values())  {
+			for(BoundaryAnnotation boundary : boundaries.values()) 
 				initNodeLocations(boundary);
-				if(!boundary.hasIntersections())
-					addAnnotationForce(m_fsim, boundary);
-			}
 		}
 
 		// initialize node locations and properties
@@ -174,7 +178,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 		final int checkCenter = (context.numIterations / 25) + 1;
 		long timestep = 1000L;
-		m_fsim.speedLimit = 2;
+		m_fsim.speedLimit = 2f;
 		for (int i = 0; i < context.numIterations / 3 && !cancelled; i++) {
 			timestep *= (1.0 - i/(double)context.numIterations);
 			long step = timestep + 50;
@@ -187,9 +191,9 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		checkCenter(m_fsim);
 		if(boundaries != null) 
 			for(BoundaryAnnotation boundary : boundaries.values()) 
-				if(boundary.hasIntersections())
-					addAnnotationForce(m_fsim, boundary);
+				addAnnotationForce(m_fsim, boundary);
 
+		// perform layout at desired speedlimit with boundary forces
 		m_fsim.speedLimit = context.speedLimit;
 		for (int i = context.numIterations / 3; i < 2 * context.numIterations / 3 && !cancelled; i++) {
 			timestep *= (1.0 - i/(double)context.numIterations);
@@ -213,18 +217,15 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 		checkCenter(m_fsim);
 
-		if(boundaries.containsKey(OUTER_UNION_KEY)) {
-			ShapeAnnotation outerShape = boundaries.get(OUTER_UNION_KEY).getShapeAnnotation();
-			outerShape.removeAnnotation();
-			netView.updateView();
+		if(boundaries.containsKey(OUTER_UNION_KEY)) 
 			boundaries.remove(OUTER_UNION_KEY);
-		}
-
 		updateNodeViews();
 	}
 
+	/** Private method
+	 * Update positions of nodes
+	 */
 	private void updateNodeViews() {
-		// update positions of nodes
 		for (CyNode node : forceItems.keySet()) {
 			ForceItem fitem = forceItems.get(node); 
 			View<CyNode> nodeView = netView.getNodeView(node);
@@ -235,11 +236,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 	/*Functions related to node projections*/
 
-	/*
+	/** Private method
 	 * This method projects all the nodes which have left their boundary
 	 * or entered into another boundary to their nearest respective locations
 	 * in their own boundaries.
-	 * 
 	 * @param m_fsim is the simulator that is currently running
 	 * @precondition boundaries is initialized 
 	 * @precondition m_fsim != null
@@ -283,19 +283,18 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 	}
 
-	/* Private method
+	/** Private method
 	 * This method is used by checkCenter() and @return true iff the @param nodebbox, taking into account its dimensions
 	 * and projection direction (@param moveDir), is respectively within the @param boundary
 	 */
 	private boolean contains(BoundaryAnnotation boundary, Rectangle2D nodebbox, int moveDir) {
 		boolean contained = true;
-		ShapeAnnotation shape = boundary.getShapeAnnotation();
 		Rectangle2D shapeBox = boundary.getBoundingBox();
 		double[] diffVector = {Math.abs(nodebbox.getX() - shapeBox.getCenterX()), Math.abs(nodebbox.getY() - shapeBox.getCenterY())};
 		diffVector[0] += nodebbox.getWidth() / 2 * moveDir;
 		diffVector[1] += nodebbox.getHeight() / 2 * moveDir;
 
-		switch(shape.getShapeType()) {
+		switch(boundary.getShapeType()) {
 		case "Rounded Rectangle":
 		case "Rectangle": 
 			if(diffVector[0] > shapeBox.getWidth() / 2. || diffVector[1] > shapeBox.getHeight() / 2.) 
@@ -312,7 +311,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		return contained;
 	}
 
-	/* Private method
+	/** Private method
 	 * @param item is the force item that is to be set to the location of
 	 * @param loc, a point2D representing a point in the network.
 	 */
@@ -324,7 +323,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		bbox.setRect((double) item.location[0], (double) item.location[1], item.dimensions[0], item.dimensions[1]);
 	} 
 
-	/* Private method
+	/** Private method
 	 * @return the point at the border of the @param boundary closest to @param bbox, the node bounding box. This
 	 * takes into account the direction of the projection @param moveDir
 	 */
@@ -335,7 +334,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		diffVector[1] += bbox.getHeight() / 2 * moveDir * (diffVector[1] < 0 ? -1 : 1);
 
 		double scale = 1.;
-		switch(boundary.getShapeAnnotation().getShapeType()) {
+		switch(boundary.getShapeType()) {
 		case "Rounded Rectangle":
 		case "Rectangle":
 			scale = getScaleRectangle(shapeBox, diffVector);
@@ -355,7 +354,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		return new Point2D.Double(shapeBox.getCenterX() + diffVector[0], shapeBox.getCenterY() + diffVector[1]);
 	}
 
-	/* Private method
+	/** Private method
 	 * @return the scale factor by which to scale the @param diffVector of a node
 	 * with respect to @param shape, corresponding to a rectangle
 	 */
@@ -369,7 +368,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		return scale;
 	}
 
-	/* Private method
+	/** Private method
 	 * @return the scale factor by which to scale the @param diffVector of a node
 	 * with respect to @param shape, corresponding to an ellipse
 	 */
@@ -381,7 +380,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		return scale;
 	}
 
-	/* Private method
+	/** Private method
 	 * @return the HashMap shapeAnnotations which consists of 
 	 * all of the Shape Annotations in the current network view and
 	 * maps them to their respective name. null is returned if
@@ -390,6 +389,23 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 */
 	private void getBoundaries() {
 		AnnotationManager manager = registrar.getService(AnnotationManager.class);
+
+		/* At least one foreground annotation must exist in order to get the correct x and y positions of the annotation. 
+		 * So, we add a trivial foreground shape and then later remove it. This applies only for versions before 3.7.0 */
+		int minorVersion = registrar.getService(CyVersion.class).getMinorVersion();
+		ShapeAnnotation shape = null;
+		if(minorVersion < 7) {
+			AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
+					AnnotationFactory.class, "(type=ShapeAnnotation.class)");
+			shape = shapeFactory.createAnnotation(ShapeAnnotation.class, netView, new HashMap<>());
+			shape.setBorderWidth(0);
+			shape.setCanvas(ShapeAnnotation.FOREGROUND);
+			manager.addAnnotation(shape);
+			shape.setName(OUTER_UNION_KEY);
+			shape.update();
+			netView.updateView();
+		}
+
 		//get the boundaries in the network view
 		List<Annotation> annotations = manager.getAnnotations(netView);
 		if(boundaries == null)
@@ -403,23 +419,27 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				}
 			}
 		}
+
+		if(minorVersion < 7) {
+			manager.removeAnnotation(shape);
+			shape.removeAnnotation();
+			netView.updateView();
+		}
 	}
 
-	/* 
+	/** Private method
 	 * This method adds a wall force, otherwise known as an annotation force corresponding to the given 
 	 * boundary within the passed simulation. This wall force is in the shape of a bounding rectangle. For
 	 * ellipses, the bounds of the wall are within the annotation.
-	 * 
-	 * @param m_fsim is the ForceSimulator instance that this
-	 * added force belongs to.
+	 * @param m_fsim is the ForceSimulator instance that this added force belongs to.
 	 * @param shapeAnnotation stores an existing ShapeAnnotation.
 	 */
-	protected void addAnnotationForce(ForceSimulator m_fsim, BoundaryAnnotation boundary) {
+	private void addAnnotationForce(ForceSimulator m_fsim, BoundaryAnnotation boundary) {
 		Point2D dimensions = getAnnotationDimensions(boundary);
 		Point2D center = getAnnotationCenter(boundary);
 		BoundaryWallForce wall;
 
-		if(boundary.getShapeAnnotation().getShapeType().equals("Ellipse")) {
+		if(boundary.getShapeType().equals("Ellipse")) {
 			wall = new EllipticalWallForce(center, dimensions, -context.gravConst,
 					context.variableWallForce, context.wallScale);
 		} else {
@@ -430,7 +450,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		m_fsim.addForce(wall);
 	}
 
-	/* Private method
+	/** Private method
 	 * @param shapeAnnotation stores an existing ShapeAnnotation.
 	 * @return the Point2D dimensions of shapeAnnotation where 
 	 * the x value of the point holds the width and the y value of the 
@@ -441,7 +461,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		return new Point2D.Double(bb.getWidth(), bb.getHeight());
 	}
 
-	/* Private method
+	/** Private method
 	 * @param shapeAnnotation stores an existing ShapeAnnotation.
 	 * @return the Point2D location where the center of the shapeAnnotation
 	 * is.
@@ -451,9 +471,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		return new Point2D.Double(bb.getX() + (bb.getWidth() / 2.), bb.getY() + (bb.getHeight() / 2.));
 	}
 
-	/* Private method
+	/** Private method
 	 * This method calculates and initializes node initialization locations for a given boundary
-	 * 
 	 * @param shapeAnnotation stores an existing ShapeAnnotation.
 	 * where all of the nodes of that respective shape annotation are to be initialized.
 	 */
@@ -477,9 +496,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		boundary.setInitializations(initNodes);
 	}
 
-	/* Private method
+	/** Private method
 	 * Used to determine if and if so, which boundaries intersect with the given boundary.
-	 * 
 	 * @param shapeAnnotation stores an existing ShapeAnnotation
 	 * @param boundingBox stores the Rectangle2D of the shapeAnnotation
 	 * @return list of Rectangle2D's of shape annotations that boundingBox contains
@@ -497,7 +515,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		return listOfContainments;
 	}
 
-	/* Private method
+	/** Private method
 	 * @return a Rectangle2D representing the union of the boundaries in the boundaries map
 	 */
 	private Rectangle2D getUnionofBoundaries() {
@@ -507,60 +525,31 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		Rectangle2D union = new Rectangle2D.Double();
 		Iterator<BoundaryAnnotation> unionIterate = this.boundaries.values().iterator();
 		BoundaryAnnotation initBoundary = unionIterate.next();
-		if(initBoundary.getName().equals(OUTER_UNION_KEY))
-			initBoundary = unionIterate.next();
 		union.setRect(initBoundary.getBoundingBox());
 
 		while(unionIterate.hasNext()) {
 			BoundaryAnnotation nextBoundary = unionIterate.next();
-			if(!nextBoundary.getName().equals(OUTER_UNION_KEY)) {
-				Rectangle2D nextRect = nextBoundary.getBoundingBox();
-				union.setRect(union.createUnion(nextRect));
-			}
+			Rectangle2D nextRect = nextBoundary.getBoundingBox();
+			union.setRect(union.createUnion(nextRect));
 		}
 		return union;
 	}
 
+	/** Private method
+	 * Initialize the outer boundary for this execution
+	 */
 	private void initializeOuterBoundary() {
 		Rectangle2D union = unionOfBoundaries;
-		Iterator<BoundaryAnnotation> unionIterate = this.boundaries.values().iterator();
-		BoundaryAnnotation zoomBoundary = unionIterate.next();
-		if(zoomBoundary.getName().equals(OUTER_UNION_KEY))
-			zoomBoundary = unionIterate.next();	
 		if(union == null)
 			return;
 		double newWidth = union.getWidth() * context.outerBoundsThickness;
 		double newHeight = union.getHeight() * context.outerBoundsThickness;
 		double newX = (union.getCenterX() - newWidth / 2.);
 		double newY = (union.getCenterY() - newHeight / 2.);
-		AnnotationFactory<ShapeAnnotation> factory = registrar.getService(AnnotationFactory.class, "(type=ShapeAnnotation.class)");
 
-		ShapeAnnotation outerShape = null;
-		Map<String, String> argMap = new HashMap<>();
-		newWidth *= zoomBoundary.getShapeAnnotation().getZoom();
-		newHeight *= zoomBoundary.getShapeAnnotation().getZoom();
-		argMap.put(ShapeAnnotation.NAME, OUTER_UNION_KEY);
-		argMap.put(ShapeAnnotation.WIDTH, "" + newWidth);
-		argMap.put(ShapeAnnotation.HEIGHT, "" + newHeight);
-		argMap.put(ShapeAnnotation.SHAPETYPE, "Rounded Rectangle");
-		argMap.put(ShapeAnnotation.CANVAS, ShapeAnnotation.FOREGROUND);
-		argMap.put(ShapeAnnotation.EDGETHICKNESS, "" + 0.);
-		argMap.put(ShapeAnnotation.X, "" + newX);
-		argMap.put(ShapeAnnotation.Y, "" + newY);
-		argMap.put(ShapeAnnotation.ZOOM, "" + zoomBoundary.getShapeAnnotation().getZoom());
+		Rectangle2D outerBox = new Rectangle2D.Double(newX, newY, newWidth, newHeight);
 
-		if(boundaries.containsKey(OUTER_UNION_KEY)) {
-			outerShape = boundaries.get(OUTER_UNION_KEY).getShapeAnnotation();
-			outerShape.removeAnnotation();
-			netView.updateView();
-		} else {
-			outerShape = (ShapeAnnotation) factory.createAnnotation(ShapeAnnotation.class, netView, argMap);
-			BoundaryAnnotation boundary = new BoundaryAnnotation(outerShape);
-			boundaries.put(OUTER_UNION_KEY, boundary);
-		}
-
-		outerShape.update();
-		networkView.updateView();
-		boundaries.get(OUTER_UNION_KEY).initBoundingBox();
+		BoundaryAnnotation boundary = new BoundaryAnnotation(OUTER_UNION_KEY, outerBox);
+		boundaries.put(OUTER_UNION_KEY, boundary);
 	}
 }

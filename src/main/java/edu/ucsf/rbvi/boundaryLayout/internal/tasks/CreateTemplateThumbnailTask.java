@@ -10,7 +10,7 @@ import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskFactory;
 import org.cytoscape.work.TaskMonitor;
 
-/*
+/**
  * Creates a template thumbnail
  */
 public class CreateTemplateThumbnailTask extends AbstractTask {

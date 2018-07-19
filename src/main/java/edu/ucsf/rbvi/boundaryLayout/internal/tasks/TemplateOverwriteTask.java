@@ -13,7 +13,7 @@ import org.cytoscape.work.Tunable;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
-/*
+/**
  * Overwrites a template with new annotation information in the templates view 
  */
 public class TemplateOverwriteTask extends AbstractTask implements ObservableTask {

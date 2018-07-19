@@ -9,11 +9,13 @@ import java.util.Properties;
 
 import org.cytoscape.application.events.CyShutdownListener;
 import org.cytoscape.application.swing.CySwingApplication;
-//import org.cytoscape.event.CyListener;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.service.util.CyServiceRegistrar;
+import org.cytoscape.session.events.SessionLoadedListener;
 import org.cytoscape.task.NetworkViewTaskFactory;
 import org.cytoscape.view.layout.CyLayoutAlgorithm;
+import org.cytoscape.view.model.events.NetworkViewAddedListener;
+import org.cytoscape.view.model.events.NetworkViewDestroyedListener;
 import org.cytoscape.work.TaskFactory;
 import org.cytoscape.work.undo.UndoSupport;
 import org.osgi.framework.BundleContext;
@@ -21,7 +23,7 @@ import org.osgi.framework.BundleContext;
 import edu.ucsf.rbvi.boundaryLayout.internal.layouts.ForceDirectedLayout;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateListener;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
-//import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateNetworkViewListener;
+import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateNetworkViewListener;
 import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.CreateTemplateThumbnailTaskFactory;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateDelete;
@@ -30,8 +32,8 @@ import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateImport;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateNetworkRemove;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSave;
 
-/*
- * This class creates the task factories, managers, and listeners used by boundary layout
+/**
+ * This class creates the task factories, managers, and listeners used by Boundary Layout
  */
 public class CyActivator extends AbstractCyActivator {
 	
@@ -55,8 +57,10 @@ public class CyActivator extends AbstractCyActivator {
 		UndoSupport undoSupport = getService(bc, UndoSupport.class);
 		registerService(bc, templateListener, CyShutdownListener.class, new Properties());
 		
-//		TemplateNetworkViewListener viewListener = new TemplateNetworkViewListener(registrar, templateManager);
-//		registerService(bc, viewListener, CyListener.class, new Properties());
+		TemplateNetworkViewListener viewListener = new TemplateNetworkViewListener(registrar, templateManager);
+		registerService(bc, viewListener, NetworkViewAddedListener.class, new Properties());
+		registerService(bc, viewListener, NetworkViewDestroyedListener.class, new Properties());
+		registerService(bc, viewListener, SessionLoadedListener.class, new Properties());
 		
 		/* Tasks */
 		TaskFactory templateImportFactory = new TemplateImport(templateManager);

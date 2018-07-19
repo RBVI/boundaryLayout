@@ -2,7 +2,7 @@ package prefuse.util.force;
 
 import java.awt.geom.Point2D;
 
-/* 
+/**
  * Represents a rectangular bounding box of a boundary and applies a force on 
  * the force items in the force simulation, pushing them away from the walls of
  * this rectangle. The walls may or may not be of variable wall force, depending

@@ -11,20 +11,21 @@ import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
 
 import prefuse.util.force.BoundaryWallForce;
 
-/*
+/**
  * This class represents a boundary annotation with all of the information corresponding
  * to a shape annotation including its bounding box, initialization locations for its nodes, 
  * a list of other boundaries intersecting it, and its corresponding wall force as well as 
  * its scaling capabilities.
- * */
+ */
 public class BoundaryAnnotation {
+	public static final String DEFAULT_TYPE = "Rounded Rectangle";
+	
 	private ShapeAnnotation shape;
+	private String name;
 	private Rectangle2D boundingBox;
-	private String shapeType;
 	
 	private List<Point2D> initLocations;
 	private Random RANDOM = new Random();
-	
 	private List<BoundaryAnnotation> intersections;
 	
 	private BoundaryWallForce wallForce;
@@ -33,22 +34,21 @@ public class BoundaryAnnotation {
 	private static final int DEFAULT_SCALEMOD = 10;
 	private int scaleMod;
 
-	/* 
+	/**
 	 * Initialize a BoundaryAnnotation, given various properties. A boundary annotation
 	 * is the basic component of this layout. A boundary is an annotation created by the user
 	 * on which the user wants to layout their data with respect to. All the information about 
 	 * boundaries which are required by the layout exist in this class. 
-	 * 
 	 * @param shape, its corresponding shape annotation
 	 * @param initLocations, the list of Point2D initialization of contained nodes
 	 * @param intersections, a list of intersecting boundary annotations
 	 * @param wallForce, the wall force associated with this boundary
 	 * @param scaleMod, scale the wall force every scaleMod'th interval
-	 * */
+	 */
 	public BoundaryAnnotation(ShapeAnnotation shape, List<Point2D> initLocations, 
 			List<BoundaryAnnotation> intersections, BoundaryWallForce wallForce, int scaleMod) {
 		this.shape = shape;
-		this.shapeType = shape.getShapeType();
+		this.name = shape.getName();
 		this.initBoundingBox();
 		this.initLocations = initLocations;
 		this.intersections = intersections;
@@ -58,24 +58,33 @@ public class BoundaryAnnotation {
 		this.scaleMod = scaleMod;
 	}
 
-	/*
+	/**
 	 * This is the main constructor used by boundary layout. The default value of scale mod
 	 * suffices in the general case and so it is used.
+	 * @param shape is the shape annotation corresponding to this boundary
 	 */
 	public BoundaryAnnotation(ShapeAnnotation shape) {
 		this(shape, null, null, null, DEFAULT_SCALEMOD);
 	}
 	
-	/*
-	 * Construct a Boundary Annotation, given a shape and scale interval
+	/**
+	 * Construct a more generalized boundary annotation: one which does not have a shape annotation
+	 * associated with it, yet has a bounding box and the properties of a boundary i.e. wall force and
+	 * scaling logic. This is used by Boundary Layout's outer boundary
+	 * @param name is the name of the boundary defined by the user
+	 * @param boundingBox is the Rectangle2D representing the bounding box of this boundary
 	 */
-	public BoundaryAnnotation(ShapeAnnotation shape, int scaleMod) {
-		this(shape, null, null, null, scaleMod);
+	public BoundaryAnnotation(String name, Rectangle2D boundingBox) {
+		this.name = name;
+		this.boundingBox = boundingBox;
+		this.inProjections = 0;
+		this.outProjections = 0;
+		this.scaleMod = DEFAULT_SCALEMOD;
 	}
 	
-	/* 
-	 * Initialize the variable boundingbox corresponding to this boundary annotation
-	 * 
+	/**
+	 * Initialize the bounding box of this boundary annotation. The information of the bounding box
+	 * is assumed to be stored in the shape annotation
 	 * @precondition shape != null
 	 */
 	protected void initBoundingBox() {
@@ -91,51 +100,54 @@ public class BoundaryAnnotation {
 			boundingBox.setRect(xCoordinate, yCoordinate, width, height);
 	}
 	
-	/*
+	/**
 	 * @return name of this boundary annotation, which is also the name of the shape annotation
 	 */
 	public String getName() {
-		return this.shape.getName();
+		return name;
 	}
 	
+	/**
+	 * Get the type of the shape of this boundary, whether it's rectangle, elliptical or otherwise.
+	 * By default this boundary is a Rounded Rectangle
+	 * @return the shape type of this boundary
+	 */
 	public String getShapeType() {
-		return this.shapeType;
+		if(shape != null)
+			return shape.getShapeType();
+		return DEFAULT_TYPE;
 	}
 	
-	/*
+	/**
 	 * Assume the shape annotation is initialized by the constructor. 
-	 * 
-	 * @return the corresponding shape annotation, a 
+	 * @return the corresponding shape annotation
 	 */
 	public ShapeAnnotation getShapeAnnotation() {
-		return this.shape;
+		return shape;
 	}
 
-	/*
+	/**
 	 * Assume the bounding box is initialized by the constructor.
-	 * 
 	 * @return the corresponding bounding box, a Rectangle2D consisting of
 	 * the location and dimensions of the boundary annotation
 	 */
 	protected Rectangle2D getBoundingBox() {
-		return this.boundingBox;
+		return boundingBox;
 	}
 	
 	/*Functions dealing with intersecting boundary annotations*/
 	
-	/*
+	/**
 	 * Sets the list of boundary intersections given a list of boundary annotations
-	 * 
 	 * @param intersections represents the list of boundaries intersecting with this boundary
 	 */
 	protected void setIntersections(List<BoundaryAnnotation> intersections) {
 		this.intersections = intersections;
 	}
 	
-	/* 
+	/**
 	 * Add an intersection to the list of boundary intersections, which are 
 	 * intersecting with this boundary annotation. 
-	 * 
 	 * @param intersection is a boundary which intersects with this
 	 * @precondition intersection is not already in the list of intersections
 	 */
@@ -146,11 +158,9 @@ public class BoundaryAnnotation {
 			intersections.add(intersection);
 	}
 	
-	/* 
+	/**
 	 * Remove a given intersection from the list of boundary intersections.
-	 * 
-	 * @param intersection is the boundary intersection to be removed 
-	 * from the list of intersections
+	 * @param intersection is the boundary intersection to be removed from the list of intersections
 	 * @precondition intersection is in the list of intersections
 	 */
 	protected void removeIntersection(BoundaryAnnotation intersection) {
@@ -158,7 +168,7 @@ public class BoundaryAnnotation {
 			intersections.remove(intersection);
 	}
 	
-	/*
+	/**
 	 * @return true if this boundary annotation has intersecting boundary annotations
 	 */
 	protected boolean hasIntersections() {
@@ -167,7 +177,7 @@ public class BoundaryAnnotation {
 		return true;
 	}
 	
-	/*
+	/**
 	 * @return true if boundary is an intersecting boundary
 	 */
 	protected boolean containsIntersection(BoundaryAnnotation boundary) {
@@ -176,47 +186,51 @@ public class BoundaryAnnotation {
 		return true;
 	}
 	
-	/*
+	/**
+	 * Get a list of boundaries which are intersecting with this boundary. Intersecting
+	 * is defined as a boundary whose bounding box physically intersects with this boundary's
+	 * bounding box, yet this is not contained within the other boundary. However, the converse
+	 * may be the case
 	 * @return the list of intersecting boundary annotations
 	 */
 	protected List<BoundaryAnnotation> getIntersections() {
-		return this.intersections;
+		return intersections;
 	}
 	
 	/*Functions deal with handling initializing node locations for this boundary*/
 	
-	/*
-	 * initialize the list of node initialization locations corresponding to this boundary
+	/**
+	 * Initialize the list of node initialization locations corresponding to this boundary
+	 * @param initLocations is the list of node initialization locations corresponding to 
+	 * this boundary
 	 */
 	protected void setInitializations(List<Point2D> initLocations) {
 		this.initLocations = initLocations;
 	}
 	
-	/* 
+	/**
 	 * Add a new node initialization location to the list of initializations for this boundary
-	 * 	
 	 * @param initLocation, the Point2D node initialization location to add to the list
-	 * */
+	 */
 	protected void addInitialization(Point2D initLocation) {
 		if(initLocations == null)
 			initLocations = new ArrayList<>();
 		initLocations.add(initLocation);
 	}
 	
-	/* 
+	/**
 	 * Add a node initialization location from the list of initializations
-	 * 	
 	 * @param initLocation, the Point2D to remove from the list
 	 * @precondition initLocation is in the list of initializations
-	 * */
+	 */
 	protected void removeInitialization(Point2D initLocation) {
 		if(initLocations != null && initLocations.contains(initLocation))
 			initLocations.remove(initLocation);
 	}
 
-	/* 
-	 * @return a node initialization location chosen randomly from the list of 
-	 * node initializations 
+	/**
+	 * Get an node initialization location associated with this boundary
+	 * @return a node initialization location chosen randomly from the list of node initializations 
 	 * @precondition list of initialization != null and is not empty
 	 */
 	protected Point2D getRandomNodeInit() {
@@ -227,41 +241,37 @@ public class BoundaryAnnotation {
 	
 	/*WallForce-related methods dealing with force-based aspect of the boundary*/
 	
-	/* 
+	/**
 	 * This method sets this boundary's wall force and sets the scale factor of that
 	 * wall force.
-	 * 
 	 * @param wallForce is the wall force corresponding to this boundary
 	 * @param scaleFactor is the factor by which to scale the wall force when needed
-	 * */
+	 */
 	protected void setWallForce(BoundaryWallForce wallForce, double scaleFactor) {
-		this.setWallForce(wallForce);
-		this.setScaleFactor(scaleFactor);
+		setWallForce(wallForce);
+		setScaleFactor(scaleFactor);
 	}
 	
-	/*
-	 * Setter method for this boundary's wall force, given the wall force.
-	 * 
+	/**
+	 * Setter method for this boundary's wall force, given the wall force
 	 * @param wallForce is the rectangular wall force corresponding to this boundary annotation
 	 */
 	protected void setWallForce(BoundaryWallForce wallForce) {
 		this.wallForce = wallForce;
 	}
 	
-	/* 
-	 * Setter method setting the scale factor, given @param scaleFactor of the wall force 
+	/**
+	 * Setter method setting the scale factor, given the scaling factor of the wall force 
 	 * corresponding to this boundary annotation
-	 * 
 	 * @param scaleFactor is the factor by which to scale the wall force when needed
 	 */
 	protected void setScaleFactor(double scaleFactor) {
 		wallForce.setScaleFactor(scaleFactor);
 	}
 	
-	/*
+	/**
 	 * Setter method for this boundary's interval by which to scale the wall force corresponding
 	 * to this boundary
-	 * 
 	 * @param scaleMod is the number which is used to scale the wall force at discrete values
 	 * of the counters: inProjections and outProjections
 	 */
@@ -270,14 +280,13 @@ public class BoundaryAnnotation {
 			this.scaleMod = scaleMod;
 	}
 	
-	/* 
+	/**
 	 * Increments one of the two projection counters, in or out, depending on the direction.
 	 * Then, if the incremented projection counter is at the scale interval scaleMod, this 
 	 * method calls with wall class to scale this boundary's wall force
-	 * 
 	 * @param dir is the direction of the projection of a node, inside or outside the boundary
-	 * @precondition dir = -1 or dir = 1
-	 * */
+	 * @precondition dir == -1 or dir == 1
+	 */
 	protected void newProjection(int dir) {
 		if(dir == BoundaryWallForce.IN_PROJECTION) {
 			this.inProjections++;
@@ -290,7 +299,7 @@ public class BoundaryAnnotation {
 		}
 	}
 	
-	/* Private method
+	/** Private method
 	 * Scale the wall force of this boundary in the direction of @param dir
 	 */
 	private void scaleWallForce(int dir) {

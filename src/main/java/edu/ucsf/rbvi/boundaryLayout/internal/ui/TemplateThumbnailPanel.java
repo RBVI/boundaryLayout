@@ -48,8 +48,9 @@ import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateOverwriteTask;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSave;
 import edu.ucsf.rbvi.boundaryLayout.internal.tasks.TemplateSaveTask;
 
-/*
- * This class controls the UI of the Boundaries tab
+/**
+ * This class controls the UI of the Boundaries tab. This corresponds to Template Mode 
+ * functionality provided by Boundary Layout
  */
 public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent, TaskObserver {
 	public static final String REMOVE_TEMPLATE_FROM_VIEW = "remove";
@@ -63,8 +64,8 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	private static final long serialVersionUID = 1L;
 
 	private CyServiceRegistrar registrar;
-	private CyApplicationManager cyApplicationManager;
 	private TemplateManager manager;
+	private CyApplicationManager cyApplicationManager;
 	private TaskManager taskManager;
 	private JPanel templatesPanel;
 	private Box templatesBox;
@@ -73,10 +74,15 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	private JScrollPane scrollPane;
 	private Map<String, Object> tasksMap;
 
-	public TemplateThumbnailPanel() {
-		this(null, null, null);
-	}
-
+	/**
+	 * Construct a TemplateThumbnailPanel, which is a functionality provided by Boundary Layout in the context of a
+	 * Template mode. This mode allows the user to save, delete, import, export, apply, and manage a collection of templates, 
+	 * where a template is simply a collection of boundaries. This component of cytoscape is under the westward tab menu, labeled
+	 * Boundaries. By making templates a convenient resource for the user, Boundary Layout becomes more readily usable by the user.
+	 * @param registrar provides many of the services used by this component, including managers and factories
+	 * @param manager is the template manager, which this works synonymously with to manage templates
+	 * @param tasks is a mapping of the features provided by this panel
+	 */
 	public TemplateThumbnailPanel(CyServiceRegistrar registrar, TemplateManager manager, Map<String, Object> tasks) {
 		super();
 		this.registrar = registrar;
@@ -104,32 +110,55 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		updatePanel();
 	}
 
+	/**
+	 * Get this component for cytoscape to handle adding this Boundaries tab
+	 * @return this, representing the Tempate Mode's Boundaries tab
+	 */
 	@Override
 	public Component getComponent() {
 		return this;
 	}
 
+	/**
+	 * Get the panel in which the Boundaries tab will be displayed under. This can
+	 * be toggled on and off in the App menu
+	 * @return WEST, where the tab will appear in cytoscape
+	 */
 	@Override
 	public CytoPanelName getCytoPanelName() {
 		return CytoPanelName.WEST;
 	}
 
+	/**
+	 * Get the icon of this Template Mode tab
+	 * @return null since there is no icon associated with this tab
+	 */
 	@Override
 	public Icon getIcon() {
 		return null;
 	}
 
+	/**
+	 * Get the title of this Template Mode tab: "Boundaries"
+	 * @return the title of this cytoscape tab
+	 */
 	@Override
 	public String getTitle() {
 		return "Boundaries";
 	}
 
-	public void repaintPanel() {
+	/** Private method
+	 * repaint this panel
+	 */
+	private void repaintPanel() {
 		this.repaint();
 	}
 
-	/*
+	/** 
 	 * Renames a template to a new name
+	 * @param oldName is the current name of the template defined by the user
+	 * @param newName is the new name of the template which the user has renamed
+	 * @return true if the template has been renamed
 	 */
 	public boolean renameTemplate(String oldName, String newName) {
 		if(!templatesMap.containsKey(oldName) || !thumbnailsMap.containsKey(oldName))
@@ -144,10 +173,10 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		return false;
 	}
 
-	/*
+	/** Private method
 	 * Updates the contents of this panel
 	 */
-	public void updatePanel() {
+	private void updatePanel() {
 		templatesPanel.removeAll();
 		for (String template : manager.getTemplateNames())
 			addToTemplatesBox(template);
@@ -156,7 +185,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		initLowerPanel();
 	}
 
-	/*
+	/** Private method
 	 * Initialize the lower panel of the Boundaries tab, holding the tools available to the user
 	 */
 	private void initLowerPanel() {
@@ -173,7 +202,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		lowerPanel.repaint();
 	}
 
-	/* Private method
+	/** Private method
 	 * Initializes a new button in the button panel, holding the template
 	 */
 	private void initNewButton(JPanel buttonPanel, String buttonName) {
@@ -185,7 +214,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		buttonPanel.add(newToolButton);
 	}
 
-	/* Private method
+	/** Private method
 	 * Adds a template to the Boundaries tab
 	 */
 	private void addToTemplatesBox(String templateName) {
@@ -202,8 +231,10 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		}
 	}
 
-	/*
-	 * Replaces the thumbnail of a given template in the Boundaries tab
+	/**
+	 * Given a template, this method updates the thumbnail of that template in the Boundaries tab. 
+	 * This occurs in the case of a template overwrite.
+	 * @param templateName is the name of the specified template defined by the user
 	 */
 	public void replaceThumbnailTemplate(String templateName) {
 		if(templateName == null || !thumbnailsMap.containsKey(templateName) || !templatesMap.containsKey(templateName)) 
@@ -214,7 +245,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		templatesMap.get(templateName).repaint();
 	}
 
-	/* Private method
+	/** Private method
 	 * Adds a popup menu to the panel
 	 */
 	private void addPopupMenu(JPanel templatePanel, JButton templateButton) {
@@ -235,7 +266,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		templatePanel.add(templateButton, BorderLayout.CENTER);
 	}
 
-	/* Private method
+	/** Private method
 	 * Remove the given list of templates from the list of templates and user side
 	 */
 	private void removeFromTemplatesBox(List<String> removeTemplates) {
@@ -246,19 +277,19 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 			}
 	}
 
-	/*
+	/** Private method
 	 * if a template is added, update the panel
 	 */
-	public void updateTemplateButtonsAdd() {
+	private void updateTemplateButtonsAdd() {
 		for(String template : manager.getTemplateNames()) 
 			if(!templatesMap.containsKey(template)) 
 				addToTemplatesBox(template);
 	}
 
-	/*
+	/** Private method
 	 * if a template is removed, update the panel
 	 */
-	public void updateTemplateButtonsRemove() {
+	private void updateTemplateButtonsRemove() {
 		Map<String, List<String>> templatesInManager = manager.getTemplateMap();
 		List<String> templatesToRemove = new ArrayList<>();
 		for(String template : templatesMap.keySet()) 
@@ -267,8 +298,11 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		removeFromTemplatesBox(templatesToRemove);
 	}
 	
-	/*
-	 * updates the templates panel if needed
+	/**
+	 * This method updates the templates panel if needed. If a template has been added, we add and 
+	 * update that template in the list of templates visible in the Boundaries tab. If a template has
+	 * been destroyed, we remove that template from the Boundaries. Otherwise, if a template is currently 
+	 * active we update the thumbnail of that template (in the case of an overwrite).
 	 */
 	public void updateTemplatesPanel() {
 		if(templatesMap.size() > manager.getTemplateMap().size())
@@ -281,8 +315,11 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		this.revalidate();
 	}
 	
-	/*
-	 * Executes the given task, whether its a save or overwrite or applying the template
+	/**
+	 * Executes the given task, whether its a save template, overwrite current template, or applying the template
+	 * to the current network view. 
+	 * @param taskObject is the generalzied task that is being run
+	 * @return true if the task was executed properly
 	 */
 	private boolean executeTask(Object taskObject) {
 		TaskIterator taskIterator = null;
@@ -290,8 +327,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 			TaskFactory task = (TaskFactory) taskObject;
 			taskIterator = task.createTaskIterator();
 			taskManager.execute(taskIterator, this);
-		}
-		else if(taskObject instanceof NetworkViewTaskFactory) {
+		} else if(taskObject instanceof NetworkViewTaskFactory) {
 			NetworkViewTaskFactory netViewTask = (NetworkViewTaskFactory) taskObject;
 			CyNetworkView networkView = registrar.getService(CyApplicationManager.class).getCurrentNetworkView();
 			if(netViewTask != null && netViewTask instanceof TemplateSave) {
@@ -304,14 +340,13 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 					taskManager.execute(new TaskIterator(saveTask), this);
 				}
 			}
-		}
-		if(taskObject != null) 
-			return true;
-		return false;
+		} else return false;
+		return true;
 	}
 
-	/*
+	/**
 	 * After the task is handled, updates the panel
+	 * @param status is the status of the task
 	 */
 	@Override
 	public void allFinished(FinishStatus status) {
@@ -319,9 +354,9 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		repaintPanel();
 	}
 
-	/*
-	 * Handles saves and overwrites to templates
-	 * 
+	/**
+	 * Handles saves and overwrites to templates. This method updates the Boundaries tab
+	 * when the user has overwritten a template
 	 * @param task is the task being performed in response to the user
 	 */
 	@Override
@@ -333,20 +368,24 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		} 
 	}
 
-	/*
-	 * Button, Mouse, and Action Listeners for Swing features
+	/**
+	 * Button, Mouse, and Action Listeners for Swing features. This includes the three buttons
+	 * on the bottom of the Boundaries tab: import a template from a file, add a template or 
+	 * overwrite the current template, and export a template to a file
 	 */
 	private class TemplateButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent buttonPressed){
 			String taskName = buttonPressed.getActionCommand();	
 			Object taskObject = tasksMap.get(taskName);
 
-			executeTask(taskObject);//first handle underlying code
+			executeTask(taskObject);
 		}
 	}
 
-	/*
-	 * Listener for when the user presses on a template
+	/**
+	 * Listener for when the user presses on a template. This should remove any
+	 * template which is currently in the network view in which the user is looking at
+	 * and apply the template in which they chose
 	 */
 	private class TemplateSelectedListener implements ActionListener {
 		public void actionPerformed(ActionEvent templateChosen) {
@@ -358,8 +397,10 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		}
 	}
 
-	/*
-	 * Listener for mouse clicks on the Boundaries tab
+	/**
+	 * Listener for mouse clicks on the Boundaries tab. When this fires, a popupmenu
+	 * should appear to the user. This menu has the choice of renaming a certain template 
+	 * or deleting the template from their list of templates
 	 */
 	private class TemplatePopupListener implements MouseListener {
 		private JPopupMenu popupMenu;
@@ -396,8 +437,8 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		}
 	}
 
-	/*
-	 * Listener for deleting a template and changing the label name
+	/**
+	 * Listener for deleting a template and renaming the template 
 	 */
 	private class TemplateMenuItemListener implements ActionListener {
 		private JLabel templateLabel;

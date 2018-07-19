@@ -26,15 +26,13 @@ import java.util.Random;
  */
 public class NBodyForce extends AbstractForce {
 
-	/* 
+	/**
 	 * The indexing scheme for quadtree child nodes goes row by row.
 	 *   0 | 1    0 -> top left,    1 -> top right
 	 *  -------
 	 *   2 | 3    2 -> bottom left, 3 -> bottom right
 	 */
-
-	private static String[] pnames = new String[] { "GravitationalConstant", 
-			"Distance", "BarnesHutTheta"  };
+	private static String[] pnames = new String[] {"GravitationalConstant", "Distance", "BarnesHutTheta"};
 
 	public static final float DEFAULT_GRAV_CONSTANT = -1.0f;
 	public static final float DEFAULT_MIN_GRAV_CONSTANT = -10f;
@@ -68,14 +66,12 @@ public class NBodyForce extends AbstractForce {
 
 	/**
 	 * Create a new NBodyForce.
-	 * @param gravConstant the gravitational constant to use. Nodes will
-	 * attract each other if this value is positive, and will repel each
-	 * other if it is negative.
-	 * @param minDistance the distance within which two particles will
+	 * @param gravConstant the gravitational constant to use. Nodes will attract each other 
+	 * if this value is positive, and will repel each other if it is negative
+	 * @param minDistance the distance within which two particles will 
 	 * interact. If -1, the value is treated as infinite.
-	 * @param theta the Barnes-Hut parameter theta, which controls when
-	 * an aggregated mass is used rather than drilling down to individual
-	 * item mass values.
+	 * @param theta the Barnes-Hut parameter theta, which controls when an aggregated mass is 
+	 * used rather than drilling down to individual item mass values.
 	 */
 	public NBodyForce(float gravConstant, float minDistance, float theta, boolean avoidOverlap) {
 		params = new float[] {gravConstant, minDistance, theta};
@@ -172,7 +168,7 @@ public class NBodyForce extends AbstractForce {
 	 * Inserts an item into the quadtree.
 	 * @param item the ForceItem to add.
 	 * @throws IllegalStateException if the current location of the item is
-	 *  outside the bounds of the quadtree
+	 * outside the bounds of the quadtree
 	 */
 	public void insert(ForceItem item) {
 		// insert item into the quadtrees
@@ -183,21 +179,15 @@ public class NBodyForce extends AbstractForce {
 		}
 	}
 
-	private void insert(ForceItem p, QuadTreeNode n, 
-			float x1, float y1, float x2, float y2)
-	{
-		// try to insert particle p at node n in the quadtree
-		// by construction, each leaf will contain either 1 or 0 particles
-		// System.out.println("insert("+x1+","+y1+","+x2+","+y2+")");
-		if (Float.isInfinite(x1) || Float.isInfinite(x2) || Float.isInfinite(y1) || Float.isInfinite(y2)) {
+	private void insert(ForceItem p, QuadTreeNode n, float x1, float y1, float x2, float y2){
+		/* Try to insert particle p at node n in the quadtree
+		 * by construction, each leaf will contain either 1 or 0 particles */
+		if (Float.isInfinite(x1) || Float.isInfinite(x2) || Float.isInfinite(y1) || Float.isInfinite(y2)) 
 			throw new RuntimeException("Infinite node position!");
-		}
 
-		if ( n.hasChildren ) {
-			// n contains more than 1 particle
+		if ( n.hasChildren ) { // n contains more than 1 particle
 			insertHelper(p,n,x1,y1,x2,y2);
-		} else if ( n.value != null ) {
-			// n contains 1 particle
+		} else if ( n.value != null ) { // n contains 1 particle
 			if ( isSameLocation(n.value, p) ) {
 				insertHelper(p,n,x1,y1,x2,y2);
 			} else {
@@ -205,21 +195,18 @@ public class NBodyForce extends AbstractForce {
 				insertHelper(v,n,x1,y1,x2,y2);
 				insertHelper(p,n,x1,y1,x2,y2);
 			}
-		} else { 
-			// n is empty, so is a leaf
+		} else { // n is empty, so is a leaf
 			n.value = p;
 		}
 	}
 
 	private static boolean isSameLocation(ForceItem f1, ForceItem f2) {
-		float dx = Math.abs(f1.location[0]-f2.location[0]);
-		float dy = Math.abs(f1.location[1]-f2.location[1]);
-		return ( dx < 0.001f && dy < 0.001f );
+		float dx = Math.abs(f1.location[0] - f2.location[0]);
+		float dy = Math.abs(f1.location[1] - f2.location[1]);
+		return (dx < 0.001f && dy < 0.001f);
 	}
 
-	private void insertHelper(ForceItem p, QuadTreeNode n, 
-			float x1, float y1, float x2, float y2)
-	{   
+	private void insertHelper(ForceItem p, QuadTreeNode n, float x1, float y1, float x2, float y2) {   
 		float x = p.location[0], y = p.location[1];
 		float splitx = (x1+x2)/2;
 		float splity = (y1+y2)/2;
@@ -270,8 +257,7 @@ public class NBodyForce extends AbstractForce {
 		}
 	}
 
-	private void forceHelper(ForceItem item, QuadTreeNode n, float x1, float y1, float x2, float y2)
-	{
+	private void forceHelper(ForceItem item, QuadTreeNode n, float x1, float y1, float x2, float y2) {
 		boolean isOverlapping = false;
 		float dx = n.com[0] - item.location[0];
 		float dy = n.com[1] - item.location[1];

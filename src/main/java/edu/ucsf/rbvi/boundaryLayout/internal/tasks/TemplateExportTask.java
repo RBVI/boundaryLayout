@@ -10,7 +10,7 @@ import org.cytoscape.work.util.ListSingleSelection;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
-/*
+/**
  * Exports a specific template to a given path
  */
 public class TemplateExportTask extends AbstractTask {

@@ -2,7 +2,7 @@ package prefuse.util.force;
 
 import java.awt.geom.Point2D;
 
-/* 
+/**
  * Represents a rectangular bounding box of a boundary and applies a force on 
  * the force items in the force simulation, pushing them away from the walls of
  * this rectangle. The walls may or may not be of variable wall force, depending
@@ -58,14 +58,13 @@ public abstract class BoundaryWallForce extends AbstractForce {
 		return pnames;
 	}
 
-	/*
+	/**
 	 * This method sets the scaling factor of this wall force. The scaling factor
 	 * is the value that the gravitational constant is multiplied by when the wall
 	 * is scaled.
-	 * 
 	 * @param scaleFactor is the new scale factor of this wall force
 	 * @precondition 0.1 <= scaleFactor <= 10
-	 * */
+	 */
 	public boolean setScaleFactor(double scaleFactor) {
 		if(Math.abs(scaleFactor) >= 0.1 && Math.abs(scaleFactor) <= 10.) {
 			this.scaleFactor = (float) scaleFactor;
@@ -74,8 +73,10 @@ public abstract class BoundaryWallForce extends AbstractForce {
 		return false;
 	}
 
-	/* This method scales the strength of the wall force in the direction of @param dir, 
-	 * only if variableStrength is true*/
+	/** 
+	 * This method scales the strength of the wall force in the direction of @param dir, 
+	 * only if variableStrength is true
+	 */
 	public void scaleStrength(int dir) {
 		if(this.variableStrength) {
 			if(dir == IN_PROJECTION) 
@@ -90,9 +91,9 @@ public abstract class BoundaryWallForce extends AbstractForce {
 	 */
 	public abstract void getForce(ForceItem item);	
 
-	/*
+	/**
 	 * @return a random displacement 
-	 * */
+	 */
 	protected float getRandDisplacement() {
 		return ((float)Math.random() - 1f) / 50.0f;
 	}

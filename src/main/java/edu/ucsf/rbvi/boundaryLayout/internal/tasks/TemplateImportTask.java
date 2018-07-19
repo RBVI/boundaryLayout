@@ -8,7 +8,7 @@ import org.cytoscape.work.Tunable;
 
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 
-/*
+/**
  * Imports a template from a particular file
  */
 public class TemplateImportTask extends AbstractTask {

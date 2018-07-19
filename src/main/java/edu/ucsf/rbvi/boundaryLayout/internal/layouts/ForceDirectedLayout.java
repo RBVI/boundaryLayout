@@ -19,7 +19,7 @@ import prefuse.util.force.EulerIntegrator;
 import prefuse.util.force.Integrator;
 import prefuse.util.force.RungeKuttaIntegrator;
 
-/*
+/**
  * Initializes the force-directed capabilities of boundary layout
  */
 public class ForceDirectedLayout extends AbstractLayoutAlgorithm {
@@ -52,16 +52,19 @@ public class ForceDirectedLayout extends AbstractLayoutAlgorithm {
 		}
 	}
 
-	/*
+	/**
 	 * Constructs a ForceDirectedLayout given the registrar
+	 * @param registrar is the registrar of this session
+	 * @param undo allows the user to undo this layout
 	 */
 	public ForceDirectedLayout(final CyServiceRegistrar registrar, UndoSupport undo) {
 		super(ALGORITHM_ID, ALGORITHM_DISPLAY_NAME, undo);
 		this.registrar = registrar;
 	}
 
-	/*
+	/**
 	 * Creates an iterator, which holds the newly created task
+	 * @return the task iterator, which holds a task corresponding to the boundaryLayout algorithm
 	 */
 	@Override
 	public TaskIterator createTaskIterator(CyNetworkView networkView, Object context, 
@@ -72,8 +75,9 @@ public class ForceDirectedLayout extends AbstractLayoutAlgorithm {
 		return new TaskIterator(newTask);
 	}
 
-	/*
+	/**
 	 * Creates the context of the layout seen by the user when running
+	 * @return the context of this boundary layout 
 	 */
 	@Override
 	public ForceDirectedLayoutContext createLayoutContext() {
@@ -81,7 +85,7 @@ public class ForceDirectedLayout extends AbstractLayoutAlgorithm {
 		return context;
 	}
 
-	/*
+	/**
 	 * @return a set of the supported node attribute types
 	 */
 	@Override

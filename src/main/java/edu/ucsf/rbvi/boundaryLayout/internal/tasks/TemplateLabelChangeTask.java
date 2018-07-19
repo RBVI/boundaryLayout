@@ -9,7 +9,7 @@ import org.cytoscape.work.Tunable;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
 
-/*
+/**
  * Changes the name of a template in the templates view
  */
 public class TemplateLabelChangeTask extends AbstractTask {

@@ -11,7 +11,7 @@ import org.cytoscape.work.Tunable;
 import edu.ucsf.rbvi.boundaryLayout.internal.model.TemplateManager;
 import edu.ucsf.rbvi.boundaryLayout.internal.ui.TemplateThumbnailPanel;
 
-/*
+/**
  * Prompts to save the template when the session is about to be closed
  */
 public class TemplateSaveShutdownTask extends AbstractTask {

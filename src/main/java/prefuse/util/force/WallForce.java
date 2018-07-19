@@ -9,7 +9,6 @@ import java.awt.geom.Line2D;
  * @author <a href="http://jheer.org">jeffrey heer</a>
  */
 public class WallForce extends AbstractForce {
-
     private static String[] pnames = new String[] { "GravitationalConstant" };
     
     public static final float DEFAULT_GRAV_CONSTANT = -0.1f;

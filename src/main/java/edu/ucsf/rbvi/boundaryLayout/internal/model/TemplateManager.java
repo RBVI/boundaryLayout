@@ -31,6 +31,7 @@ import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
 import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.application.CyVersion;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyRow;
@@ -52,11 +53,11 @@ import org.cytoscape.view.presentation.annotations.ShapeAnnotation;
 import org.cytoscape.view.presentation.annotations.TextAnnotation;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 
-/* 
+/**
  * This is the manager of the Templates tab called Boundaries feature
  * provided by boundary layout. Capabilities include saving, loading, deleting,
  * overwriting, importing, exporting, and applying the template to the view
- * */
+ */
 public class TemplateManager {
 	private Map<String, Template> templates;
 	private Map<CyNetworkView, String> activeTemplates;
@@ -67,10 +68,11 @@ public class TemplateManager {
 	private final RenderingEngineFactory<CyNetwork> renderingEngineFactory;
 	static double PADDING = 10.0; // Make sure we have some room around our annotations
 
-	/*
+	/**
 	 * Initialize a template manager, which manages the entire Boundaries tab, corresponding
-	 * to the Template Mode feature of boundaryLayout.  
-	 * */
+	 * to the Template Mode feature of boundaryLayout
+	 * @param registrar provides services like managers and factories
+	 */
 	public TemplateManager(CyServiceRegistrar registrar) {
 		templates = new HashMap<>();
 		activeTemplates = new HashMap<>();
@@ -81,10 +83,20 @@ public class TemplateManager {
 		renderingEngineFactory = registrar.getService(RenderingEngineFactory.class);
 	}
 
+	/**
+	 * Check to see if this manager has the given template in its list of templates
+	 * @param template is the name of the template to check. This corresponds to the key in the templates map
+	 * @return true if this manager has the specified template
+	 */
 	public boolean hasTemplate(String template) {
 		return templates.containsKey(template);
 	}
 
+	/** Private method
+	 * Gets the template with the UUIDs which are all contained in the passed array uuids
+	 * @param uuids is a list of the ids of annotations
+	 * @return the template if one is found, meaning its UUIDs are contained within list uuids
+	 */
 	private Template getTemplateWithUUIDs(List<String> uuids) {
 		for(Template template : templates.values())
 			if(template.isContainedUUIDs(uuids))
@@ -92,6 +104,13 @@ public class TemplateManager {
 		return null;
 	}
 
+	/**
+	 * Handles when the user adds a network view to their session. This method checks the network
+	 * view for any active templates and updates the activeTemplates map and the corresponding template
+	 * accordingly
+	 * @param addedView is the view which has just been added
+	 * @param uuids is a list of strings representing the annotations within the added view
+	 */
 	public void handleAddedNetworkView(CyNetworkView addedView, List<String> uuids) {
 		if(uuids == null || uuids.isEmpty()) return;
 		Template containedTemplate = getTemplateWithUUIDs(uuids);
@@ -100,7 +119,14 @@ public class TemplateManager {
 			activeTemplates.put(addedView, containedTemplate.getName());
 		}
 	}
-	
+
+	/**
+	 * Handles when the user deletes network views from their session. The activeTemplates
+	 * mapping the network views to their respective template removes the desired network views and 
+	 * the templates which were active on those views are updated
+	 * @param currentViews is a list of the views on which to compare in order to find which views have 
+	 * been removed by the user
+	 */
 	public void handleDeletedNetworkView(Set<CyNetworkView> currentViews) {
 		List<CyNetworkView> deletedViews = new ArrayList<>();
 		for(CyNetworkView view : activeTemplates.keySet()) 
@@ -112,10 +138,9 @@ public class TemplateManager {
 		}
 	}
 
-	/*
+	/**
 	 * Adds template to the templates map, with the mapping:
 	 * (template name - list of annotations information), by calling addTemplateStrings()
-	 * 
 	 * @param templateName is the name of the added template 
 	 * @param annotations is a list of annotations that make up the template 
 	 * @return true if the template has been successfully added
@@ -130,10 +155,9 @@ public class TemplateManager {
 		return added;
 	}
 
-	/*
+	/**
 	 * Adds the mapping (template name - list of annotations information) to templates map. 
 	 * If the mapping already exists, overwrite the template mapping.
-	 * 
 	 * @param templateName is the name of the added template 
 	 * @param annotations is a list of information of the annotations that comprise the template 
 	 * @return true if the template has been successfully added to the templates map
@@ -147,9 +171,8 @@ public class TemplateManager {
 		return false;
 	}
 
-	/*
+	/**
 	 * Removes the mapping (template name - list of annotations information) from templates map. 
-	 * 
 	 * @param templateName is the name of the added template 
 	 * @return true if the template has been successfully removed from the templates map
 	 * */
@@ -171,10 +194,9 @@ public class TemplateManager {
 		return false;
 	}
 
-	/*
+	/**
 	 * Overwrites template mapping of key template name with the new value consisting
 	 * of a new list of annotation information, by calling overwriteTemplateStrings()
-	 * 
 	 * @param templateName is the name of the overwritten template 
 	 * @param annotations is a list of annotations that make up the template 
 	 * @return true if the template has been successfully overwritten
@@ -186,9 +208,8 @@ public class TemplateManager {
 		return overwritten;
 	}
 
-	/*
+	/**
 	 * Overwrites the mapping (template name - list of annotations information) to templates map. 
-	 * 
 	 * @precondition It is assumed that templates map already has the key templateName.
 	 * @param templateName is the name of the overwritten template 
 	 * @param annotations is a list of information of the annotations that comprise the template 
@@ -202,10 +223,9 @@ public class TemplateManager {
 		return true;
 	}
 
-	/*
+	/**
 	 * This method applies the template corresponding to the templateName to the given 
 	 * network view, meaning all the annotations and their properties are added to the view.
-	 * 
 	 * @param templateName is the name of the applied template 
 	 * @param networkView is the network view on which to apply the template
 	 * @return true if the template has been applied correctly
@@ -235,10 +255,9 @@ public class TemplateManager {
 		return true;
 	}
 
-	/*
+	/**
 	 * Imports the template information given in the template file and creates the mapping
 	 * (template name - list of annotation information)
-	 * 
 	 * @precondition templateFile exists 
 	 * @param templateName is what the user chooses to call the template after importing that 
 	 * template's annotations from the file
@@ -267,11 +286,10 @@ public class TemplateManager {
 		return successful;
 	}
 
-	/*
+	/**
 	 * Exports the template information associated with the template name to a file in the given
 	 * path. If the file does not exist, a file is created. The information of the annotations in the
 	 * template are written line by line to this file.
-	 * 
 	 * @param templateName is name of the template that the user wishes to export
 	 * @param absoluteFilePath is the path of the file that the template information is written to
 	 * @precondition templateName is valid and is in the templates map 
@@ -297,10 +315,9 @@ public class TemplateManager {
 		return true;
 	}
 
-	/*
+	/**
 	 * This method removes all the templates from the given network view. This method
 	 * uses networkRemoveTemplates(), passing the list of templates active in the view.
-	 * 
 	 * @param networkView is the network view whose templates will be removed
 	 */
 	public void removeCurrentTemplate() { 
@@ -308,16 +325,13 @@ public class TemplateManager {
 		this.removeTemplate(netView);
 	}
 
-	/*
+	/**
 	 * Given a list of template names to remove from the passed network view, this method
 	 * removes every template name in the list from the network view.
-	 * 
 	 * @param networkView is the network view from which to remove the templates
 	 * @param templateRemoveNames is the list of template names corresponding to templates and 
 	 * their annotations to remove from the view
 	 * @precondition templateRemoveNames != null & templateRemoveNames is not empty
-	 * Given @param networkView and @param templateRemoveNames, remove the templates from networkView
-	 * corresponding to these names 
 	 */
 	public void removeTemplate(CyNetworkView networkView) {
 		String activeTemplate = activeTemplates.get(networkView);
@@ -349,11 +363,10 @@ public class TemplateManager {
 		}
 	}
 
-	/* Private method
+	/** Private method
 	 * Creates a list of the annotation information corresponding to the given list
 	 * of annotations. The annotation information is simply a String representing the
 	 * respective argument maps, argMap, of each annotation
-	 * 
 	 * @return that list of annotation information
 	 */
 	private static List<String> getAnnotationInformation(List<Annotation> annotations) {
@@ -364,17 +377,16 @@ public class TemplateManager {
 		return annotationsInfo;
 	}
 
-	/*
+	/**
 	 * @return a list of template names
 	 */
 	public List<String> getTemplateNames() {
 		return new ArrayList<>(templates.keySet());
 	}
 
-	/*
+	/**
 	 * This method appends the given template name, which must be a template in the user's 
 	 * list of templates, into the network view's list of active templates 
-	 * 
 	 * @param networkView is the network view that the template corresponding to the variable
 	 * templateName is being applied on
 	 * @param templateName is the name of the template that the user has applied onto the network
@@ -391,7 +403,7 @@ public class TemplateManager {
 		templates.get(templateName).addActiveView(networkView);
 	}
 
-	/* Private method
+	/** Private method
 	 * Removes the templates in @param templateRemoveNames from the @param networkView
 	 */
 	private void removeActiveTemplate(CyNetworkView networkView, String templateName) {
@@ -403,37 +415,32 @@ public class TemplateManager {
 		}
 	}
 
+	/**
+	 * This method gets the active template in the current network view, i.e. the network view
+	 * the user is currently looking at
+	 * @return the name of the template which is active on the current network view
+	 */
 	public String getCurrentActiveTemplate() {
 		return getActiveTemplate(registrar.getService(CyApplicationManager.class).getCurrentNetworkView());
 	}
 
+	/** 
+	 * Get the active template in a certain networkView. If the view is not mapped in the
+	 * activeViews, then there is no active template
+	 * @param networkView is the view to check if there is currently an active template
+	 * @return the active template if there is an active template, otherwise return null
+	 */
 	public String getActiveTemplate(CyNetworkView networkView) {
 		if(!activeTemplates.containsKey(networkView))
 			return null;
 		return activeTemplates.get(networkView);
 	}
 
-	/* 
-	 * Gets the network CyRow of the given network view and if the templates column
-	 * is null, initialize it.
-	 * 
-	 * @param networkView is the view whose requested CyRow corresponds to 
-	 * @return the CyRow of the networkView, containing information about the view
-	 */
-	public CyRow getNetworkRow(CyNetworkView networkView) {
-		return getNetworkRow(networkView.getModel());
-	}
-
-	public CyRow getNetworkRow(CyNetwork network) {
-		CyTable networkTable = network.getDefaultNetworkTable();
-		return networkTable.getRow(network.getSUID());
-	}
-
-	/*
+	/** Private method
 	 * Creates an annotation with arguments @param argMap, in the @param networkView, and with the
 	 * information @argMap
 	 */
-	public Annotation getCreatedAnnotation(CyServiceRegistrar registrar, CyNetworkView networkView, Map<String, String> argMap) {
+	private Annotation getCreatedAnnotation(CyServiceRegistrar registrar, CyNetworkView networkView, Map<String, String> argMap) {
 		String annotationType = argMap.get("type");
 		Annotation addedShape = null;
 		if(networkView.getModel().getDefaultNetworkTable().getColumn("__Annotations") == null) {
@@ -468,14 +475,12 @@ public class TemplateManager {
 		return addedShape;
 	}
 
-	/*
+	/**
 	 * Rename the template corresponding to oldName with a new name, without changing any properties 
 	 * of the template, by calling the helper function. Also, rename all instances of the active 
 	 * template in the network views found in the manager.
-	 * 
 	 * @param oldName is the name of the template to be changed 
 	 * @param newName is the new name of the template
-	 * 
 	 * @precondition oldName must exist in the templates map as a template
 	 * @return true if the renaming was successful
 	 */
@@ -493,7 +498,7 @@ public class TemplateManager {
 		return true;
 	}
 
-	/*
+	/**
 	 * @return the template map
 	 */
 	public Map<String, List<String>> getTemplateMap() {
@@ -503,9 +508,8 @@ public class TemplateManager {
 		return templateMap;
 	}
 
-	/*
+	/**
 	 * This method returns the annotation information corresponding to the given template.
-	 * 
 	 * @return annotation information corresponding to the template as a list of strings
 	 * @precondition template exists in the templates map
 	 */
@@ -515,9 +519,8 @@ public class TemplateManager {
 		return null;
 	}
 
-	/*
+	/**
 	 * This method handles encoding the thumbnail of the given template
-	 * 
 	 * @param template is the template in which to create a thumbnail of
 	 * @return encoded thumbnail in the form of a string
 	 */
@@ -537,10 +540,9 @@ public class TemplateManager {
 		}
 	}
 
-	/*
+	/**
 	 * This method creates a new thumbnail corresponding to the given template.
-	 * Add the mapping (template - thumbnail) to the thumbnails map.
-	 * 
+	 * Add the mapping (template - thumbnail) to the thumbnails map
 	 * @param template, the name of the thumbnail to be created
 	 * @return the thumbnail corresponding to template
 	 * @precondition template exists in templates map
@@ -554,11 +556,9 @@ public class TemplateManager {
 		return null;
 	}
 
-	/*
-	 * This method gets a thumbnail corresponding to the given template.
-	 * If the thumbnail has not yet been created, create one and add the mapping
-	 * (template - thumbnail) to the thumbnails map.
-	 * 
+	/**
+	 * This method gets a thumbnail corresponding to the given template. If the thumbnail has 
+	 * not yet been created, create one and add the mapping (template - thumbnail) to the thumbnails map
 	 * @param template, the name of the thumbnail to be created
 	 * @return the thumbnail corresponding to template
 	 * @precondition template exists in templates map
@@ -573,9 +573,8 @@ public class TemplateManager {
 		return null;
 	}
 
-	/* Private method
-	 * Adds the thumbnail to the thumbnail map iff the list of templates
-	 * contains the template
+	/** Private method
+	 * Adds the thumbnail to the thumbnail map iff the list of templates contains the template
 	 */
 	private void addThumbnail(String template, Image thumbnail) {
 		if (!templates.containsKey(template))
@@ -584,10 +583,9 @@ public class TemplateManager {
 		templates.get(template).setThumbnail(thumbnail);
 	}
 
-	/*
+	/**
 	 * Reads a thumbnail corresponding to the string thumbnail and adds the 
 	 * (template - image thumbnail) mapping to the thumbnails map
-	 * 
 	 * @param template is the name of the template corresponding to the thumbnail 
 	 * @param thumbnail is an encoded string, which contains the image
 	 * @precondition templates map must contain the mapping template
@@ -607,7 +605,7 @@ public class TemplateManager {
 		}
 	}
 
-	/* Private method
+	/** Private method
 	 * This method creates a thumbnail of the list of annotations corresponding 
 	 * to @param template and @return that thumbnail
 	 */
@@ -636,24 +634,28 @@ public class TemplateManager {
 		return img;
 	}
 
-	/* Private method 
+	/** Private method 
 	 * Given @param networkView, this method finds the union of annotations and @return
 	 * this union in the form of a Rectangle2D.Double
-	 * */
+	 */
 	private Rectangle2D.Double getUnionofAnnotations(CyNetworkView networkView) { 
 		Rectangle2D.Double union = new Rectangle2D.Double();
 		final String REFERENCE = "";
 
-		/*AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
-				AnnotationFactory.class, "(type=ShapeAnnotation.class)");
 		AnnotationManager manager = registrar.getService(AnnotationManager.class);
-		ShapeAnnotation shape = shapeFactory.createAnnotation(ShapeAnnotation.class, networkView, new HashMap<>());
-		shape.setBorderWidth(0);
-		shape.setCanvas(ShapeAnnotation.FOREGROUND);
-		manager.addAnnotation(shape);
-		shape.update();
-		shape.setName(REFERENCE);
-		networkView.updateView();*/
+		int minVersion = registrar.getService(CyVersion.class).getMinorVersion();
+		ShapeAnnotation shape = null;
+		if(minVersion < 7) {
+			AnnotationFactory<ShapeAnnotation> shapeFactory = registrar.getService(
+					AnnotationFactory.class, "(type=ShapeAnnotation.class)");
+			shape = shapeFactory.createAnnotation(ShapeAnnotation.class, networkView, new HashMap<>());
+			shape.setBorderWidth(0);
+			shape.setCanvas(ShapeAnnotation.FOREGROUND);
+			manager.addAnnotation(shape);
+			shape.update();
+			shape.setName(REFERENCE);
+			networkView.updateView();
+		}
 
 		List<Annotation> annotations = registrar.getService(AnnotationManager.class).getAnnotations(networkView);
 		List<ShapeAnnotation> shapeAnnotations = new ArrayList<>();
@@ -661,9 +663,10 @@ public class TemplateManager {
 			for(Annotation annotation : annotations) 
 				if(annotation instanceof ShapeAnnotation && !annotation.getName().equals(REFERENCE)) 
 					shapeAnnotations.add((ShapeAnnotation) annotation);
-
-		//	manager.removeAnnotation(shape);
-		//	shape.removeAnnotation();
+		if(minVersion < 7) {
+			manager.removeAnnotation(shape);
+			shape.removeAnnotation();
+		}
 
 		for(ShapeAnnotation shapeAnnotation : shapeAnnotations) {
 			Map<String, String> argMap = shapeAnnotation.getArgMap();
@@ -682,9 +685,8 @@ public class TemplateManager {
 		return union;
 	}
 
-	/* Private method
+	/** Private method
 	 * Gets the image, with size @param bounds, of the network view @param view with the name @param template
-	 * 
 	 * @return the image corresponding to the view
 	 */
 	private Image getViewImage(final String template, final CyNetworkView view, Rectangle2D.Double bounds) {
@@ -711,9 +713,9 @@ public class TemplateManager {
 		return image.getScaledInstance((int) newBounds.getWidth(), (int) newBounds.getHeight(), Image.SCALE_SMOOTH);
 	}
 
-	/* Private method
+	/** Private method
 	 * Given @param bounds, adjust and scale the dimensions of them to fit within a specific containment
-	 * */
+	 */
 	private static Rectangle2D.Double getAdjustedDimensions(Rectangle2D.Double bounds) { 
 		final double width = Math.abs(bounds.getWidth());
 		final double height = Math.abs(bounds.getHeight());
@@ -735,10 +737,9 @@ public class TemplateManager {
 		return new Rectangle2D.Double(bounds.getX(), bounds.getY(), newWidth, newHeight);
 	}
 
-	/*
+	/**
 	 * Renders the template and its annotations into the given network view and places it in
 	 * its own template panel.
-	 * 
 	 * @param template is the name of the template to be rendered
 	 * @param view is the network view containing a visual of what the template looks like
 	 * @param img contains an wrapper image of the view

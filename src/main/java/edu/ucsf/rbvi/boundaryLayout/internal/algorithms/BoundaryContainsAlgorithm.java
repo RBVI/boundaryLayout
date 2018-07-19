@@ -4,12 +4,12 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
-/* 
+/**
  * This class corresponds to the algorithm performed when the boundary has intersecting boundaries.
  */
 public class BoundaryContainsAlgorithm {
 	
-	/* 
+	/**
 	 * Given a certain rectangle and intersecting rectangles, this method finds a list of the largest
 	 * areas. These areas are rectangles sorted in high-low order by their area. Important to note is these
 	 * rectangles, which are subrectangles of the particular given rectangle, are not intersected by the

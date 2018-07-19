@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 
-/*
+/**
  * BoundaryTree is a Quadtree data structure with the following invariants:
  * 1) Each leaf has no intersected area
  * 2) Each parent contains its children, meaning each child is simply a subrectangle of its parent
@@ -21,14 +21,14 @@ public class BoundaryTree {
 	private BoundaryTreeNode root;
 	private int size;
 
-	/*
+	/**
 	 * Construct an empty Boundary Quadtree with no root
 	 */
 	public BoundaryTree() {
 		this(null);
 	}
 
-	/*
+	/**
 	 * Construct a Boundary Quadtree with a root and size 1
 	 * 
 	 * @param root is the root of the tree
@@ -38,7 +38,7 @@ public class BoundaryTree {
 		size = 1;
 	}	
 
-	/*
+	/**
 	 * Given a partitioning rectangle, this method finds every leaf
 	 * node, representing a rectangle, which intersects with this 
 	 * partitioning rectangle and returns a list of intersecting leaves.
@@ -73,14 +73,14 @@ public class BoundaryTree {
 		return intersectedNodes;
 	}
 
-	/*
+	/**
 	 * @return size of the tree.
 	 */
 	public int getSize() {
 		return size;
 	}
 
-	/* 
+	/**
 	 * Given a partitioning rectangle, this function finds the intersecting leaf nodes
 	 * in this tree and for each of the intersecting nodes, it partitions the rectangle
 	 * creating 1-4 children for that node. The children describe the resultant rectangles
@@ -134,7 +134,7 @@ public class BoundaryTree {
 		}
 	}
 
-	/* 
+	/**
 	 * This method does a preorder search through all the available areas and 
 	 * returns a list of areas, in the form of Rectangle2D's. This list is sorted
 	 * from highest - lowest area. This list includes no less than 85% of the
@@ -146,22 +146,10 @@ public class BoundaryTree {
 		List<Rectangle2D> bTreeAreas = new ArrayList<>();
 		preorderArea(bTreeAreas, root);
 
-		//double totalArea = getTotalArea(bTreeAreas);
-		//double summedArea = 0.;
-		//Iterator<Rectangle2D> recIterator = bTreeAreas.iterator();
-		//List<Rectangle2D> largestAreas = new ArrayList<>();
-
 		return bTreeAreas.subList(0, 1);
-		/*while(recIterator.hasNext()) {
-			Rectangle2D nextRect = recIterator.next();
-			largestAreas.add(nextRect);
-			//summedArea += getNonIntersectedArea(nextRect, largestAreas, largestAreas.size() - 1);
-		}
-
-		return largestAreas;*/
 	}
 
-	/*
+	/**
 	 * This method calculates the total area of a list of rectangles. This calculation
 	 * takes into account the intersection of rectangles, in which case the intersected area
 	 * is not duplicated.
@@ -182,7 +170,7 @@ public class BoundaryTree {
 		return totalArea;
 	}
 
-	/* Private method
+	/** Private method
 	 * @param nextRect is a rectangle you want to find the area of
 	 * @param areas is a list of rectangles that you must compare nextRect with to determine
 	 * any intersections
@@ -204,7 +192,7 @@ public class BoundaryTree {
 		return nextRect.getWidth() * nextRect.getHeight() - repeatArea;
 	}
 
-	/* Private method
+	/** Private method
 	 * @param List<Rectangle2D> areas holds the largest area rectangle
 	 * leaves in the tree
 	 * @param BoundaryTreeNode bNode is the node currently being traversed
@@ -222,7 +210,7 @@ public class BoundaryTree {
 		}
 	}
 
-	/* Private method
+	/** Private method
 	 * @param areas is a sorted list and this method keeps the sorted property
 	 * @param leafRect is the rectangle you want to add to areas
 	 * 

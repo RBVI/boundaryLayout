@@ -21,9 +21,8 @@ import org.cytoscape.work.Tunable;
 import org.cytoscape.work.TunableValidator;
 import org.cytoscape.work.util.ListSingleSelection;
 
-/* 
- * This is the context for performing boundary layout and handles
- * tunables and setting the layout categories
+/** 
+ * This is the context for performing boundary layout and handles tunables and setting the layout categories
  */
 public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentNetworkListener {	
 	
@@ -70,6 +69,10 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	@ContainsTunables
 	public EdgeWeighter edgeWeighter = new EdgeWeighter();
 
+	/**
+	 * Construct a context for the boundary layout algorithm
+	 * @param registrar provides the services used by the application
+	 */
 	public ForceDirectedLayoutContext(CyServiceRegistrar registrar) {
 		super();
 		registrar.registerService(this, SetCurrentNetworkListener.class, new Properties());
@@ -78,8 +81,8 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 			setColumnTunables(network);
 	}
 	
-	/*
-	 * Validates the parameters
+	/**
+	 * Validates the parameters and make sure they logically make sense
 	 */
 	@Override
 	public ValidationState getValidationState(final Appendable errMsg) {
@@ -112,8 +115,9 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 		return n > 0.0;
 	}
 
-	/*
+	/**
 	 * Sets the categories for the user on which to perform boundary layout
+	 * @param network on which the user looks to use the layout
 	 */
 	protected void setColumnTunables(CyNetwork network) {
 		CyTable edgeTable = network.getDefaultEdgeTable();
@@ -133,6 +137,10 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 		edgeWeight = new ListSingleSelection<String>(columnNames);
 	}
 
+	/**
+	 * Handles network switching
+	 * @param ev is the new network the user has switched to
+	 */
 	@Override
 	public void handleEvent(SetCurrentNetworkEvent ev) {
 		if (ev.getNetwork() != null)

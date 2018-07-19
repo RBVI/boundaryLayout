@@ -4,7 +4,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
 import java.util.Map;
 
-/*
+/**
  * This BoundaryTreeNode represents a node in the BoundaryTree and its properties include:
  * entry: the Rectangle2D that this node corresponds to
  * parent: the parent node of this node
@@ -21,23 +21,30 @@ public class BoundaryTreeNode {
 	static final String RIGHTCHILD = "RIGHT";
 	static final String BOTTOMCHILD = "BOTTOM";
 
-	/*
+	/**
 	 * Construct a BoundaryTreeNode with a specified entry: children and parent are null. This
-	 * constructor is used for the root of the tree.
+	 * constructor is used for the root of the tree
+	 * @param entry is the rectangle bounding box corresponding to this node
 	 */
 	BoundaryTreeNode(Rectangle2D entry) {
 		this(entry, null, null, null, null, null);
 	}
 
-	/*
-	 * Construct a BoundaryTreeNode with a specified entry and parent: children are null.
+	/**
+	 * Construct a BoundaryTreeNode with a specified entry and parent: children are null
+	 * @param entry is the rectangle bounding box corresponding to this node
+	 * @param parent is this node's parent node
 	 */
 	BoundaryTreeNode(Rectangle2D entry, BoundaryTreeNode parent) {
 		this(entry, parent, null, null, null, null);
 	}
 
-	/*
-	 *  Construct a BoundaryTreeNode, specifying entry, parent and children.
+	/**
+	 * Construct a BoundaryTreeNode, specifying entry, parent and children
+	 * @param entry is the rectangle bounding box corresponding to this node
+	 * @param parent is this node's parent node
+	 * @param leftChild, topChild, rightChild, and bottomChild are the children 
+	 * of this quadtree-based node
 	 */
 	BoundaryTreeNode(Rectangle2D entry, BoundaryTreeNode parent,
 			BoundaryTreeNode leftChild, BoundaryTreeNode topChild, 
@@ -51,9 +58,8 @@ public class BoundaryTreeNode {
 		this.parent = parent;
 	}
 
-	/*
+	/**
 	 * Express a BoundaryTreeNode as a String.
-	 *
 	 * @return a String representing the BoundaryTreeNode.
 	 */
 	@Override
@@ -67,9 +73,8 @@ public class BoundaryTreeNode {
 		return s;
 	}
 	
-	/*
+	/**
 	 * Checks to see if this node has children
-	 * 
 	 * @return true if this node has at least 1 child
 	 */
 	public boolean hasChildren() {
@@ -79,9 +84,8 @@ public class BoundaryTreeNode {
 				children.get(BOTTOMCHILD) != null);
 	}
 	
-	/* 
+	/**
 	 * Adds children to this node
-	 * 
 	 * @param BoundaryTreeNode[] partitionChildren is assumed to be of
 	 * length 4 holding [leftChild, topChild, rightChild, bottomChild]
 	 */
