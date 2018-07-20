@@ -1,6 +1,7 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.layouts;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -49,7 +50,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private final String chosenCategory;
 	final CyNetworkView netView;
 	private Map<Object, BoundaryAnnotation> boundaries;
-	private static final String OUTER_UNION_KEY = "";
+	private static final String OUTER_UNION_KEY = "Default Outer Boundary";
 
 	private Rectangle2D unionOfBoundaries;
 
@@ -118,7 +119,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 		//initialize initial node locations
 		if (boundaries != null) {
-			this.unionOfBoundaries = getUnionofBoundaries();
+			this.unionOfBoundaries = getUnionofBoundaries(boundaries.values());
 			this.initializeOuterBoundary();
 			for(BoundaryAnnotation boundary : boundaries.values()) 
 				initNodeLocations(boundary);
@@ -145,10 +146,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			fitem.category = group;
 
 			if(unionOfBoundaries != null) {
-				if(boundaries.containsKey(fitem.category) && !boundaries.get(fitem.category).hasIntersections()) {
-					Point2D init = boundaries.get(fitem.category).getRandomNodeInit();
-					fitem.location[0] = (float) init.getX();
-					fitem.location[1] = (float) init.getY();
+				if(boundaries.containsKey(fitem.category)) {
+					Rectangle2D intersectionUnion = boundaries.get(fitem.category).getUnionOfIntersections();
+					fitem.location[0] = (float) intersectionUnion.getCenterX();
+					fitem.location[1] = (float) intersectionUnion.getCenterY();
 				} else {
 					fitem.location[0] = (float) unionOfBoundaries.getCenterX();
 					fitem.location[1] = (float) unionOfBoundaries.getCenterY();
@@ -162,7 +163,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 
 
-		// initialize edges
+		//initialize edges
 		for (View<CyEdge> edgeView : edgeViewList) {
 			CyEdge edge = edgeView.getModel();
 			CyNode n1 = edge.getSource();
@@ -174,9 +175,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			m_fsim.addSpring(f1, f2, (float) context.defaultSpringCoefficient, (float) context.defaultSpringLength); 
 		}
 
-		// perform layout and check center at intervals
-
 		final int checkCenter = (context.numIterations / 25) + 1;
+		// perform layout and check center at intervals
 		long timestep = 1000L;
 		m_fsim.speedLimit = 2f;
 		for (int i = 0; i < context.numIterations / 3 && !cancelled; i++) {
@@ -189,7 +189,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 
 		checkCenter(m_fsim);
-		if(boundaries != null) 
+		if(boundaries != null && !boundaries.isEmpty()) 
 			for(BoundaryAnnotation boundary : boundaries.values()) 
 				addAnnotationForce(m_fsim, boundary);
 
@@ -504,26 +504,28 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 */
 	private List<Rectangle2D> applySpecialInitialization(BoundaryAnnotation boundary, Rectangle2D boundingBox) {
 		List<Rectangle2D> listOfContainments = new ArrayList<>();
+		List<BoundaryAnnotation> listOfIntersections = new ArrayList<>();
 		for(BoundaryAnnotation comparedBoundary : boundaries.values()) {
 			Rectangle2D comparedBoundingBox = comparedBoundary.getBoundingBox();
 			if(comparedBoundary.getName().equals(boundary.getName())) {} 
 			else if(boundingBox.intersects(comparedBoundingBox) && !comparedBoundingBox.contains(boundingBox))  {
 				listOfContainments.add(comparedBoundingBox);
-				boundary.addIntersection(comparedBoundary);
+				listOfIntersections.add(comparedBoundary);
 			}
 		}
+		boundary.setIntersections(listOfIntersections);
 		return listOfContainments;
 	}
 
 	/** Private method
 	 * @return a Rectangle2D representing the union of the boundaries in the boundaries map
 	 */
-	private Rectangle2D getUnionofBoundaries() {
+	private Rectangle2D getUnionofBoundaries(Collection<BoundaryAnnotation> boundaries) {
 		if(boundaries.size() == 0)
 			return null;
 
 		Rectangle2D union = new Rectangle2D.Double();
-		Iterator<BoundaryAnnotation> unionIterate = this.boundaries.values().iterator();
+		Iterator<BoundaryAnnotation> unionIterate = boundaries.iterator();
 		BoundaryAnnotation initBoundary = unionIterate.next();
 		union.setRect(initBoundary.getBoundingBox());
 

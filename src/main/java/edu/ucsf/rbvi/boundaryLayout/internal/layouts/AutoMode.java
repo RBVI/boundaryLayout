@@ -19,13 +19,13 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 
 /**
- * AutoMode class called to create shape annotations in the 
+ * AutoMode class called to create boundaries in the 
  * instance where the user does not create any
  */
 public class AutoMode {
 
 	/**
-	 * This method creates shape annotations for each value of the given category and places those
+	 * This method creates a boundary for each value of the given category and places those
 	 * annotations in the network view. The shape annotations are large enough to encompass 
 	 * all their respective nodes and are positioned in a grid fashion. They are also named according
 	 * to each of their respective categorical value.
@@ -107,9 +107,7 @@ public class AutoMode {
 		netView.updateView();
 
 		Map<Object, BoundaryAnnotation> boundaries = new HashMap<>();
-
 		initBoundaryAnnotations(boundaries, annotationManager, netView);
-
 		return boundaries;
 	}
 

@@ -3,6 +3,7 @@ package edu.ucsf.rbvi.boundaryLayout.internal.layouts;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -27,6 +28,7 @@ public class BoundaryAnnotation {
 	private List<Point2D> initLocations;
 	private Random RANDOM = new Random();
 	private List<BoundaryAnnotation> intersections;
+	private Rectangle2D unionOfIntersections;
 	
 	private BoundaryWallForce wallForce;
 	private int inProjections;
@@ -100,6 +102,30 @@ public class BoundaryAnnotation {
 			boundingBox.setRect(xCoordinate, yCoordinate, width, height);
 	}
 	
+	/** Private method
+	 * Initialize the union of intersections, which is inclusive of this bounding box
+	 */
+	private void setUnionOfIntersections() {
+		if(unionOfIntersections == null)
+			unionOfIntersections = new Rectangle2D.Double();
+		if(boundingBox == null)
+			return;
+		
+		unionOfIntersections.setRect(boundingBox);
+		if(intersections != null && !intersections.isEmpty())
+			for(BoundaryAnnotation boundary : intersections) 
+				unionOfIntersections.setRect(unionOfIntersections.createUnion(boundary.getBoundingBox()));
+	}
+	
+	/**
+	 * Gets the union of intersections. This is a Rectangle2D object which is the union of this bounding
+	 * box along with the bounding boxes of all the intersecting boundaries
+	 * @return union of this shape and all intersecting boundaries
+	 */
+	protected Rectangle2D getUnionOfIntersections() {
+		return unionOfIntersections;
+	}
+	
 	/**
 	 * @return name of this boundary annotation, which is also the name of the shape annotation
 	 */
@@ -143,29 +169,7 @@ public class BoundaryAnnotation {
 	 */
 	protected void setIntersections(List<BoundaryAnnotation> intersections) {
 		this.intersections = intersections;
-	}
-	
-	/**
-	 * Add an intersection to the list of boundary intersections, which are 
-	 * intersecting with this boundary annotation. 
-	 * @param intersection is a boundary which intersects with this
-	 * @precondition intersection is not already in the list of intersections
-	 */
-	protected void addIntersection(BoundaryAnnotation intersection) {
-		if(intersections == null)
-			intersections = new ArrayList<>();
-		if(!intersections.contains(intersection))
-			intersections.add(intersection);
-	}
-	
-	/**
-	 * Remove a given intersection from the list of boundary intersections.
-	 * @param intersection is the boundary intersection to be removed from the list of intersections
-	 * @precondition intersection is in the list of intersections
-	 */
-	protected void removeIntersection(BoundaryAnnotation intersection) {
-		if(intersections != null && intersections.contains(intersection))
-			intersections.remove(intersection);
+		this.setUnionOfIntersections();
 	}
 	
 	/**

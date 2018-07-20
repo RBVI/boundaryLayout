@@ -50,7 +50,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	public float speedLimit = 1f;
 	
 	@Tunable(description="Strength of boundaries", gravity=13.0, groups = {"Boundary Parameters"})
-	public float gravConst = 20f;
+	public float gravConst = 50f;
 	
 	@Tunable(description="Variable boundary forces", gravity = 14.0, groups = {"Boundary Parameters"})
 	public boolean variableWallForce = true;
