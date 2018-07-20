@@ -2,6 +2,8 @@ package edu.ucsf.rbvi.boundaryLayout.internal.tasks;
 
 import javax.swing.JLabel;
 
+import org.cytoscape.application.CyApplicationManager;
+import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.Tunable;
@@ -20,8 +22,7 @@ public class TemplateLabelChangeTask extends AbstractTask {
 	@Tunable (description = "New name of template: ")
 	public String newTemplateName = null;
 
-	public TemplateLabelChangeTask(TemplateManager templateManager, 
-			TemplateThumbnailPanel templatesPanel, JLabel templateLabel) {
+	public TemplateLabelChangeTask(TemplateManager templateManager, TemplateThumbnailPanel templatesPanel, JLabel templateLabel) {
 		super();
 		this.templateManager = templateManager;
 		this.templatesPanel = templatesPanel;
@@ -30,7 +31,7 @@ public class TemplateLabelChangeTask extends AbstractTask {
 
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {
-		if(newTemplateName != null) {
+		if(newTemplateName != null && !templateManager.getTemplateNames().contains(newTemplateName)) {
 			String oldTemplateName = templateLabel.getText();
 			templateManager.renameTemplate(oldTemplateName, newTemplateName);
 			templatesPanel.renameTemplate(oldTemplateName, newTemplateName);

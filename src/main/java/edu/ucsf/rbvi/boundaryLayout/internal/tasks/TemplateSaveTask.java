@@ -20,21 +20,23 @@ public class TemplateSaveTask extends AbstractTask implements ObservableTask {
 	private final CyServiceRegistrar registrar;
 	private final CyNetworkView networkView;
 	private TemplateManager templateManager;
-	
+
 	@Tunable(description = "Name of new template: ")
 	public String templateName = "";
-	
+
 	public TemplateSaveTask(CyServiceRegistrar registrar, CyNetworkView networkView, TemplateManager templateManager) {
 		super();
 		this.registrar = registrar;
 		this.networkView = networkView;
 		this.templateManager = templateManager;
 	}
-	
+
 	@Override
 	public void run(TaskMonitor taskMonitor) throws Exception {		
-		List<Annotation> annotations = registrar.getService(AnnotationManager.class).getAnnotations(networkView);
-		templateManager.addTemplate(templateName, annotations);
+		if(!templateManager.getTemplateNames().contains(templateName)) {
+			List<Annotation> annotations = registrar.getService(AnnotationManager.class).getAnnotations(networkView);
+			templateManager.addTemplate(templateName, annotations);
+		}
 	}
 
 	@Override

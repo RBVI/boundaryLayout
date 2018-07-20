@@ -318,7 +318,7 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 	/**
 	 * Executes the given task, whether its a save template, overwrite current template, or applying the template
 	 * to the current network view. 
-	 * @param taskObject is the generalzied task that is being run
+	 * @param taskObject is the generalized task that is being run
 	 * @return true if the task was executed properly
 	 */
 	private boolean executeTask(Object taskObject) {

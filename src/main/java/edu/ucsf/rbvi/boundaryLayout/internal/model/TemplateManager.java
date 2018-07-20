@@ -381,6 +381,8 @@ public class TemplateManager {
 	 * @return a list of template names
 	 */
 	public List<String> getTemplateNames() {
+		if(templates.isEmpty())
+			return new ArrayList<>();
 		return new ArrayList<>(templates.keySet());
 	}
 
