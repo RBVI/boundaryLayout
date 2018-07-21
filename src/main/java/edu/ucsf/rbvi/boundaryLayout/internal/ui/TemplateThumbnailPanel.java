@@ -242,7 +242,8 @@ public class TemplateThumbnailPanel extends JPanel implements CytoPanelComponent
 		ImageIcon icon = (ImageIcon) thumbnailsMap.get(templateName).getIcon();
 		icon.setImage(manager.getThumbnail(templateName));
 		thumbnailsMap.get(templateName).repaint();
-		templatesMap.get(templateName).repaint();
+		if(templatesMap.containsKey(templateName))
+			templatesMap.get(templateName).repaint();
 	}
 
 	/** Private method

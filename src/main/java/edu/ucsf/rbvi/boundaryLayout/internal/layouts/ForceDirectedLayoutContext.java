@@ -98,7 +98,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 			if(outerBoundsThickness <= 1.)
 				errMsg.append("The thickness of the outer network boundary must be > 1.0; current value = " + outerBoundsThickness);
 			if(wallScale < 1. || wallScale > 10.)
-				errMsg.append("The wall scale factor must be < 1.0 and > 10.0; current value = " + wallScale);
+				errMsg.append("The wall scale factor must be > 1.0 and < 10.0; current value = " + wallScale);
 			
 		} catch (IOException e) {}
 		return isPositive(numIterations) && isPositive(defaultSpringCoefficient)
