@@ -1,5 +1,8 @@
 package edu.ucsf.rbvi.boundaryLayout.internal.layouts;
 
+import java.awt.Shape;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
@@ -20,16 +23,19 @@ import prefuse.util.force.BoundaryWallForce;
  */
 public class BoundaryAnnotation {
 	public static final String DEFAULT_TYPE = "Rounded Rectangle";
-	
-	private ShapeAnnotation shape;
+
+	private List<VertexData> vertices;
+
+	private Shape shape;
+	private String shapeType;
 	private String name;
 	private Rectangle2D boundingBox;
-	
+
 	private List<Point2D> initLocations;
 	private Random RANDOM = new Random();
 	private List<BoundaryAnnotation> intersections;
 	private Rectangle2D unionOfIntersections;
-	
+
 	private BoundaryWallForce wallForce;
 	private int inProjections;
 	private int outProjections;
@@ -47,11 +53,12 @@ public class BoundaryAnnotation {
 	 * @param wallForce, the wall force associated with this boundary
 	 * @param scaleMod, scale the wall force every scaleMod'th interval
 	 */
-	public BoundaryAnnotation(ShapeAnnotation shape, List<Point2D> initLocations, 
+	public BoundaryAnnotation(ShapeAnnotation shapeAnn, List<Point2D> initLocations, 
 			List<BoundaryAnnotation> intersections, BoundaryWallForce wallForce, int scaleMod) {
-		this.shape = shape;
-		this.name = shape.getName();
-		this.initBoundingBox();
+		this.shape = shapeAnn.getShape();
+		this.shapeType = shapeAnn.getShapeType();
+		this.name = shapeAnn.getName();
+		this.initBoundingBox(shapeAnn);
 		this.initLocations = initLocations;
 		this.intersections = intersections;
 		this.wallForce = wallForce;
@@ -68,7 +75,7 @@ public class BoundaryAnnotation {
 	public BoundaryAnnotation(ShapeAnnotation shape) {
 		this(shape, null, null, null, DEFAULT_SCALEMOD);
 	}
-	
+
 	/**
 	 * Construct a more generalized boundary annotation: one which does not have a shape annotation
 	 * associated with it, yet has a bounding box and the properties of a boundary i.e. wall force and
@@ -82,26 +89,64 @@ public class BoundaryAnnotation {
 		this.inProjections = 0;
 		this.outProjections = 0;
 		this.scaleMod = DEFAULT_SCALEMOD;
+		this.shapeType = DEFAULT_TYPE;
 	}
-	
+
 	/**
 	 * Initialize the bounding box of this boundary annotation. The information of the bounding box
 	 * is assumed to be stored in the shape annotation
 	 * @precondition shape != null
 	 */
-	protected void initBoundingBox() {
-		Map<String, String> argMap = shape.getArgMap();
+	protected void initBoundingBox(ShapeAnnotation shapeAnn) {
+		Map<String, String> argMap = shapeAnn.getArgMap();
 		double xCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.X));
 		double yCoordinate = Double.parseDouble(argMap.get(ShapeAnnotation.Y));
-		double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH)) / shape.getZoom();
-		double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT)) / shape.getZoom();
-		
+		double width = Double.parseDouble(argMap.get(ShapeAnnotation.WIDTH)) / shapeAnn.getZoom();
+		double height = Double.parseDouble(argMap.get(ShapeAnnotation.HEIGHT)) / shapeAnn.getZoom();
+
 		if(boundingBox == null)
 			boundingBox = new Rectangle2D.Double(xCoordinate, yCoordinate, width, height);
 		else
 			boundingBox.setRect(xCoordinate, yCoordinate, width, height);
+		
+		Rectangle2D shapebbox = shape.getBounds2D();
+		AffineTransform transform = new AffineTransform();
+		double scaleX = width / (shapebbox.getWidth() + 2 * shapebbox.getX());
+		double scaleY = height / (shapebbox.getHeight() + 2 * shapebbox.getY());
+		transform.scale(scaleX, scaleY);
+		transform.translate(xCoordinate / scaleX, yCoordinate / scaleY);
+		shape = transform.createTransformedShape(shape);
+		
+		if(vertices == null)
+			vertices = new ArrayList<>();
+		if(!shapeType.equals("Rectangle") && !shapeType.equals("Rounded Rectangle") && !shapeType.equals("Ellipse")) {
+			PathIterator path = shape.getPathIterator(null);
+			while(!path.isDone()) {
+				double[] point = new double[2];
+				int interaction = path.currentSegment(point);
+				if(interaction == PathIterator.SEG_MOVETO || interaction == PathIterator.SEG_LINETO)
+					vertices.add(new VertexData(new Point2D.Double(point[0], point[1]), boundingBox));
+				path.next();
+			}
+		}
 	}
 	
+	public boolean intersects(Rectangle2D boundingbox) {
+		if(shape == null)
+			return false;
+		return shape.intersects(boundingbox);
+	}
+	
+	public boolean contains(Rectangle2D boundingbox) {
+		if(shape == null)
+			return false;
+		return shape.contains(boundingbox);
+	}
+
+	public List<VertexData> getVertices() {
+		return vertices;
+	}
+
 	/** Private method
 	 * Initialize the union of intersections, which is inclusive of this bounding box
 	 */
@@ -110,13 +155,13 @@ public class BoundaryAnnotation {
 			unionOfIntersections = new Rectangle2D.Double();
 		if(boundingBox == null)
 			return;
-		
+
 		unionOfIntersections.setRect(boundingBox);
 		if(intersections != null && !intersections.isEmpty())
 			for(BoundaryAnnotation boundary : intersections) 
 				unionOfIntersections.setRect(unionOfIntersections.createUnion(boundary.getBoundingBox()));
 	}
-	
+
 	/**
 	 * Gets the union of intersections. This is a Rectangle2D object which is the union of this bounding
 	 * box along with the bounding boxes of all the intersecting boundaries
@@ -125,31 +170,21 @@ public class BoundaryAnnotation {
 	protected Rectangle2D getUnionOfIntersections() {
 		return unionOfIntersections;
 	}
-	
+
 	/**
 	 * @return name of this boundary annotation, which is also the name of the shape annotation
 	 */
 	public String getName() {
 		return name;
 	}
-	
+
 	/**
 	 * Get the type of the shape of this boundary, whether it's rectangle, elliptical or otherwise.
 	 * By default this boundary is a Rounded Rectangle
 	 * @return the shape type of this boundary
 	 */
 	public String getShapeType() {
-		if(shape != null)
-			return shape.getShapeType();
-		return DEFAULT_TYPE;
-	}
-	
-	/**
-	 * Assume the shape annotation is initialized by the constructor. 
-	 * @return the corresponding shape annotation
-	 */
-	public ShapeAnnotation getShapeAnnotation() {
-		return shape;
+		return shapeType;
 	}
 
 	/**
@@ -160,9 +195,9 @@ public class BoundaryAnnotation {
 	protected Rectangle2D getBoundingBox() {
 		return boundingBox;
 	}
-	
+
 	/*Functions dealing with intersecting boundary annotations*/
-	
+
 	/**
 	 * Sets the list of boundary intersections given a list of boundary annotations
 	 * @param intersections represents the list of boundaries intersecting with this boundary
@@ -171,7 +206,7 @@ public class BoundaryAnnotation {
 		this.intersections = intersections;
 		this.setUnionOfIntersections();
 	}
-	
+
 	/**
 	 * @return true if this boundary annotation has intersecting boundary annotations
 	 */
@@ -180,7 +215,7 @@ public class BoundaryAnnotation {
 			return false;
 		return true;
 	}
-	
+
 	/**
 	 * @return true if boundary is an intersecting boundary
 	 */
@@ -189,7 +224,7 @@ public class BoundaryAnnotation {
 			return false;
 		return true;
 	}
-	
+
 	/**
 	 * Get a list of boundaries which are intersecting with this boundary. Intersecting
 	 * is defined as a boundary whose bounding box physically intersects with this boundary's
@@ -200,9 +235,9 @@ public class BoundaryAnnotation {
 	protected List<BoundaryAnnotation> getIntersections() {
 		return intersections;
 	}
-	
+
 	/*Functions deal with handling initializing node locations for this boundary*/
-	
+
 	/**
 	 * Initialize the list of node initialization locations corresponding to this boundary
 	 * @param initLocations is the list of node initialization locations corresponding to 
@@ -211,7 +246,7 @@ public class BoundaryAnnotation {
 	protected void setInitializations(List<Point2D> initLocations) {
 		this.initLocations = initLocations;
 	}
-	
+
 	/**
 	 * Add a new node initialization location to the list of initializations for this boundary
 	 * @param initLocation, the Point2D node initialization location to add to the list
@@ -221,7 +256,7 @@ public class BoundaryAnnotation {
 			initLocations = new ArrayList<>();
 		initLocations.add(initLocation);
 	}
-	
+
 	/**
 	 * Add a node initialization location from the list of initializations
 	 * @param initLocation, the Point2D to remove from the list
@@ -242,9 +277,9 @@ public class BoundaryAnnotation {
 			return new Point2D.Double(0., 0.);
 		return initLocations.get(RANDOM.nextInt(initLocations.size()));
 	}
-	
+
 	/*WallForce-related methods dealing with force-based aspect of the boundary*/
-	
+
 	/**
 	 * This method sets this boundary's wall force and sets the scale factor of that
 	 * wall force.
@@ -255,7 +290,7 @@ public class BoundaryAnnotation {
 		setWallForce(wallForce);
 		setScaleFactor(scaleFactor);
 	}
-	
+
 	/**
 	 * Setter method for this boundary's wall force, given the wall force
 	 * @param wallForce is the rectangular wall force corresponding to this boundary annotation
@@ -263,7 +298,7 @@ public class BoundaryAnnotation {
 	protected void setWallForce(BoundaryWallForce wallForce) {
 		this.wallForce = wallForce;
 	}
-	
+
 	/**
 	 * Setter method setting the scale factor, given the scaling factor of the wall force 
 	 * corresponding to this boundary annotation
@@ -272,7 +307,7 @@ public class BoundaryAnnotation {
 	protected void setScaleFactor(double scaleFactor) {
 		wallForce.setScaleFactor(scaleFactor);
 	}
-	
+
 	/**
 	 * Setter method for this boundary's interval by which to scale the wall force corresponding
 	 * to this boundary
@@ -283,7 +318,7 @@ public class BoundaryAnnotation {
 		if(scaleMod >= 1)
 			this.scaleMod = scaleMod;
 	}
-	
+
 	/**
 	 * Increments one of the two projection counters, in or out, depending on the direction.
 	 * Then, if the incremented projection counter is at the scale interval scaleMod, this 
@@ -302,7 +337,7 @@ public class BoundaryAnnotation {
 				scaleWallForce(dir);
 		}
 	}
-	
+
 	/** Private method
 	 * Scale the wall force of this boundary in the direction of @param dir
 	 */

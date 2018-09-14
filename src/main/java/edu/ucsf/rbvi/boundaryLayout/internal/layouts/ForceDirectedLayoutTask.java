@@ -144,8 +144,14 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			fitem.dimensions[0] = (float) width;
 			fitem.dimensions[1] = (float) height;
 			fitem.category = group;
-
-			if(unionOfBoundaries != null) {
+			double x = (double) nodeView.getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION);
+			double y = (double) nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
+			fitem.location[0] = (float) x;
+			fitem.location[1] = (float) y;
+			
+			System.out.println((x - width / 2.) + "    ,    " + (y - height / 2.));
+			
+			/*if(unionOfBoundaries != null) {
 				if(boundaries.containsKey(fitem.category)) {
 					Rectangle2D intersectionUnion = boundaries.get(fitem.category).getUnionOfIntersections();
 					fitem.location[0] = (float) intersectionUnion.getCenterX();
@@ -157,7 +163,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			} else {
 				fitem.location[0] = 0f;
 				fitem.location[1] = 0f;
-			}
+			}*/
 
 			m_fsim.addItem(fitem);
 		}
@@ -175,7 +181,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			m_fsim.addSpring(f1, f2, (float) context.defaultSpringCoefficient, (float) context.defaultSpringLength); 
 		}
 
-		final int checkCenter = (context.numIterations / 25) + 1;
+		/*final int checkCenter = (context.numIterations / 25) + 1;
 		// perform layout and check center at intervals
 		long timestep = 1000L;
 		m_fsim.speedLimit = 2f;
@@ -214,7 +220,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				checkCenter(m_fsim);
 			m_fsim.runSimulator(step);
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
-		}
+		}*/
 		checkCenter(m_fsim);
 
 		if(boundaries.containsKey(OUTER_UNION_KEY)) 
@@ -249,15 +255,17 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			Iterator itemsIterator = m_fsim.getItems();
 			while(itemsIterator.hasNext()) {
 				ForceItem nextItem = (ForceItem) itemsIterator.next();
-				Rectangle2D bbox = new Rectangle2D.Double((double) nextItem.location[0], (double) nextItem.location[1], 
-						nextItem.dimensions[0], nextItem.dimensions[1]);
+				double x = (double) (nextItem.location[0] - nextItem.dimensions[0] / 2f);
+				double y = (double) (nextItem.location[1] - nextItem.dimensions[1] / 2f);
+							
+				Rectangle2D bbox = new Rectangle2D.Double(x, y, (double) nextItem.dimensions[0], (double) nextItem.dimensions[1]);
 				BoundaryAnnotation nextBoundary;
 				if(boundaries.containsKey(nextItem.category))
 					nextBoundary = boundaries.get(nextItem.category);
 				else
 					nextBoundary = boundaries.get(OUTER_UNION_KEY);
 
-				int moveDir = RectangularWallForce.IN_PROJECTION;
+				int moveDir = BoundaryWallForce.IN_PROJECTION;
 				if(!contains(nextBoundary, bbox, moveDir)) {
 					// We moved the node outside of the shape. Find the closest point in the bound and move back
 					nextBoundary.newProjection(moveDir);
@@ -267,7 +275,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 				//look at each intersecting shape annotation and project accordingly
 				if(nextBoundary.hasIntersections()) {
-					moveDir = RectangularWallForce.OUT_PROJECTION;
+					moveDir = BoundaryWallForce.OUT_PROJECTION;
 					for(BoundaryAnnotation intersectingBoundary : nextBoundary.getIntersections()) {
 						if(contains(intersectingBoundary, bbox, moveDir)) {
 							Point2D nearestPoint = getNearestPoint(intersectingBoundary, bbox, moveDir);
@@ -275,7 +283,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 							intersectingBoundary.newProjection(moveDir);
 						}
 					}
-					moveDir = RectangularWallForce.IN_PROJECTION;
+//					for(BoundaryAnnotation intersectingBoundary : nextBoundary.getIntersections()) 
+//						if(contains(intersectingBoundary, bbox, moveDir)) 
+//							updateItemInfo(nextItem, nextBoundary.getRandomNodeInit(), bbox);
+					moveDir = BoundaryWallForce.IN_PROJECTION;
 					if(!contains(nextBoundary, bbox, moveDir)) 
 						updateItemInfo(nextItem, nextBoundary.getRandomNodeInit(), bbox);
 				} 
@@ -290,7 +301,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private boolean contains(BoundaryAnnotation boundary, Rectangle2D nodebbox, int moveDir) {
 		boolean contained = true;
 		Rectangle2D shapeBox = boundary.getBoundingBox();
-		double[] diffVector = {Math.abs(nodebbox.getX() - shapeBox.getCenterX()), Math.abs(nodebbox.getY() - shapeBox.getCenterY())};
+		double[] diffVector = {Math.abs(nodebbox.getCenterX() - shapeBox.getCenterX()), Math.abs(nodebbox.getCenterY() - shapeBox.getCenterY())};
 		diffVector[0] += nodebbox.getWidth() / 2 * moveDir;
 		diffVector[1] += nodebbox.getHeight() / 2 * moveDir;
 
@@ -305,6 +316,16 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			double xVec = (diffVector[0] * diffVector[0]) / (shapeBox.getWidth() * shapeBox.getWidth() / 4.);
 			double yVec = (diffVector[1] * diffVector[1]) / (shapeBox.getHeight() * shapeBox.getHeight() / 4.);
 			if(xVec + yVec >= 1)
+				contained = false;
+			break;
+			
+		default:
+			if(diffVector[0] < shapeBox.getWidth() / 2. && diffVector[1] < shapeBox.getHeight() / 2.) {
+				if(moveDir == BoundaryWallForce.OUT_PROJECTION && !boundary.intersects(nodebbox)) 
+					contained = false;
+				else if(moveDir == BoundaryWallForce.IN_PROJECTION && !boundary.contains(nodebbox))
+					contained = false;
+			} else
 				contained = false;
 			break;
 		}
@@ -329,7 +350,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 */
 	private Point2D getNearestPoint(BoundaryAnnotation boundary, Rectangle2D bbox, int moveDir) {
 		Rectangle2D shapeBox = boundary.getBoundingBox();
-		double[] diffVector = { bbox.getX() - shapeBox.getCenterX(), bbox.getY() - shapeBox.getCenterY()};
+		double[] diffVector = { bbox.getCenterX() - shapeBox.getCenterX(), bbox.getCenterY() - shapeBox.getCenterY()};
 		diffVector[0] += bbox.getWidth() / 2 * moveDir * (diffVector[0] < 0 ? -1 : 1);
 		diffVector[1] += bbox.getHeight() / 2 * moveDir * (diffVector[1] < 0 ? -1 : 1);
 
@@ -343,15 +364,48 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		case "Ellipse":
 			scale = getScaleEllipse(shapeBox, bbox, diffVector);
 			break;
+
+		default:
+			scale = polygonProject(boundary, bbox);
+			break;
 		}	
 
-		scale *= (moveDir == 1 ? 0.985 : 1.015);
-		diffVector[0] = diffVector[0] * scale; 
-		diffVector[1] = diffVector[1] * scale;
-		diffVector[0] -= bbox.getWidth() / 2 * moveDir * (diffVector[0] < 0 ? -1 : 1);
-		diffVector[1] -= bbox.getHeight() / 2 * moveDir * (diffVector[1] < 0 ? -1 : 1);
-
-		return new Point2D.Double(shapeBox.getCenterX() + diffVector[0], shapeBox.getCenterY() + diffVector[1]);
+		if(scale != 1.) {
+			scale *= (moveDir == 1 ? 0.985 : 1.015);
+			diffVector[0] = diffVector[0] * scale; 
+			diffVector[1] = diffVector[1] * scale;
+			diffVector[0] -= bbox.getWidth() / 2 * moveDir * (diffVector[0] < 0 ? -1 : 1);
+			diffVector[1] -= bbox.getHeight() / 2 * moveDir * (diffVector[1] < 0 ? -1 : 1);
+		}
+		return new Point2D.Double(bbox.getCenterX(), bbox.getCenterY());
+//		return new Point2D.Double(shapeBox.getCenterX() + diffVector[0], shapeBox.getCenterY() + diffVector[1]);
+	}
+	
+	private double polygonProject(BoundaryAnnotation boundary, Rectangle2D node) {
+		double scale = 1.;
+		List<VertexData> vertices = boundary.getVertices();
+		if(vertices != null && !vertices.isEmpty()) {
+			VertexData nodeData = new VertexData(new Point2D.Double(node.getCenterX(), node.getCenterY()), boundary.getBoundingBox());
+			double nodeAngle = nodeData.getRelativeAngle();
+			
+			VertexData vertexA = vertices.get(0);
+			VertexData vertexB = null;
+			vertices.add(vertexA);
+			for(int vertex = 1; vertex < vertices.size(); vertex++) {
+				vertexB = vertices.get(vertex);
+				
+				double angleA = vertexA.getRelativeAngle();
+				double angleB = vertexB.getRelativeAngle();
+				boolean isBetween = nodeAngle >= angleA ^ nodeAngle >= angleB;
+				if(isBetween ^ Math.abs(angleA - angleB) > Math.PI)
+					break;
+				
+				vertexA = vertexB;
+			}
+			
+			System.out.println("IS IN BETWEEN " + vertexA.getPoint() + "  and   " + vertexB.getPoint());
+		}
+		return scale;
 	}
 
 	/** Private method
