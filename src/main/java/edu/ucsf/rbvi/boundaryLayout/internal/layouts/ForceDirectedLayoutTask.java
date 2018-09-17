@@ -145,14 +145,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			fitem.dimensions[0] = (float) width;
 			fitem.dimensions[1] = (float) height;
 			fitem.category = group;
-			double x = (double) nodeView.getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION);
-			double y = (double) nodeView.getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION);
-			fitem.location[0] = (float) x;
-			fitem.location[1] = (float) y;
 
-			System.out.println((x - width / 2.) + "    ,    " + (y - height / 2.));
-
-			/*if(unionOfBoundaries != null) {
+			if(unionOfBoundaries != null) {
 				if(boundaries.containsKey(fitem.category)) {
 					Rectangle2D intersectionUnion = boundaries.get(fitem.category).getUnionOfIntersections();
 					fitem.location[0] = (float) intersectionUnion.getCenterX();
@@ -164,7 +158,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			} else {
 				fitem.location[0] = 0f;
 				fitem.location[1] = 0f;
-			}*/
+			}
 
 			m_fsim.addItem(fitem);
 		}
@@ -182,7 +176,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			m_fsim.addSpring(f1, f2, (float) context.defaultSpringCoefficient, (float) context.defaultSpringLength); 
 		}
 
-		/*final int checkCenter = (context.numIterations / 25) + 1;
+		final int checkCenter = (context.numIterations / 25) + 1;
 		// perform layout and check center at intervals
 		long timestep = 1000L;
 		m_fsim.speedLimit = 2f;
@@ -221,7 +215,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				checkCenter(m_fsim);
 			m_fsim.runSimulator(step);
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
-		}*/
+		}
 		checkCenter(m_fsim);
 
 		if(boundaries.containsKey(OUTER_UNION_KEY)) 
@@ -284,9 +278,9 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 							intersectingBoundary.newProjection(moveDir);
 						}
 					}
-					//					for(BoundaryAnnotation intersectingBoundary : nextBoundary.getIntersections()) 
-					//						if(contains(intersectingBoundary, bbox, moveDir)) 
-					//							updateItemInfo(nextItem, nextBoundary.getRandomNodeInit(), bbox);
+					for(BoundaryAnnotation intersectingBoundary : nextBoundary.getIntersections()) 
+						if(contains(intersectingBoundary, bbox, moveDir)) 
+							updateItemInfo(nextItem, nextBoundary.getRandomNodeInit(), bbox);
 					moveDir = BoundaryWallForce.IN_PROJECTION;
 					if(!contains(nextBoundary, bbox, moveDir)) 
 						updateItemInfo(nextItem, nextBoundary.getRandomNodeInit(), bbox);
@@ -371,7 +365,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		diffVector[1] = diffVector[1] * scale;
 		diffVector[0] -= bbox.getWidth() / 2 * moveDir * (diffVector[0] < 0 ? -1 : 1);
 		diffVector[1] -= bbox.getHeight() / 2 * moveDir * (diffVector[1] < 0 ? -1 : 1);
-		//	return new Point2D.Double(bbox.getCenterX(), bbox.getCenterY());
 		return new Point2D.Double(shapeBox.getCenterX() + diffVector[0], shapeBox.getCenterY() + diffVector[1]);
 	}
 
@@ -379,7 +372,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		double scale = 1.;
 		List<VertexData> vertices = boundary.getVertices();
 		if(vertices != null && !vertices.isEmpty()) {
-			Rectangle2D boundarybbox = boundary.getBoundingBox();
 			VertexData vertexNode = new VertexData(new Point2D.Double(node.getCenterX(), node.getCenterY()), boundary.getBoundingBox());
 			double nodeAngle = vertexNode.getRelativeAngle();
 
@@ -401,9 +393,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			Line2D line = new Line2D.Double(vertexA.getPoint(), vertexB.getPoint());
 			double nodeSideDist = line.ptSegDist(vertexNode.getPoint());
 			double nodeBoundaryDist = Math.sqrt(diffVector[0] * diffVector[0] + diffVector[1] * diffVector[1]);
-			
+
 			scale = (nodeBoundaryDist - nodeSideDist * moveDir) / nodeBoundaryDist; 
-			System.out.println("IS IN BETWEEN " + vertexA.getPoint() + "  and   " + vertexB.getPoint());
 		}
 		return scale;
 	}
@@ -509,8 +500,36 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			wall = new RectangularWallForce(center, dimensions, -context.gravConst, 
 					context.variableWallForce, context.wallScale);
 		}
+
+		wall.setActiveCategories(getWallForceCategories(boundary));
 		boundary.setWallForce(wall);
 		m_fsim.addForce(wall);
+	}
+
+	private List<Object> getWallForceCategories(BoundaryAnnotation boundary) {
+		Rectangle2D boundingbox = boundary.getBoundingBox();
+		List<Object> activeCategories = new ArrayList<>();
+
+		activeCategories.add(boundary.getName());
+		if(boundary.hasIntersections()) 
+			for(BoundaryAnnotation intersection : boundary.getIntersections()) 
+				if(!boundingbox.contains(intersection.getBoundingBox()))
+					activeCategories.add(intersection.getName());
+
+		BoundaryAnnotation closestContaining = null;
+		for(BoundaryAnnotation compared : boundaries.values()) {
+			Rectangle2D comparedbbox = compared.getBoundingBox();
+			if(compared != boundary && comparedbbox.contains(boundingbox) && 
+					(closestContaining == null || closestContaining.getBoundingBox().contains(comparedbbox)))
+				closestContaining = compared;
+		}
+		if(closestContaining != null)
+			activeCategories.add(closestContaining.getName());
+		System.out.println(boundary.getName());
+		for(Object category : activeCategories)
+			System.out.print("  " + category);
+		System.out.println();
+		return activeCategories;
 	}
 
 	/** Private method
@@ -541,20 +560,16 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 */
 	private void initNodeLocations(BoundaryAnnotation boundary) { 
 		Rectangle2D boundingBox = boundary.getBoundingBox();
-		List<Rectangle2D> applySpecialInitialization = applySpecialInitialization(boundary, boundingBox);
+		List<BoundaryAnnotation> specialInit = applySpecialInit(boundary);
 		double xCenter = boundingBox.getX() + boundingBox.getWidth() / 2.;
 		double yCenter = boundingBox.getY() + boundingBox.getHeight() / 2.;
 		List<Point2D> initNodes = new ArrayList<>();
 		initNodes.add(new Point2D.Double(xCenter, yCenter));
-		if(!applySpecialInitialization.isEmpty()) {
+		if(!specialInit.isEmpty()) {
 			initNodes.remove(0);
-			List<Rectangle2D> initRectangles = BoundaryContainsAlgorithm.doAlgorithm(
-					boundingBox, applySpecialInitialization);
-			for(Rectangle2D initRectangle : initRectangles) {
-				xCenter = initRectangle.getX() + initRectangle.getWidth() / 2.;
-				yCenter = initRectangle.getY() + initRectangle.getHeight() / 2.;
-				initNodes.add(new Point2D.Double(xCenter, yCenter));
-			}
+			List<Rectangle2D> initRectangles = BoundaryContainsAlgorithm.doAlgorithm(boundingBox, specialInit);
+			for(Rectangle2D initRectangle : initRectangles) 
+				initNodes.add(new Point2D.Double(initRectangle.getCenterX(), initRectangle.getCenterY()));
 		}
 		boundary.setInitializations(initNodes);
 	}
@@ -565,19 +580,34 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	 * @param boundingBox stores the Rectangle2D of the shapeAnnotation
 	 * @return list of Rectangle2D's of shape annotations that boundingBox contains
 	 */
-	private List<Rectangle2D> applySpecialInitialization(BoundaryAnnotation boundary, Rectangle2D boundingBox) {
-		List<Rectangle2D> listOfContainments = new ArrayList<>();
-		List<BoundaryAnnotation> listOfIntersections = new ArrayList<>();
+	private List<BoundaryAnnotation> applySpecialInit(BoundaryAnnotation boundary) {
+		Rectangle2D boundingBox = boundary.getBoundingBox();
+		List<BoundaryAnnotation> intersections = new ArrayList<>();
 		for(BoundaryAnnotation comparedBoundary : boundaries.values()) {
-			Rectangle2D comparedBoundingBox = comparedBoundary.getBoundingBox();
+			Rectangle2D comparedbbox = comparedBoundary.getBoundingBox();
 			if(comparedBoundary.getName().equals(boundary.getName())) {} 
-			else if(boundingBox.intersects(comparedBoundingBox) && !comparedBoundingBox.contains(boundingBox))  {
-				listOfContainments.add(comparedBoundingBox);
-				listOfIntersections.add(comparedBoundary);
+			else if(boundingBox.intersects(comparedbbox) && !comparedbbox.contains(boundingBox)) {
+				boolean add = true;
+				if(!intersections.isEmpty()) {
+					List<BoundaryAnnotation> nested = new ArrayList<>();
+					for(BoundaryAnnotation intersection : intersections) {
+						Rectangle2D intersectRect = intersection.getBoundingBox();
+						if(intersectRect.contains(comparedbbox)) {
+							add = false;
+							break;
+						} else if(comparedbbox.contains(intersectRect))
+							nested.add(intersection);
+					}
+					if(!nested.isEmpty())
+						for(BoundaryAnnotation toRemove : nested)
+							intersections.remove(toRemove);
+				}
+				if(add)
+					intersections.add(comparedBoundary);
 			}
 		}
-		boundary.setIntersections(listOfIntersections);
-		return listOfContainments;
+		boundary.setIntersections(intersections);
+		return intersections;
 	}
 
 	/** Private method

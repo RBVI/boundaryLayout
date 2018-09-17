@@ -192,7 +192,7 @@ public class BoundaryAnnotation {
 	 * @return the corresponding bounding box, a Rectangle2D consisting of
 	 * the location and dimensions of the boundary annotation
 	 */
-	protected Rectangle2D getBoundingBox() {
+	public Rectangle2D getBoundingBox() {
 		return boundingBox;
 	}
 

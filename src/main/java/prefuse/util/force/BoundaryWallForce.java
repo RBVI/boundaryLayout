@@ -1,6 +1,8 @@
 package prefuse.util.force;
 
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a rectangular bounding box of a boundary and applies a force on 
@@ -10,6 +12,8 @@ import java.awt.geom.Point2D;
  */
 public abstract class BoundaryWallForce extends AbstractForce {
 	private static String[] pnames = new String[] { "GravitationalConstant" };
+	public static final float ABS_MAX_FORCE = 1e10f;
+	private List<Object> activeOn = new ArrayList<>();
 
 	public static final int IN_GRAVITATIONAL_CONST = 0;
 	public static final int OUT_GRAVITATIONAL_CONST = 1;
@@ -84,6 +88,16 @@ public abstract class BoundaryWallForce extends AbstractForce {
 			else if(dir == OUT_PROJECTION) 
 				params[OUT_GRAVITATIONAL_CONST] *= scaleFactor;
 		}
+	}
+	
+	public void setActiveCategories(List<Object> categories) {
+		activeOn = categories;
+	}
+	
+	public boolean isActive(Object category) {
+		if(activeOn != null || activeOn.isEmpty())
+			return false;
+		return activeOn.contains(category);
 	}
 
 	/**

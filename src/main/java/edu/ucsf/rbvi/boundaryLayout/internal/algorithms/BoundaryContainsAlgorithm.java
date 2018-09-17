@@ -4,6 +4,8 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.ucsf.rbvi.boundaryLayout.internal.layouts.BoundaryAnnotation;
+
 /**
  * This class corresponds to the algorithm performed when the boundary has intersecting boundaries.
  */
@@ -20,13 +22,13 @@ public class BoundaryContainsAlgorithm {
 	 * @return list of rectangles corresponding to areas where nodes can be initialized safely
 	 * @precondition thisShape != null and intersecting shapes !- null
 	 */
-	public static List<Rectangle2D> doAlgorithm(Rectangle2D thisShape, List<Rectangle2D> intersectingShapes) {
+	public static List<Rectangle2D> doAlgorithm(Rectangle2D thisShape, List<BoundaryAnnotation> intersectingShapes) {
 		List<Rectangle2D> boundingAreas = new ArrayList<>();
 		
 		BoundaryTree shapeTree = new BoundaryTree(new BoundaryTreeNode(thisShape));
 		
 		while(!intersectingShapes.isEmpty()) 
-			shapeTree.do2DShapePartitioning(intersectingShapes.remove(0));
+			shapeTree.do2DShapePartitioning(intersectingShapes.remove(0).getBoundingBox());
 		
 		boundingAreas = shapeTree.getLargestAreas(); 
 		return boundingAreas;

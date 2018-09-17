@@ -25,32 +25,27 @@ public class RectangularWallForce extends BoundaryWallForce {
 	public RectangularWallForce(Point2D center, Point2D dimensions, float gravConst, boolean variableWall) {
 		super(center, dimensions, gravConst, variableWall);
 	}
-	
+
 	/**
 	 * @see prefuse.util.force.Force#getForce(prefuse.util.force.ForceItem)
 	 */
 	@Override
 	public void getForce(ForceItem item) {
-		float[] n = item.location;
-		float dx = (float) center.getX() - n[0];
-		float dy = (float) center.getY() - n[1];
+		if(!isActive(item.category))
+			return;
+		float[] itemLoc = item.location;
+		float[] itemDim = item.dimensions;
+		float dx = (float) center.getX() - itemLoc[0];
+		float dy = (float) center.getY() - itemLoc[1];
+		
+		//initialize dimensions
+		float width = (float) dimensions.getX();
+		float height = (float) dimensions.getY();
 
 		if(dx == 0f && dy == 0f) {
 			dx = getRandDisplacement();
 			dy = getRandDisplacement();
 		}
-
-		//initialize dimensions and displacements
-		float width = (float) this.dimensions.getX();
-		float height = (float) this.dimensions.getY();
-		float drLeft = Math.abs((width / 2f) - dx - item.dimensions[0] / 2);
-		float drTop = Math.abs((height / 2f) - dy - item.dimensions[1] / 2);
-		float drRight = Math.abs(width - drLeft - item.dimensions[0]); 
-		float drBottom = Math.abs(height - drTop - item.dimensions[1]);
-		if(drLeft < 0.01f) drLeft = 0.01f;
-		if(drRight < 0.01f) drRight = 0.01f;
-		if(drTop < 0.01f) drTop = 0.01f;
-		if(drBottom < 0.01f) drBottom = 0.01f;
 
 		//initialize orientation of shape
 		int cX = (Math.abs(dx) > width / 2 ? -1 : 1);
@@ -59,39 +54,49 @@ public class RectangularWallForce extends BoundaryWallForce {
 		if(cX + cY != 2)
 			return;
 
-		//calculate forces due to each wall of the rectangle
-		float gravConst = (cX == -1 || cY == -1 ? params[OUT_GRAVITATIONAL_CONST] : params[IN_GRAVITATIONAL_CONST]);
-		float vLeft = -cX * gravConst * item.mass / (drLeft * drLeft * drLeft);
-		float vTop = -cY * gravConst * item.mass / (drTop * drTop * drTop);
-		float vRight = cX * gravConst * item.mass / (drRight * drRight * drRight);
-		float vBottom = cY * gravConst * item.mass / (drBottom * drBottom * drBottom);
-
 		if(cX + cY == -2) {//case where the node is outside the corner of the shape
 			float xCorner = (float) center.getX() + (width / 2 * (dx > 0 ? -1 : 1));
 			float yCorner = (float) center.getY() + (height / 2 * (dy > 0 ? -1 : 1));
-			float dxCorner = n[0] - xCorner;
-			float dyCorner = n[1] - yCorner;
+			float dxCorner = Math.abs(itemLoc[0] - xCorner) - itemDim[0] / 2f;
+			float dyCorner = Math.abs(itemLoc[1] - yCorner) - itemDim[1] / 2f;
 			float dCorner = (float) Math.sqrt(dxCorner * dxCorner + dyCorner * dyCorner);
-			float vCorner = params[OUT_GRAVITATIONAL_CONST] * item.mass / (dCorner * dCorner * dCorner);
-			float vxCorner = Math.abs(vCorner) * (dxCorner < 0 ? -1 : 1);
-			float vyCorner = Math.abs(vCorner) * (dyCorner < 0 ? -1 : 1);
+			float vCorner = Math.abs(params[OUT_GRAVITATIONAL_CONST] * item.mass / (dCorner * dCorner));
+			vCorner = (Math.abs(vCorner) > ABS_MAX_FORCE ? ABS_MAX_FORCE : vCorner);
+			float vxCorner = vCorner * (dxCorner < 0 ? -1 : 1);
+			float vyCorner = vCorner * (dyCorner < 0 ? -1 : 1);
 			item.force[0] += vxCorner;
 			item.force[1] += vyCorner;
-		} else if(cX == -1) {//case where the node is within the x normal lines of the shape
-			if(dx < 0)
-				item.force[0] += vRight;
-			else
-				item.force[0] += vLeft;
-		} else if(cY == -1) {//case where the node is within the y normal lines of the shape
-			if(dy < 0)
-				item.force[1] += vBottom;
-			else 
-				item.force[1] += vTop;
-		} else {//case where the node is completely inside the shape
-			item.force[0] += vLeft;
-			item.force[1] += vTop;
-			item.force[0] += vRight;
-			item.force[1] += vBottom;
+		} else { 
+			float drLeft = Math.abs(width / 2f - dx) - itemDim[0] / 2f;
+			float drTop = Math.abs(height / 2f - dy) - itemDim[1] / 2f;
+			float drRight = Math.abs(width - drLeft) - itemDim[0]; 
+			float drBottom = Math.abs(height - drTop) - itemDim[1];
+			
+			//calculate forces due to each wall of the rectangle
+			float gravConst = (cX == -1 || cY == -1 ? params[OUT_GRAVITATIONAL_CONST] : params[IN_GRAVITATIONAL_CONST]);
+			float vLeft = Math.abs(gravConst * item.mass / (drLeft * drLeft));
+			float vTop = Math.abs(gravConst * item.mass / (drTop * drTop));
+			float vRight = Math.abs(gravConst * item.mass / (drRight * drRight));
+			float vBottom = Math.abs(gravConst * item.mass / (drBottom * drBottom));
+			vLeft = (vLeft > ABS_MAX_FORCE ? ABS_MAX_FORCE : vLeft);
+			vTop = (vTop > ABS_MAX_FORCE ? ABS_MAX_FORCE : vTop);
+			vRight = (vRight > ABS_MAX_FORCE ? ABS_MAX_FORCE : vRight);
+			vBottom = (vBottom > ABS_MAX_FORCE ? ABS_MAX_FORCE : vBottom);
+			
+			if(cX == -1) {//case where the node is within the x normal lines of the shape
+				if(dx < 0)
+					item.force[0] -= vRight;
+				else
+					item.force[0] += vLeft;
+			} else if(cY == -1) {//case where the node is within the y normal lines of the shape
+				if(dy < 0)
+					item.force[1] -= vBottom;
+				else 
+					item.force[1] += vTop;
+			} else {//case where the node is completely inside the shape
+				item.force[0] += vLeft - vRight;
+				item.force[1] += vTop - vBottom;
+			}
 		}
 	}
 }
