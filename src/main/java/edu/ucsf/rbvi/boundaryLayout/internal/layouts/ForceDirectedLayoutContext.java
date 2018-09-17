@@ -27,12 +27,12 @@ import org.cytoscape.work.util.ListSingleSelection;
 public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentNetworkListener {	
 	
 	@Tunable(description="Number of Iterations:", gravity=4.0, groups={"Layout Parameters"})
-	public int numIterations = 250;
+	public int numIterations = 100;
 
 	@Tunable(description="Default Spring Coefficient",
 			tooltip="The smaller this number is, the more the network "+
 			"topology affects the layout.", gravity=5.0, groups={"Layout Parameters"})
-	public double defaultSpringCoefficient = 5e-4;
+	public double defaultSpringCoefficient = 1e-5;
 
 	@Tunable(description="Default Spring Length", groups={"Layout Parameters"}, gravity=6.0)
 	public double defaultSpringLength = 140.0;
@@ -40,11 +40,6 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	@Tunable(description="Node mass", gravity=7.0, groups={"Layout Parameters"},
 			tooltip="The higher the node mass, the less nodes move around the network")
 	public double defaultNodeMass = 3.0;
-
-	@Tunable(description="Avoid overlapping nodes (y/n)",
-	         groups={"Layout Parameters"},gravity=12.0,	
-			tooltip="Apply a force to minimize node overlap")
-	public boolean avoidOverlap = true;
 		
 	@Tunable(description="speed limit", gravity=9.0, groups={"Layout Parameters"})
 	public float speedLimit = 1f;
@@ -57,7 +52,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 
 	@Tunable(description = "Scale boundary forces", gravity = 15.0, groups = {"Boundary Parameters"},
 			tooltip = "Scale the boundary force by this factor, as more nodes are stuck on the edges of the boundary")
-	public double wallScale = 2.;
+	public double wallScale = 1.1;
 	
 	@Tunable(description = "Outer bounds thickness", gravity = 16.0, groups = {"Boundary Parameters"},
 			tooltip = "Thickness of the outer boundary relative to the union of boundaries")
@@ -95,6 +90,8 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 				errMsg.append("Default spring length must be > 0; current value = " + defaultSpringLength);
 			if (!isPositive(defaultNodeMass))
 				errMsg.append("Default node mass must be > 0; current value = " + defaultNodeMass);
+			if(!isPositive(gravConst))
+				errMsg.append("The gravitational cosntant must be > 0.0; current value = " + gravConst);
 			if(outerBoundsThickness <= 1.)
 				errMsg.append("The thickness of the outer network boundary must be > 1.0; current value = " + outerBoundsThickness);
 			if(wallScale < 1. || wallScale > 10.)
@@ -102,8 +99,8 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 			
 		} catch (IOException e) {}
 		return isPositive(numIterations) && isPositive(defaultSpringCoefficient)
-				&& isPositive(defaultSpringLength) && isPositive(defaultNodeMass) && outerBoundsThickness > 1.
-				&& (wallScale >= 1. && wallScale <= 10.)
+				&& isPositive(defaultSpringLength) && isPositive(defaultNodeMass) 
+				&& isPositive(gravConst) && outerBoundsThickness > 1. && (wallScale >= 1. && wallScale <= 10.)
 				? ValidationState.OK : ValidationState.INVALID;
 	}
 
@@ -113,6 +110,10 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 
 	private static boolean isPositive(final double n) {
 		return n > 0.0;
+	}
+	
+	private static boolean isPositive(final float n) {
+		return n > 0f;
 	}
 
 	/**

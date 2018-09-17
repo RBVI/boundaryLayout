@@ -109,9 +109,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if(boundaries.containsKey(null))
 			boundaries.remove(null);
 
-		if(context.gravConst < 0)
-			context.gravConst *= -1;
-
 		//initialize simulation and add the various forces
 		ForceSimulator m_fsim = new ForceSimulator();
 		m_fsim.speedLimit = context.speedLimit;
@@ -176,20 +173,16 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 			m_fsim.addSpring(f1, f2, (float) context.defaultSpringCoefficient, (float) context.defaultSpringLength); 
 		}
 
-		final int checkCenter = (context.numIterations / 25) + 1;
 		// perform layout and check center at intervals
 		long timestep = 1000L;
 		m_fsim.speedLimit = 2f;
 		for (int i = 0; i < context.numIterations / 3 && !cancelled; i++) {
 			timestep *= (1.0 - i/(double)context.numIterations);
 			long step = timestep + 50;
-			if(i % checkCenter == 0) 
-				checkCenter(m_fsim);
 			m_fsim.runSimulator(step);
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
 		}
 
-		checkCenter(m_fsim);
 		if(boundaries != null && !boundaries.isEmpty()) 
 			for(BoundaryAnnotation boundary : boundaries.values()) 
 				addAnnotationForce(m_fsim, boundary);
@@ -199,20 +192,17 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		for (int i = context.numIterations / 3; i < 2 * context.numIterations / 3 && !cancelled; i++) {
 			timestep *= (1.0 - i/(double)context.numIterations);
 			long step = timestep + 50;
-			if(i % checkCenter == 0) 
-				checkCenter(m_fsim);
+			checkCenter(m_fsim);
 			m_fsim.runSimulator(step);
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
 		}
 
 		// perform layout while looking at NBodyForce interactions
-		checkCenter(m_fsim);
-		m_fsim.addForce(new NBodyForce(context.avoidOverlap));
+		m_fsim.addForce(new NBodyForce());
 		for(int i = 2 * context.numIterations / 3; i < context.numIterations && !cancelled; i++) {
 			timestep *= (1.0 - i/(double)context.numIterations);
 			long step = timestep + 50;
-			if(i % checkCenter == 0) 
-				checkCenter(m_fsim);
+			checkCenter(m_fsim);
 			m_fsim.runSimulator(step);
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
 		}
@@ -402,7 +392,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	private double getScaleSpecial(Rectangle2D shape, Rectangle2D bbox, double[] diffVector, int moveDir, String type) {
 		diffVector[0] += bbox.getWidth() / 2 * moveDir * (diffVector[0] < 0 ? -1 : 1);
 		diffVector[1] += bbox.getHeight() / 2 * moveDir * (diffVector[1] < 0 ? -1 : 1);
-		if(type.equals(ShapeType.ELLIPSE.toString()))
+		if(type.equals("Ellipse"))
 			return getScaleEllipse(shape, bbox, diffVector);
 		else
 			return getScaleRectangle(shape, diffVector);
@@ -494,10 +484,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		BoundaryWallForce wall;
 
 		if(boundary.getShapeType().equals("Ellipse")) {
-			wall = new EllipticalWallForce(center, dimensions, -context.gravConst,
+			wall = new EllipticalWallForce(center, dimensions, context.gravConst,
 					context.variableWallForce, context.wallScale);
 		} else {
-			wall = new RectangularWallForce(center, dimensions, -context.gravConst, 
+			wall = new RectangularWallForce(center, dimensions, context.gravConst, 
 					context.variableWallForce, context.wallScale);
 		}
 
@@ -506,9 +496,9 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		m_fsim.addForce(wall);
 	}
 
-	private List<Object> getWallForceCategories(BoundaryAnnotation boundary) {
+	private List<String> getWallForceCategories(BoundaryAnnotation boundary) {
 		Rectangle2D boundingbox = boundary.getBoundingBox();
-		List<Object> activeCategories = new ArrayList<>();
+		List<String> activeCategories = new ArrayList<>();
 
 		activeCategories.add(boundary.getName());
 		if(boundary.hasIntersections()) 
@@ -525,10 +515,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		}
 		if(closestContaining != null)
 			activeCategories.add(closestContaining.getName());
-		System.out.println(boundary.getName());
-		for(Object category : activeCategories)
-			System.out.print("  " + category);
-		System.out.println();
 		return activeCategories;
 	}
 
@@ -606,6 +592,10 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					intersections.add(comparedBoundary);
 			}
 		}
+		System.out.println(boundary.getName());
+		for(BoundaryAnnotation intersection : intersections)
+			System.out.print("   " + intersection.getName());
+		System.out.println();
 		boundary.setIntersections(intersections);
 		return intersections;
 	}

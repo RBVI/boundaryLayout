@@ -27,8 +27,9 @@ public class BoundaryContainsAlgorithm {
 		
 		BoundaryTree shapeTree = new BoundaryTree(new BoundaryTreeNode(thisShape));
 		
-		while(!intersectingShapes.isEmpty()) 
-			shapeTree.do2DShapePartitioning(intersectingShapes.remove(0).getBoundingBox());
+		if(intersectingShapes != null && !intersectingShapes.isEmpty())
+			for(BoundaryAnnotation boundary : intersectingShapes)
+				shapeTree.do2DShapePartitioning(boundary.getBoundingBox());
 		
 		boundingAreas = shapeTree.getLargestAreas(); 
 		return boundingAreas;

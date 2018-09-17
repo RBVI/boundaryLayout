@@ -48,22 +48,24 @@ public class RectangularWallForce extends BoundaryWallForce {
 		}
 
 		//initialize orientation of shape
-		int cX = (Math.abs(dx) > width / 2 ? -1 : 1);
-		int cY = (Math.abs(dy) > height / 2 ? -1 : 1);
+		int cX = (Math.abs(dx) > width / 2f ? -1 : 1);
+		int cY = (Math.abs(dy) > height / 2f ? -1 : 1);
 
 		if(cX + cY != 2)
 			return;
 
 		if(cX + cY == -2) {//case where the node is outside the corner of the shape
-			float xCorner = (float) center.getX() + (width / 2 * (dx > 0 ? -1 : 1));
-			float yCorner = (float) center.getY() + (height / 2 * (dy > 0 ? -1 : 1));
+			float xOrientation = (dx > 0 ? -1f : 1f);
+			float yOrientation = (dy > 0 ? -1f : 1f);
+			float xCorner = (float) (center.getX() + (width / 2f * xOrientation));
+			float yCorner = (float) (center.getY() + (height / 2f * yOrientation));
 			float dxCorner = Math.abs(itemLoc[0] - xCorner) - itemDim[0] / 2f;
 			float dyCorner = Math.abs(itemLoc[1] - yCorner) - itemDim[1] / 2f;
 			float dCorner = (float) Math.sqrt(dxCorner * dxCorner + dyCorner * dyCorner);
-			float vCorner = Math.abs(params[OUT_GRAVITATIONAL_CONST] * item.mass / (dCorner * dCorner));
-			vCorner = (Math.abs(vCorner) > ABS_MAX_FORCE ? ABS_MAX_FORCE : vCorner);
-			float vxCorner = vCorner * (dxCorner < 0 ? -1 : 1);
-			float vyCorner = vCorner * (dyCorner < 0 ? -1 : 1);
+			float vCorner = params[OUT_GRAVITATIONAL_CONST] * item.mass / (dCorner * dCorner);
+			vCorner = (vCorner > ABS_MAX_FORCE ? ABS_MAX_FORCE : vCorner);
+			float vxCorner = vCorner * xOrientation;
+			float vyCorner = vCorner * yOrientation;
 			item.force[0] += vxCorner;
 			item.force[1] += vyCorner;
 		} else { 
@@ -74,10 +76,10 @@ public class RectangularWallForce extends BoundaryWallForce {
 			
 			//calculate forces due to each wall of the rectangle
 			float gravConst = (cX == -1 || cY == -1 ? params[OUT_GRAVITATIONAL_CONST] : params[IN_GRAVITATIONAL_CONST]);
-			float vLeft = Math.abs(gravConst * item.mass / (drLeft * drLeft));
-			float vTop = Math.abs(gravConst * item.mass / (drTop * drTop));
-			float vRight = Math.abs(gravConst * item.mass / (drRight * drRight));
-			float vBottom = Math.abs(gravConst * item.mass / (drBottom * drBottom));
+			float vLeft = gravConst * item.mass / (drLeft * drLeft);
+			float vTop = gravConst * item.mass / (drTop * drTop);
+			float vRight = gravConst * item.mass / (drRight * drRight);
+			float vBottom = gravConst * item.mass / (drBottom * drBottom);
 			vLeft = (vLeft > ABS_MAX_FORCE ? ABS_MAX_FORCE : vLeft);
 			vTop = (vTop > ABS_MAX_FORCE ? ABS_MAX_FORCE : vTop);
 			vRight = (vRight > ABS_MAX_FORCE ? ABS_MAX_FORCE : vRight);

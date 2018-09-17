@@ -204,7 +204,7 @@ public class BoundaryAnnotation {
 	 */
 	protected void setIntersections(List<BoundaryAnnotation> intersections) {
 		this.intersections = intersections;
-		this.setUnionOfIntersections();
+		setUnionOfIntersections();
 	}
 
 	/**

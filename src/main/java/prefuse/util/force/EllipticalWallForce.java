@@ -60,10 +60,10 @@ public class EllipticalWallForce extends BoundaryWallForce {
 			float drRight = 2 * effectiveXWidth - drLeft - itemDim[0]; 
 			float drBottom = 2 * effectiveYHeight - drTop - itemDim[1];
 
-			float vLeft = Math.abs(gravConst * item.mass / (drLeft * drLeft));
-			float vTop = Math.abs(gravConst * item.mass / (drTop * drTop));
-			float vRight = Math.abs(gravConst * item.mass / (drRight * drRight));
-			float vBottom = Math.abs(gravConst * item.mass / (drBottom * drBottom));
+			float vLeft = gravConst * item.mass / (drLeft * drLeft);
+			float vTop = gravConst * item.mass / (drTop * drTop);
+			float vRight = gravConst * item.mass / (drRight * drRight);
+			float vBottom = gravConst * item.mass / (drBottom * drBottom);
 			vLeft = (vLeft > ABS_MAX_FORCE ? ABS_MAX_FORCE : vLeft);
 			vTop = (vTop > ABS_MAX_FORCE ? ABS_MAX_FORCE : vTop);
 			vRight = (vRight > ABS_MAX_FORCE ? ABS_MAX_FORCE : vRight);
@@ -80,7 +80,7 @@ public class EllipticalWallForce extends BoundaryWallForce {
 			float xDiff = Math.abs(dx - xVec) - itemDim[0] / 2f;
 			float yDiff = Math.abs(dy - yVec) - itemDim[1] / 2f;
 			float resDiff = (float) Math.sqrt(xDiff * xDiff + yDiff * yDiff);
-			float force = Math.abs(gravConst * item.mass / (resDiff * resDiff));
+			float force = gravConst * item.mass / (resDiff * resDiff);
 			force = (force > ABS_MAX_FORCE ? ABS_MAX_FORCE : force);
 			
 			item.force[0] += force * (dx < 0 ? 1 : -1);

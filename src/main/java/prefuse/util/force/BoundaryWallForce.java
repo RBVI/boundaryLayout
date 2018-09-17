@@ -13,7 +13,8 @@ import java.util.List;
 public abstract class BoundaryWallForce extends AbstractForce {
 	private static String[] pnames = new String[] { "GravitationalConstant" };
 	public static final float ABS_MAX_FORCE = 1e10f;
-	private List<Object> activeOn = new ArrayList<>();
+	public static final float MAX_GRAV_CONST = 1e12f;
+	private List<String> activeOn = new ArrayList<>();
 
 	public static final int IN_GRAVITATIONAL_CONST = 0;
 	public static final int OUT_GRAVITATIONAL_CONST = 1;
@@ -82,20 +83,21 @@ public abstract class BoundaryWallForce extends AbstractForce {
 	 * only if variableStrength is true
 	 */
 	public void scaleStrength(int dir) {
+		System.out.println(params[IN_GRAVITATIONAL_CONST] + "   " + params[OUT_GRAVITATIONAL_CONST]);
 		if(this.variableStrength) {
-			if(dir == IN_PROJECTION) 
+			if(dir == IN_PROJECTION && Math.abs(params[IN_GRAVITATIONAL_CONST]) < MAX_GRAV_CONST) 
 				params[IN_GRAVITATIONAL_CONST] *= scaleFactor;
-			else if(dir == OUT_PROJECTION) 
+			else if(dir == OUT_PROJECTION && Math.abs(params[OUT_GRAVITATIONAL_CONST]) < MAX_GRAV_CONST) 
 				params[OUT_GRAVITATIONAL_CONST] *= scaleFactor;
 		}
 	}
 	
-	public void setActiveCategories(List<Object> categories) {
+	public void setActiveCategories(List<String> categories) {
 		activeOn = categories;
 	}
 	
 	public boolean isActive(Object category) {
-		if(activeOn != null || activeOn.isEmpty())
+		if(activeOn == null || activeOn.isEmpty())
 			return false;
 		return activeOn.contains(category);
 	}
