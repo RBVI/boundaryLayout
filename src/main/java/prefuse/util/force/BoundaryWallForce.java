@@ -1,7 +1,6 @@
 package prefuse.util.force;
 
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -14,7 +13,7 @@ public abstract class BoundaryWallForce extends AbstractForce {
 	private static String[] pnames = new String[] { "GravitationalConstant" };
 	public static final float ABS_MAX_FORCE = 1e10f;
 	public static final float MAX_GRAV_CONST = 1e12f;
-	private List<String> activeOn = new ArrayList<>();
+	public List<String> activeOn;
 
 	public static final int IN_GRAVITATIONAL_CONST = 0;
 	public static final int OUT_GRAVITATIONAL_CONST = 1;
@@ -83,7 +82,6 @@ public abstract class BoundaryWallForce extends AbstractForce {
 	 * only if variableStrength is true
 	 */
 	public void scaleStrength(int dir) {
-		System.out.println(params[IN_GRAVITATIONAL_CONST] + "   " + params[OUT_GRAVITATIONAL_CONST]);
 		if(this.variableStrength) {
 			if(dir == IN_PROJECTION && Math.abs(params[IN_GRAVITATIONAL_CONST]) < MAX_GRAV_CONST) 
 				params[IN_GRAVITATIONAL_CONST] *= scaleFactor;

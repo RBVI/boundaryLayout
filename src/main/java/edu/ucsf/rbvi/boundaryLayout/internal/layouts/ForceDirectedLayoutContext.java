@@ -27,7 +27,7 @@ import org.cytoscape.work.util.ListSingleSelection;
 public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentNetworkListener {	
 	
 	@Tunable(description="Number of Iterations:", gravity=4.0, groups={"Layout Parameters"})
-	public int numIterations = 100;
+	public int numIterations = 250;
 
 	@Tunable(description="Default Spring Coefficient",
 			tooltip="The smaller this number is, the more the network "+
@@ -39,7 +39,11 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 
 	@Tunable(description="Node mass", gravity=7.0, groups={"Layout Parameters"},
 			tooltip="The higher the node mass, the less nodes move around the network")
-	public double defaultNodeMass = 3.0;
+	public double nodeMass = 3.0;
+	
+	@Tunable(description="Node Repulsion Constant", gravity=8.0, groups={"Layout Parameters"},
+			tooltip="The higher this constant, the less nodes overlap")
+	public float nodeRepulsionConst = 100f;
 		
 	@Tunable(description="speed limit", gravity=9.0, groups={"Layout Parameters"})
 	public float speedLimit = 1f;
@@ -52,7 +56,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 
 	@Tunable(description = "Scale boundary forces", gravity = 15.0, groups = {"Boundary Parameters"},
 			tooltip = "Scale the boundary force by this factor, as more nodes are stuck on the edges of the boundary")
-	public double wallScale = 1.1;
+	public double wallScale = 1.15;
 	
 	@Tunable(description = "Outer bounds thickness", gravity = 16.0, groups = {"Boundary Parameters"},
 			tooltip = "Thickness of the outer boundary relative to the union of boundaries")
@@ -85,11 +89,13 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 			if (!isPositive(numIterations))
 				errMsg.append("Number of iterations must be > 0; current value = " + numIterations);
 			if (!isPositive(defaultSpringCoefficient))
-				errMsg.append("Default spring coefficient must be > 0; current value = " + defaultSpringCoefficient);
+				errMsg.append("The spring coefficient must be > 0; current value = " + defaultSpringCoefficient);
 			if (!isPositive(defaultSpringLength))
-				errMsg.append("Default spring length must be > 0; current value = " + defaultSpringLength);
-			if (!isPositive(defaultNodeMass))
-				errMsg.append("Default node mass must be > 0; current value = " + defaultNodeMass);
+				errMsg.append("The spring length must be > 0; current value = " + defaultSpringLength);
+			if (!isPositive(nodeMass))
+				errMsg.append("The node mass must be > 0; current value = " + nodeMass);
+			if(nodeRepulsionConst < 1f || nodeRepulsionConst > 1e8f)
+				errMsg.append("The node repulsion constant must be >= 1.0 and <= 1E8; current value = " + nodeRepulsionConst);
 			if(!isPositive(gravConst))
 				errMsg.append("The gravitational cosntant must be > 0.0; current value = " + gravConst);
 			if(outerBoundsThickness <= 1.)
@@ -99,7 +105,7 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 			
 		} catch (IOException e) {}
 		return isPositive(numIterations) && isPositive(defaultSpringCoefficient)
-				&& isPositive(defaultSpringLength) && isPositive(defaultNodeMass) 
+				&& isPositive(defaultSpringLength) && isPositive(nodeMass) && (nodeRepulsionConst >= 1f && nodeRepulsionConst <= 1e8f)
 				&& isPositive(gravConst) && outerBoundsThickness > 1. && (wallScale >= 1. && wallScale <= 10.)
 				? ValidationState.OK : ValidationState.INVALID;
 	}

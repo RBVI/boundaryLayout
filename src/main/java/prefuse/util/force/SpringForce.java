@@ -66,9 +66,9 @@ public class SpringForce extends AbstractForce {
 		float x1 = item1.location[0], y1 = item1.location[1];
 		float x2 = item2.location[0], y2 = item2.location[1];
 		float dx = x2-x1, dy = y2-y1;
-		dx -= item1.dimensions[0] + item2.dimensions[0];
-		dy -= item2.dimensions[1] + item2.dimensions[1];
-		float r  = (float)Math.sqrt(dx*dx+dy*dy);
+		float effdx = Math.abs(dx) - (item1.dimensions[0] + item2.dimensions[0]) / 2f;
+		float effdy = Math.abs(dy) - (item1.dimensions[1] + item2.dimensions[1]) / 2f;
+		float r  = (float)Math.sqrt(effdx*effdx+effdy*effdy);
 
 		if ( r == 0.0 ) {
 			dx = ((float)Math.random()-0.5f) / 50.0f;

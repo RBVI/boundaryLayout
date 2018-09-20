@@ -60,29 +60,39 @@ public class EllipticalWallForce extends BoundaryWallForce {
 			float drRight = 2 * effectiveXWidth - drLeft - itemDim[0]; 
 			float drBottom = 2 * effectiveYHeight - drTop - itemDim[1];
 
-			float vLeft = gravConst * item.mass / (drLeft * drLeft);
-			float vTop = gravConst * item.mass / (drTop * drTop);
-			float vRight = gravConst * item.mass / (drRight * drRight);
-			float vBottom = gravConst * item.mass / (drBottom * drBottom);
+			float gravMass = gravConst * item.mass;
+			float vLeft = gravMass / (drLeft * drLeft);
+			float vTop = gravMass / (drTop * drTop);
+			float vRight = gravMass / (drRight * drRight);
+			float vBottom = gravMass / (drBottom * drBottom);
 			vLeft = (vLeft > ABS_MAX_FORCE ? ABS_MAX_FORCE : vLeft);
 			vTop = (vTop > ABS_MAX_FORCE ? ABS_MAX_FORCE : vTop);
 			vRight = (vRight > ABS_MAX_FORCE ? ABS_MAX_FORCE : vRight);
 			vBottom = (vBottom > ABS_MAX_FORCE ? ABS_MAX_FORCE : vBottom);
-			
+
 			item.force[0] += vLeft - vRight;
 			item.force[1] += vTop - vBottom;
 		} else {
 			gravConst = params[OUT_GRAVITATIONAL_CONST];
-			float slope = dy / dx;
-			float denominator = (1 / (width * width * 4f) + (slope * slope) / (height * height * 4f));
-			float xVec = (float) Math.sqrt(1f / denominator);
-			float yVec = slope * xVec;
-			float xDiff = Math.abs(dx - xVec) - itemDim[0] / 2f;
-			float yDiff = Math.abs(dy - yVec) - itemDim[1] / 2f;
+			float slope = Math.abs(dy / dx);
+			float xVec = 1f;
+			float yVec = 1f;
+			if(slope > 1e5f) {
+				yVec = height / 2f;
+			} else if(slope < 1e-5f) {
+				xVec = width / 2f;
+			} else {
+				float denominator = (4f / (width * width) + (4f * slope * slope) / (height * height));
+				xVec = (float) Math.sqrt(1f / denominator);
+				yVec = Math.abs(slope * xVec);
+			}
+
+			float xDiff = Math.abs(dx) - xVec - itemDim[0] / 2f;
+			float yDiff = Math.abs(dy) - yVec - itemDim[1] / 2f;
 			float resDiff = (float) Math.sqrt(xDiff * xDiff + yDiff * yDiff);
 			float force = gravConst * item.mass / (resDiff * resDiff);
 			force = (force > ABS_MAX_FORCE ? ABS_MAX_FORCE : force);
-			
+
 			item.force[0] += force * (dx < 0 ? 1 : -1);
 			item.force[1] += force * (dy < 0 ? 1 : -1);
 		}

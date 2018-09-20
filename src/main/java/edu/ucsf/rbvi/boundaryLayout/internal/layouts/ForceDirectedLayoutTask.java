@@ -131,7 +131,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				forceItems.put(nodeView.getModel(), fitem);
 			}
 
-			fitem.mass = (float) context.defaultNodeMass;
+			fitem.mass = (float) context.nodeMass;
 
 			Object group = null;
 			if(chosenCategory != null)
@@ -149,6 +149,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					fitem.location[0] = (float) intersectionUnion.getCenterX();
 					fitem.location[1] = (float) intersectionUnion.getCenterY();
 				} else {
+					fitem.category = OUTER_UNION_KEY;
 					fitem.location[0] = (float) unionOfBoundaries.getCenterX();
 					fitem.location[1] = (float) unionOfBoundaries.getCenterY();
 				}
@@ -172,11 +173,11 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				continue;
 			m_fsim.addSpring(f1, f2, (float) context.defaultSpringCoefficient, (float) context.defaultSpringLength); 
 		}
-
+		
 		// perform layout and check center at intervals
+		int j = 0;
 		long timestep = 1000L;
-		m_fsim.speedLimit = 2f;
-		for (int i = 0; i < context.numIterations / 3 && !cancelled; i++) {
+		for (int i = 0; i < context.numIterations / 6 && !cancelled; i++) {
 			timestep *= (1.0 - i/(double)context.numIterations);
 			long step = timestep + 50;
 			m_fsim.runSimulator(step);
@@ -186,19 +187,20 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if(boundaries != null && !boundaries.isEmpty()) 
 			for(BoundaryAnnotation boundary : boundaries.values()) 
 				addAnnotationForce(m_fsim, boundary);
-
+		
 		// perform layout at desired speedlimit with boundary forces
-		m_fsim.speedLimit = context.speedLimit;
-		for (int i = context.numIterations / 3; i < 2 * context.numIterations / 3 && !cancelled; i++) {
+		for (int i = context.numIterations / 6; i < 2 * context.numIterations / 3 && !cancelled; i++) {
 			timestep *= (1.0 - i/(double)context.numIterations);
 			long step = timestep + 50;
 			checkCenter(m_fsim);
 			m_fsim.runSimulator(step);
+			updateNodeViews();
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
 		}
+		updateNodeViews();
 
 		// perform layout while looking at NBodyForce interactions
-		m_fsim.addForce(new NBodyForce());
+		m_fsim.addForce(new NBodyForce(context.nodeRepulsionConst));
 		for(int i = 2 * context.numIterations / 3; i < context.numIterations && !cancelled; i++) {
 			timestep *= (1.0 - i/(double)context.numIterations);
 			long step = timestep + 50;
@@ -592,10 +594,6 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 					intersections.add(comparedBoundary);
 			}
 		}
-		System.out.println(boundary.getName());
-		for(BoundaryAnnotation intersection : intersections)
-			System.out.print("   " + intersection.getName());
-		System.out.println();
 		boundary.setIntersections(intersections);
 		return intersections;
 	}

@@ -35,10 +35,10 @@ public class NBodyForce extends AbstractForce {
 
     private static String[] pnames = new String[] { "GravitationalConstant", 
             "Distance", "BarnesHutTheta"  };
-    
-    public static final float DEFAULT_GRAV_CONSTANT = -1.0f;
-    public static final float DEFAULT_MIN_GRAV_CONSTANT = -10f;
-    public static final float DEFAULT_MAX_GRAV_CONSTANT = 10f;
+    public static final float MAX_FORCE = 1e4f;
+    public static final float DEFAULT_GRAV_CONSTANT = 1e2f;
+    public static final float DEFAULT_MIN_GRAV_CONSTANT = 0.1f;
+    public static final float DEFAULT_MAX_GRAV_CONSTANT = 1e8f;
     
     public static final float DEFAULT_DISTANCE = -1f;
     public static final float DEFAULT_MIN_DISTANCE = -1f;
@@ -65,6 +65,10 @@ public class NBodyForce extends AbstractForce {
         this(DEFAULT_GRAV_CONSTANT, DEFAULT_MIN_DISTANCE, DEFAULT_THETA);
     }
     
+    public NBodyForce(float gravConst) {
+    	this(gravConst, DEFAULT_MIN_DISTANCE, DEFAULT_THETA);
+    }
+    
     /**
      * Create a new NBodyForce.
      * @param gravConstant the gravitational constant to use. Nodes will
@@ -77,6 +81,7 @@ public class NBodyForce extends AbstractForce {
      * item mass values.
      */
     public NBodyForce(float gravConstant, float minDistance, float theta) {
+    	gravConstant = Math.abs(gravConstant);
         params = new float[] { gravConstant, minDistance, theta };
         minValues = new float[] { DEFAULT_MIN_GRAV_CONSTANT,
             DEFAULT_MIN_DISTANCE, DEFAULT_MIN_THETA };
@@ -178,7 +183,6 @@ public class NBodyForce extends AbstractForce {
         try {
             insert(item, root, xMin, yMin, xMax, yMax);
         } catch ( StackOverflowError e ) {
-            // TODO: safe to remove?
             e.printStackTrace();
         }
     }
@@ -261,7 +265,6 @@ public class NBodyForce extends AbstractForce {
         try {
             forceHelper(item,root,xMin,yMin,xMax,yMax);
         } catch ( StackOverflowError e ) {
-            // TODO: safe to remove?
             e.printStackTrace();
         }
     }
@@ -269,16 +272,23 @@ public class NBodyForce extends AbstractForce {
     private void forceHelper(ForceItem item, QuadTreeNode n, 
                              float x1, float y1, float x2, float y2)
     {
-        float dx = n.com[0] - item.location[0];
-        float dy = n.com[1] - item.location[1];
+        float dx = item.location[0] - n.com[0];
+        float dy = item.location[1] - n.com[1];
         float r  = (float)Math.sqrt(dx*dx+dy*dy);
         boolean same = false;
-        if ( r == 0.0f ) {
+        if ( r <= 0.001f ) {
             // if items are in the exact same place, add some noise
             dx = (rand.nextFloat()-0.5f) / 50.0f;
             dy = (rand.nextFloat()-0.5f) / 50.0f;
             r  = (float)Math.sqrt(dx*dx+dy*dy);
             same = true;
+        }
+        if(n.value != null && n.value != item) {
+        	float effdx = Math.abs(dx) - (n.value.dimensions[0] + item.dimensions[0]) / 2f;
+        	float effdy = Math.abs(dy) - (n.value.dimensions[1] + item.dimensions[1]) / 2f;
+        	effdx = (effdx < 0f ? 1f : effdx);
+        	effdy = (effdy < 0f ? 1f : effdy);
+        	r = (float) Math.sqrt(effdx*effdx+effdy*effdy);
         }
         
         boolean minDist = params[MIN_DISTANCE]>0f && r>params[MIN_DISTANCE];
@@ -292,10 +302,10 @@ public class NBodyForce extends AbstractForce {
             if ( minDist ) return;
             // either only 1 particle or we meet criteria
             // for Barnes-Hut approximation, so calc force
-            float v = params[GRAVITATIONAL_CONST]*item.mass*n.mass 
-                        / (r*r*r);
-            item.force[0] += v*dx;
-            item.force[1] += v*dy;
+            float v = params[GRAVITATIONAL_CONST]*item.mass*n.mass / (r*r);
+            v = (v > MAX_FORCE ? MAX_FORCE : v);
+            item.force[0] += v * (dx > 0 ? 1 : -1);
+            item.force[1] += v * (dy > 0 ? 1 : -1);
         } else if ( n.hasChildren ) {
             // recurse for more accurate calculation
             float splitx = (x1+x2)/2;
@@ -309,10 +319,10 @@ public class NBodyForce extends AbstractForce {
             }
             if ( minDist ) return;
             if ( n.value != null && n.value != item ) {
-                float v = params[GRAVITATIONAL_CONST]*item.mass*n.value.mass
-                            / (r*r*r);
-                item.force[0] += v*dx;
-                item.force[1] += v*dy;
+                float v = params[GRAVITATIONAL_CONST]*item.mass*n.value.mass / (r*r);
+                v = (v > MAX_FORCE ? MAX_FORCE : v);
+                item.force[0] += v * (dx > 0 ? 1 : -1);
+                item.force[1] += v * (dy > 0 ? 1 : -1);
             }
         }
     }
