@@ -49,7 +49,7 @@ public class EllipticalWallForce extends BoundaryWallForce {
 		float widthRatio = (dx * dx) / (width * width);
 		boolean insideEllipse = widthRatio + heightRatio <= 0.25f;
 		float gravConst = 0f;
-
+		
 		if(insideEllipse) { //item is contained within the shape
 			gravConst = params[IN_GRAVITATIONAL_CONST];
 			float effectiveXWidth = (width) * (float) Math.sqrt(0.25f - heightRatio);
@@ -93,8 +93,8 @@ public class EllipticalWallForce extends BoundaryWallForce {
 			float force = gravConst * item.mass / (resDiff * resDiff);
 			force = (force > ABS_MAX_FORCE ? ABS_MAX_FORCE : force);
 
-			item.force[0] += force * (dx < 0 ? 1 : -1);
-			item.force[1] += force * (dy < 0 ? 1 : -1);
+			item.force[0] += force * (dx < 0 ? 1f : -1f);
+			item.force[1] += force * (dy < 0 ? 1f : -1f);
 		}
 	}
 }

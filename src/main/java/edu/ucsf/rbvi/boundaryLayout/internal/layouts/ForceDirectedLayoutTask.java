@@ -173,9 +173,9 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 				continue;
 			m_fsim.addSpring(f1, f2, (float) context.defaultSpringCoefficient, (float) context.defaultSpringLength); 
 		}
-		
+
 		// perform layout and check center at intervals
-		int j = 0;
+		int projectMod = (int) (1. / context.projectFreq);
 		long timestep = 1000L;
 		for (int i = 0; i < context.numIterations / 6 && !cancelled; i++) {
 			timestep *= (1.0 - i/(double)context.numIterations);
@@ -187,24 +187,24 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 		if(boundaries != null && !boundaries.isEmpty()) 
 			for(BoundaryAnnotation boundary : boundaries.values()) 
 				addAnnotationForce(m_fsim, boundary);
-		
+
 		// perform layout at desired speedlimit with boundary forces
 		for (int i = context.numIterations / 6; i < 2 * context.numIterations / 3 && !cancelled; i++) {
 			timestep *= (1.0 - i/(double)context.numIterations);
 			long step = timestep + 50;
-			checkCenter(m_fsim);
+			if(i % projectMod == 0)
+				checkCenter(m_fsim);
 			m_fsim.runSimulator(step);
-			updateNodeViews();
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
 		}
-		updateNodeViews();
 
 		// perform layout while looking at NBodyForce interactions
 		m_fsim.addForce(new NBodyForce(context.nodeRepulsionConst));
 		for(int i = 2 * context.numIterations / 3; i < context.numIterations && !cancelled; i++) {
 			timestep *= (1.0 - i/(double)context.numIterations);
 			long step = timestep + 50;
-			checkCenter(m_fsim);
+			if(i % projectMod == 0)
+				checkCenter(m_fsim);
 			m_fsim.runSimulator(step);
 			taskMonitor.setProgress((int)(((double)i/(double)context.numIterations)*90.+5));
 		}
@@ -521,10 +521,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	}
 
 	/** Private method
-	 * @param shapeAnnotation stores an existing ShapeAnnotation.
-	 * @return the Point2D dimensions of shapeAnnotation where 
-	 * the x value of the point holds the width and the y value of the 
-	 * point holds the height.
+	 * @param boundary holds layout-related information about its corresponding annotation
+	 * @return the dimensions of the boundary's bounding box
 	 */
 	private Point2D getAnnotationDimensions(BoundaryAnnotation boundary) {
 		Rectangle2D bb = boundary.getBoundingBox();
@@ -532,9 +530,8 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 	}
 
 	/** Private method
-	 * @param shapeAnnotation stores an existing ShapeAnnotation.
-	 * @return the Point2D location where the center of the shapeAnnotation
-	 * is.
+	 * @param boundary holds layout-related information about its corresponding annotation
+	 * @return the center of the boundary's bounding box
 	 */
 	private Point2D getAnnotationCenter(BoundaryAnnotation boundary) { 
 		Rectangle2D bb = boundary.getBoundingBox();
@@ -543,8 +540,7 @@ public class ForceDirectedLayoutTask extends AbstractLayoutTask {
 
 	/** Private method
 	 * This method calculates and initializes node initialization locations for a given boundary
-	 * @param shapeAnnotation stores an existing ShapeAnnotation.
-	 * where all of the nodes of that respective shape annotation are to be initialized.
+	 * @param boundary holds layout-related information about its corresponding annotation
 	 */
 	private void initNodeLocations(BoundaryAnnotation boundary) { 
 		Rectangle2D boundingBox = boundary.getBoundingBox();

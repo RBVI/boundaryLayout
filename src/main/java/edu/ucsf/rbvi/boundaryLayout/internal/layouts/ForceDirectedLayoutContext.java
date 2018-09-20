@@ -48,6 +48,10 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 	@Tunable(description="speed limit", gravity=9.0, groups={"Layout Parameters"})
 	public float speedLimit = 1f;
 	
+	@Tunable(description="Force-Directed Accuracy", gravity=13.0, groups = {"Boundary Parameters"},
+			tooltip = "1.0 is the most accurate, but is slower")
+	public double projectFreq = 1.0;
+	
 	@Tunable(description="Strength of boundaries", gravity=13.0, groups = {"Boundary Parameters"})
 	public float gravConst = 50f;
 	
@@ -94,20 +98,22 @@ public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentN
 				errMsg.append("The spring length must be > 0; current value = " + defaultSpringLength);
 			if (!isPositive(nodeMass))
 				errMsg.append("The node mass must be > 0; current value = " + nodeMass);
-			if(nodeRepulsionConst < 1f || nodeRepulsionConst > 1e8f)
-				errMsg.append("The node repulsion constant must be >= 1.0 and <= 1E8; current value = " + nodeRepulsionConst);
+			if(nodeRepulsionConst < 1f || nodeRepulsionConst > 1e6f)
+				errMsg.append("The node repulsion constant must be >= 1.0 and <= 1E6; current value = " + nodeRepulsionConst);
+			if(projectFreq < 0.1 || projectFreq > 1.0)
+				errMsg.append("The Force-Directed accuracy must be >= 0.1 and <= 1.0; current value = " + projectFreq);
 			if(!isPositive(gravConst))
 				errMsg.append("The gravitational cosntant must be > 0.0; current value = " + gravConst);
 			if(outerBoundsThickness <= 1.)
 				errMsg.append("The thickness of the outer network boundary must be > 1.0; current value = " + outerBoundsThickness);
-			if(wallScale < 1. || wallScale > 10.)
+			if(wallScale < 1. || wallScale > 2.)
 				errMsg.append("The wall scale factor must be > 1.0 and < 10.0; current value = " + wallScale);
 			
 		} catch (IOException e) {}
-		return isPositive(numIterations) && isPositive(defaultSpringCoefficient)
-				&& isPositive(defaultSpringLength) && isPositive(nodeMass) && (nodeRepulsionConst >= 1f && nodeRepulsionConst <= 1e8f)
-				&& isPositive(gravConst) && outerBoundsThickness > 1. && (wallScale >= 1. && wallScale <= 10.)
-				? ValidationState.OK : ValidationState.INVALID;
+		return isPositive(numIterations) && isPositive(defaultSpringCoefficient) && isPositive(defaultSpringLength) 
+				&& isPositive(nodeMass) && (nodeRepulsionConst >= 1f && nodeRepulsionConst <= 1e6f) 
+				&& (projectFreq >= 0.1 && projectFreq <= 1.0) &&isPositive(gravConst) && outerBoundsThickness > 1. 
+				&& (wallScale >= 1. && wallScale <= 2.) ? ValidationState.OK : ValidationState.INVALID;
 	}
 
 	private static boolean isPositive(final int n) {

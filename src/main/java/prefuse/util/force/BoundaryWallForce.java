@@ -11,8 +11,8 @@ import java.util.List;
  */
 public abstract class BoundaryWallForce extends AbstractForce {
 	private static String[] pnames = new String[] { "GravitationalConstant" };
-	public static final float ABS_MAX_FORCE = 1e10f;
-	public static final float MAX_GRAV_CONST = 1e12f;
+	public static final float ABS_MAX_FORCE = 1e6f;
+	public static final float MAX_GRAV_CONST = 1e10f;
 	public List<String> activeOn;
 
 	public static final int IN_GRAVITATIONAL_CONST = 0;
