@@ -11,7 +11,7 @@ public class VertexData {
 		this.point = point;
 		double xDiff = shape.getCenterX() - point.getX();
 		double yDiff = shape.getCenterY() - point.getY();
-		relativeAngle = Math.atan2(yDiff, xDiff) + Math.PI;
+		relativeAngle = ((Math.atan2(yDiff, xDiff) + Math.PI) * 180. / Math.PI) % 360.;
 	}
 	
 	public Point2D getPoint() {

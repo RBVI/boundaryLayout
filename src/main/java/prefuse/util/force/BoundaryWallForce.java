@@ -17,8 +17,8 @@ public abstract class BoundaryWallForce extends AbstractForce {
 
 	public static final int IN_GRAVITATIONAL_CONST = 0;
 	public static final int OUT_GRAVITATIONAL_CONST = 1;
-	public static final int IN_PROJECTION = 1;
-	public static final int OUT_PROJECTION = -1;
+	public static final int IN_PROJ = 1;
+	public static final int OUT_PROJ = -1;
 	private static final double DEFAULT_SCALEFACTOR = 2.5;
 
 	private boolean variableStrength;
@@ -83,9 +83,9 @@ public abstract class BoundaryWallForce extends AbstractForce {
 	 */
 	public void scaleStrength(int dir) {
 		if(this.variableStrength) {
-			if(dir == IN_PROJECTION && Math.abs(params[IN_GRAVITATIONAL_CONST]) < MAX_GRAV_CONST) 
+			if(dir == IN_PROJ && Math.abs(params[IN_GRAVITATIONAL_CONST]) < MAX_GRAV_CONST) 
 				params[IN_GRAVITATIONAL_CONST] *= scaleFactor;
-			else if(dir == OUT_PROJECTION && Math.abs(params[OUT_GRAVITATIONAL_CONST]) < MAX_GRAV_CONST) 
+			else if(dir == OUT_PROJ && Math.abs(params[OUT_GRAVITATIONAL_CONST]) < MAX_GRAV_CONST) 
 				params[OUT_GRAVITATIONAL_CONST] *= scaleFactor;
 		}
 	}

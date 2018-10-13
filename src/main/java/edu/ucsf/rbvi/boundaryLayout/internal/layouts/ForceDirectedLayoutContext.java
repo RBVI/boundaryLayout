@@ -27,12 +27,12 @@ import org.cytoscape.work.util.ListSingleSelection;
 public class ForceDirectedLayoutContext implements TunableValidator, SetCurrentNetworkListener {	
 	
 	@Tunable(description="Number of Iterations:", gravity=4.0, groups={"Layout Parameters"})
-	public int numIterations = 250;
+	public int numIterations = 100;
 
 	@Tunable(description="Default Spring Coefficient",
 			tooltip="The smaller this number is, the more the network "+
 			"topology affects the layout.", gravity=5.0, groups={"Layout Parameters"})
-	public double defaultSpringCoefficient = 1e-5;
+	public double defaultSpringCoefficient = 1e-4;
 
 	@Tunable(description="Default Spring Length", groups={"Layout Parameters"}, gravity=6.0)
 	public double defaultSpringLength = 140.0;

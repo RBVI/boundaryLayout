@@ -2,11 +2,11 @@ package edu.ucsf.rbvi.boundaryLayout.internal.layouts;
 
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -22,9 +22,22 @@ import prefuse.util.force.BoundaryWallForce;
  * its scaling capabilities.
  */
 public class BoundaryAnnotation {
-	public static final String DEFAULT_TYPE = "Rounded Rectangle";
+	public static final String RECTANGLE = ShapeAnnotation.ShapeType.RECTANGLE.shapeName();
+	public static final String ROUNDEDRECTANGLE = ShapeAnnotation.ShapeType.ROUNDEDRECTANGLE.shapeName();
+	public static final String ELLIPSE = ShapeAnnotation.ShapeType.ELLIPSE.shapeName();
+	public static final String TRIANGLE = ShapeAnnotation.ShapeType.TRIANGLE.shapeName();
+	public static final String PENTAGON = ShapeAnnotation.ShapeType.PENTAGON.shapeName();
+	public static final String HEXAGON = ShapeAnnotation.ShapeType.HEXAGON.shapeName();
+	public static final String OCTAGON = ShapeAnnotation.ShapeType.OCTAGON.shapeName();
+	public static final String PARALLELOGRAM = "Parallelogram";
+	public static final String[] SUPPORTED_SHAPES = {RECTANGLE, ROUNDEDRECTANGLE, ELLIPSE, 
+			TRIANGLE, PENTAGON, HEXAGON, OCTAGON, PARALLELOGRAM};
 
+	public static final double ANGLES_PI = 180.;
+	public static final int ANGLES_HASH_SIZE = 360;
 	private List<VertexData> vertices;
+	private List<Line2D> sides;
+	private int[] angleLineHash; 
 
 	private Shape shape;
 	private String shapeType;
@@ -55,15 +68,17 @@ public class BoundaryAnnotation {
 	 */
 	public BoundaryAnnotation(ShapeAnnotation shapeAnn, List<Point2D> initLocations, 
 			List<BoundaryAnnotation> intersections, BoundaryWallForce wallForce, int scaleMod) {
-		this.shape = shapeAnn.getShape();
-		this.shapeType = shapeAnn.getShapeType();
-		this.name = shapeAnn.getName();
-		this.initBoundingBox(shapeAnn);
+		angleLineHash = new int[ANGLES_HASH_SIZE];
+		sides = new ArrayList<>();
+		shape = shapeAnn.getShape();
+		shapeType = shapeAnn.getShapeType();
+		name = shapeAnn.getName();
+		initBoundingBox(shapeAnn);
+		inProjections = 0;
+		outProjections = 0;
 		this.initLocations = initLocations;
 		this.intersections = intersections;
 		this.wallForce = wallForce;
-		this.inProjections = 0;
-		this.outProjections = 0;
 		this.scaleMod = scaleMod;
 	}
 
@@ -86,10 +101,18 @@ public class BoundaryAnnotation {
 	public BoundaryAnnotation(String name, Rectangle2D boundingBox) {
 		this.name = name;
 		this.boundingBox = boundingBox;
-		this.inProjections = 0;
-		this.outProjections = 0;
-		this.scaleMod = DEFAULT_SCALEMOD;
-		this.shapeType = DEFAULT_TYPE;
+		shape = (Shape) boundingBox;
+		inProjections = 0;
+		outProjections = 0;
+		scaleMod = DEFAULT_SCALEMOD;
+		shapeType = ROUNDEDRECTANGLE;
+	}
+
+	public static boolean isSupported(String type) {
+		for(String supported : SUPPORTED_SHAPES)
+			if(supported.equals(type))
+				return true;
+		return false;
 	}
 
 	/**
@@ -108,7 +131,7 @@ public class BoundaryAnnotation {
 			boundingBox = new Rectangle2D.Double(xCoordinate, yCoordinate, width, height);
 		else
 			boundingBox.setRect(xCoordinate, yCoordinate, width, height);
-		
+
 		Rectangle2D shapebbox = shape.getBounds2D();
 		AffineTransform transform = new AffineTransform();
 		double scaleX = width / (shapebbox.getWidth() + 2 * shapebbox.getX());
@@ -116,10 +139,10 @@ public class BoundaryAnnotation {
 		transform.scale(scaleX, scaleY);
 		transform.translate(xCoordinate / scaleX, yCoordinate / scaleY);
 		shape = transform.createTransformedShape(shape);
-		
-		if(vertices == null)
-			vertices = new ArrayList<>();
+
 		if(!shapeType.equals("Rectangle") && !shapeType.equals("Rounded Rectangle") && !shapeType.equals("Ellipse")) {
+			if(vertices == null)
+				vertices = new ArrayList<>();
 			PathIterator path = shape.getPathIterator(null);
 			while(!path.isDone()) {
 				double[] point = new double[2];
@@ -128,19 +151,75 @@ public class BoundaryAnnotation {
 					vertices.add(new VertexData(new Point2D.Double(point[0], point[1]), boundingBox));
 				path.next();
 			}
-		}
+			vertices.add(vertices.get(0));
+
+			for(int v = 0; v < vertices.size() - 1; v++) {
+				VertexData vertex1 = vertices.get(v);
+				VertexData vertex2 = vertices.get(v + 1);
+				int angle1 = (int) vertex1.getRelativeAngle();
+				int angle2 = (int) vertex2.getRelativeAngle();
+				int greater = angle1 < angle2 ? angle2 : angle1;
+				int less = greater == angle1 ? angle2 : angle1;
+				if(greater - less < ANGLES_PI) {
+					initInBetween(less, greater, v);
+				} else {
+					initInBetween(greater, ANGLES_HASH_SIZE - 1, v);
+					initInBetween(0, less, v);
+				}
+				angleLineHash[angle1] = -1;
+				angleLineHash[angle2] = -1;
+
+				sides.add(new Line2D.Double(vertex1.getPoint(), vertex2.getPoint()));
+			}
+			vertices.remove(vertices.size() - 1);
+		} 
 	}
-	
+
+	/**
+	 * @precondition angle1 < angle2 
+	 * @precondition angleLineHash has been initialized 
+	 * @precondition 0 <= angle1 < angleLineHash.length & 0 <= angle2 < angleLineHash.length 
+	 * @param angle1 
+	 * @param angle2
+	 * @param lineIndex
+	 */
+	private void initInBetween(int angle1, int angle2, int lineIndex) {
+		for(int angle = angle1; angle <= angle2; angle++)
+			angleLineHash[angle] = lineIndex;
+	}
+
 	public boolean intersects(Rectangle2D boundingbox) {
-		if(shape == null)
-			return false;
-		return shape.intersects(boundingbox);
+		return shape == null ? false : shape.intersects(boundingbox);
 	}
-	
+
 	public boolean contains(Rectangle2D boundingbox) {
-		if(shape == null)
-			return false;
-		return shape.contains(boundingbox);
+		return shape == null ? false : shape.contains(boundingbox);
+	}
+
+	public Line2D getClosestLine(VertexData nodeVertex) {
+		if(nodeVertex != null && vertices != null && !vertices.isEmpty()) {
+			int nodeAngle = (int) nodeVertex.getRelativeAngle();
+			int lineIndex = angleLineHash[nodeAngle];
+			if(lineIndex != -1) {
+				return sides.get(lineIndex);
+			} else {
+				int size = sides.size();
+				int index = angleLineHash[(nodeAngle + 1) % ANGLES_HASH_SIZE];
+				VertexData vertex = vertices.get(index);
+				VertexData vertexRight = vertices.get((index + 1) % size);
+				double angleA = vertex.getRelativeAngle();
+				double angleB = vertexRight.getRelativeAngle();
+				boolean isBetween = nodeAngle >= angleA ^ nodeAngle >= angleB;
+				if(isBetween ^ Math.abs(angleA - angleB) > ANGLES_PI) 
+					return sides.get(index);
+				else 
+					return sides.get(Math.floorMod((index - 1), size));
+			}
+		} else return null;
+	}
+
+	public Line2D getClosestLine(Point2D point) {
+		return getClosestLine(new VertexData(point, boundingBox));
 	}
 
 	public List<VertexData> getVertices() {
@@ -327,12 +406,12 @@ public class BoundaryAnnotation {
 	 * @precondition dir == -1 or dir == 1
 	 */
 	protected void newProjection(int dir) {
-		if(dir == BoundaryWallForce.IN_PROJECTION) {
-			this.inProjections++;
+		if(dir == BoundaryWallForce.IN_PROJ) {
+			inProjections++;
 			if(inProjections % scaleMod == 0)
 				scaleWallForce(dir);
-		} else if(dir == BoundaryWallForce.OUT_PROJECTION) {
-			this.outProjections++;
+		} else if(dir == BoundaryWallForce.OUT_PROJ) {
+			outProjections++;
 			if(outProjections % scaleMod == 0)
 				scaleWallForce(dir);
 		}
@@ -342,7 +421,7 @@ public class BoundaryAnnotation {
 	 * Scale the wall force of this boundary in the direction of @param dir
 	 */
 	private void scaleWallForce(int dir) {
-		if(this.wallForce != null)
+		if(wallForce != null)
 			wallForce.scaleStrength(dir);
 	}
 }
